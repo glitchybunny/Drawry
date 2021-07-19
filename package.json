@@ -1,0 +1,16 @@
+{
+    "name": "open-picturephone",
+    "version": "0.0.1",
+    "description": "",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "express": "^4.17.1",
+        "socket.io": "^2.4.0",
+        "xss": "^1.0.8"
+    },
+    "license": "ACSL",
+    "keywords": []
+}
