@@ -4,8 +4,9 @@
 */
 
 /// --- SOCKET CONSTANTS --- ///
-let array = new Uint32Array(1); window.crypto.getRandomValues(array);
-const ID = array[0].valueOf()+1;
+let array = new Uint32Array(1);
+window.crypto.getRandomValues(array);
+const ID = array[0].valueOf() + 1;
 const SOCKET = io.connect(document.documentURI);
 const USERS = {};
 
@@ -17,7 +18,8 @@ var room = undefined;
 // Ensure browser compatibility
 if (!('getContext' in document.createElement('canvas'))) {
     let message = 'Sorry, it looks like your browser does not support canvas! This game depends on canvas to be playable.';
-    alert(message); console.error(message);
+    alert(message);
+    console.error(message);
 }
 
 
@@ -30,7 +32,7 @@ SOCKET.on('connect', () => {
 });
 
 // Let client know they've joined the room successfully
-SOCKET.on('joined', (data) => {
+SOCKET.on('joined', async (data) => {
     console.log("Joined room '" + data.room + "'");
     document.body.style.cursor = '';
 
@@ -38,23 +40,26 @@ SOCKET.on('joined', (data) => {
 
     // clear join UI and replace it with game UI
     let main = document.querySelector('main');
-    main.innerHTML = '<section id="playerSection">\n' +
-        '        <h1>Players <span style="float:right">(<span id="playerCount">1</span>/10)</span></h1>\n' +
-        '        <ul id="playerList"></ul>\n' +
-        '    </section>\n' +
-        '    <section>\n' +
-        '        <h1>Game Setup</h1>\n' +
-        '    </section>\n' +
-        '    <section>\n' +
-        '        <h1>Books</h1>\n' +
-        '    </section>';
+    main.innerHTML = '';
     main.className = 'game';
+    await updateUI(main, '/game.html');
+    initSetup();
 
-    // add self to players list
+    // add self and already connected players to players list
     let nameElem = document.createElement('li');
     nameElem.innerText = name;
     nameElem.style.fontWeight = "bold";
     document.getElementById('playerList').appendChild(nameElem);
+
+    for (let id in USERS) {
+        let nameElem = document.createElement('li');
+        nameElem.innerText = USERS[id].name;
+        nameElem.id = id;
+        document.getElementById('playerList').appendChild(nameElem);
+    }
+
+    // Increment player count
+    document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
 })
 
 // Alert client to another user joining the room
@@ -65,14 +70,17 @@ SOCKET.on('userJoin', (data) => {
         name: data.name
     }
 
-    // Add to player list
-    let nameElem = document.createElement('li');
-    nameElem.innerText = htmlDecode(data.name);
-    nameElem.id = data.id;
-    document.getElementById('playerList').appendChild(nameElem);
+    let playerList = document.getElementById('playerList');
+    if (playerList !== undefined && playerList !== null) {
+        // Add to player list
+        let nameElem = document.createElement('li');
+        nameElem.innerText = htmlDecode(data.name);
+        nameElem.id = data.id;
+        playerList.appendChild(nameElem);
 
-    // Increase player count
-    document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+        // Increment player count
+        document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+    }
 });
 
 // Alert client to another user leaving the room
@@ -95,7 +103,7 @@ SOCKET.on('userLeave', (userID) => {
 // If client is disconnected unexpectedly (i.e. booted from server or server connection lost)
 SOCKET.on('disconnect', (data) => {
     // Determine which disconnect has occurred and display relevant error
-    switch(data) {
+    switch (data) {
         case("io server disconnect"):
             alert("Kicked from server!");
             break;
@@ -114,6 +122,20 @@ SOCKET.on('disconnect', (data) => {
 });
 
 
+// Update UI (load from other HTML file instead of having code inline in js - it's just cleaner ok)
+async function updateUI(e, url) {
+    document.body.style.cursor = "wait";
+
+    let response = await fetch(url).catch(function (err) {
+        console.warn('Something went wrong', err);
+        alert("Failed to connect to server");
+    });
+    e.innerHTML = await response.text();
+
+    document.body.style.cursor = "";
+    return 1;
+}
+
 
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
 // Join button
@@ -125,7 +147,7 @@ inputSubmit.addEventListener('click', () => {
 
     if (nameInput.reportValidity() && roomInput.reportValidity()) {
         name = nameInput.value.substr(0, 32);
-        room = roomInput.value.substr(0, 16);
+        room = roomInput.value.substr(0, 8);
 
         nameInput.disabled = true;
         roomInput.disabled = true;
@@ -139,6 +161,7 @@ inputSubmit.addEventListener('click', () => {
         });
     }
 });
+
 
 // Restrict inputs for a textbox to the given inputFilter.
 // If you're reading this, I'm aware you can bypass the restrictions - there's serverside checks too, ya bozo
@@ -168,4 +191,33 @@ setInputFilter(document.getElementById("roomInput"), function (value) {
 function htmlDecode(input) {
     let doc = new DOMParser().parseFromString(input, "text/html");
     return doc.documentElement.textContent;
+}
+
+
+// Game setup functions
+function initSetup() {
+    let pageCount = document.getElementById('pageCount');
+    pageCount.addEventListener('input', () => {
+        document.getElementById('pageCountDisplay').value = pageCount.value;
+    });
+
+    let timeWrite = document.getElementById('timeWrite');
+    timeWrite.addEventListener('input', () => {
+        let timeWriteDisplay = document.getElementById('timeWriteDisplay');
+        if (timeWrite.value == 0) {
+            timeWriteDisplay.value = "none";
+        } else {
+            timeWriteDisplay.value = timeWrite.value + " min";
+        }
+    });
+
+    let timeDraw = document.getElementById('timeDraw');
+    timeDraw.addEventListener('input', () => {
+        let timeDrawDisplay = document.getElementById('timeDrawDisplay');
+        if (timeDraw.value == 0) {
+            timeDrawDisplay.value = "none";
+        } else {
+            timeDrawDisplay.value = timeDraw.value + " min";
+        }
+    });
 }
