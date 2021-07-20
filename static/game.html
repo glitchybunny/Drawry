@@ -1,0 +1,58 @@
+<h1 id="cornerTitle">Open Picturephone v0.0.1</h1>
+<!-- todo: add option to see room code -->
+<section id="playerSection">
+    <h1>Players <span style="float:right">(<span id="playerCount">1</span>/10)</span></h1>
+    <ul id="playerList"></ul>
+</section>
+<section id="gameSection">
+    <h1>Game Setup</h1>
+    <div id="gameSettings">
+        <div>
+            <p>First page</p>
+            <div class="centerV">
+                <label><input checked name="firstPage" type="radio" value="write">Write</label><label><input
+                    name="firstPage" type="radio" value="draw">Draw</label>
+            </div>
+        </div>
+        <div>
+            <p>Pages per book</p>
+            <div class="centerV">
+                <input id="pageCount" max="20" min="2" name="pageCount" type="range" value="8">
+                <output for="pageCount" id="pageCountDisplay">8</output>
+            </div>
+        </div>
+        <div>
+            <p>Page assignment</p>
+            <div class="centerV">
+                <label><input checked name="pageOrder" type="radio" value="linear">Normal</label><label><input
+                    name="pageOrder" type="radio" value="random">Random</label>
+            </div>
+        </div>
+        <div>
+            <p>Colour palette</p>
+            <div class="centerV">
+                <select disabled>
+                    <option id="colourPalette" value="none">No palette</option>
+                </select>
+            </div>
+        </div>
+        <hr>
+        <div>
+            <p>Write time limit</p>
+            <div class="centerV">
+                <input id="timeWrite" max="15" min="0" name="timeWrite" type="range" value="0">
+                <output for="timeWrite" id="timeWriteDisplay">none</output>
+            </div>
+        </div>
+        <div>
+            <p>Draw time limit</p>
+            <div class="centerV">
+                <input id="timeDraw" max="15" min="0" name="timeDraw" type="range" value="0">
+                <output for="timeDraw" id="timeDrawDisplay">none</output>
+            </div>
+        </div>
+    </div>
+</section>
+<section id="bookSection">
+    <h1>Books</h1>
+</section>
