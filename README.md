@@ -1,8 +1,16 @@
+### ***Notice: This project is still very early in development, and as such, there is no playable version yet.***
+
+---
+
 # open-picturephone
 
-Alternate drawing pictures and adding captions to make funny stories with your friends
+Alternate drawing pictures and adding captions to make funny stories with your friends.
 
-## Instructions
+Inspired by drawception, brokenpicturephone, and a plethora of other games in this genre.
+
+:art:
+
+### Running your own server
 For reference, app.js is the node server, and /static/js/picturephone.js is the main javascript module loaded by the client when they connect.
 
 **How to run locally:**
