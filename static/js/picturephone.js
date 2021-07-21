@@ -48,7 +48,7 @@ SOCKET.on('joined', async (data) => {
     // add self and already connected players to players list
     let nameElem = document.createElement('li');
     nameElem.innerText = name;
-    nameElem.style.fontWeight = "bold";
+    nameElem.title = "You!";
     document.getElementById('playerList').appendChild(nameElem);
 
     for (let id in USERS) {
@@ -65,7 +65,7 @@ SOCKET.on('joined', async (data) => {
 // Alert client to another user joining the room
 SOCKET.on('userJoin', (data) => {
     // Add user data
-    console.log(data.name, "has joined the room");
+    console.log(data.name, "joined");
     USERS[data.id] = {
         name: data.name
     }
@@ -90,14 +90,24 @@ SOCKET.on('userLeave', (userID) => {
 
     // Clear user data
     if (USERS[userID] !== undefined) {
-        console.log(USERS[userID].name, "has disconnected");
+        console.log(USERS[userID].name, "disconnected");
         delete USERS[userID];
     } else {
-        console.log(userID, "has disconnected");
+        console.log(userID, "disconnected");
     }
 
     // Decrease player count
     document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+});
+
+// Alert client to host assignment
+SOCKET.on('userHost', (userID) => {
+    // Update host
+    if (userID === ID) {
+        console.log("You are the host");
+    } else {
+        console.log(USERS[userID].name, "is the host");
+    }
 });
 
 // If client is disconnected unexpectedly (i.e. booted from server or server connection lost)

@@ -105,7 +105,7 @@ output {
 }
 
 ul {
-    margin-top: 8px
+    margin-top: 0;
 }
 
 li {
@@ -116,7 +116,8 @@ li {
 li:first-child {
     border-bottom: 2px solid #234567;
     padding-bottom: 4px;
-    margin-bottom: -3px
+    margin-bottom: -3px;
+    font-weight:bold;
 }
 
 hr {
@@ -141,15 +142,7 @@ hr {
 #playerList {
     list-style: none;
     padding-inline: 0;
-    padding-left: 0
-}
-
-#you {
-    font-weight:bold;
-}
-
-.host {
-
+    padding-left: 0;
 }
 
 #gameSection {
