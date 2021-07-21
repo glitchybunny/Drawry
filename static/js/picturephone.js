@@ -11,9 +11,9 @@ const SOCKET = io.connect(document.documentURI);
 const USERS = {};
 
 /// --- VARIABLES --- ///
-var connected = true;
 var name = undefined;
 var room = undefined;
+var host = undefined;
 
 // Ensure browser compatibility
 if (!('getContext' in document.createElement('canvas'))) {
@@ -28,7 +28,6 @@ if (!('getContext' in document.createElement('canvas'))) {
 SOCKET.on('connect', () => {
     console.log("Established connection to the server");
     console.log("ID is " + ID);
-    connected = true;
 });
 
 // Let client know they've joined the room successfully
@@ -67,7 +66,7 @@ SOCKET.on('userJoin', (data) => {
     // Add user data
     console.log(data.name, "joined");
     USERS[data.id] = {
-        name: data.name
+        name: htmlDecode(data.name)
     }
 
     let playerList = document.getElementById('playerList');
@@ -104,9 +103,16 @@ SOCKET.on('userLeave', (userID) => {
 SOCKET.on('userHost', (userID) => {
     // Update host
     if (userID === ID) {
+        host = name;
         console.log("You are the host");
     } else {
-        console.log(USERS[userID].name, "is the host");
+        host = USERS[userID].name;
+        console.log(host, "is the host");
+    }
+
+    let hostElem = document.getElementById('hostName');
+    if (hostElem !== undefined && hostElem !== null) {
+        hostElem.innerText = host;
     }
 });
 
@@ -230,4 +236,7 @@ function initSetup() {
             timeDrawDisplay.value = timeDraw.value + " min";
         }
     });
+
+    document.getElementById('hostName').innerText = host;
+    document.getElementById('host').title = "Host: " + host;
 }
