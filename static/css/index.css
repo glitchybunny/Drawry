@@ -13,16 +13,16 @@ body, html {
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    background: #567890
+    background: #567890;
+    overflow:hidden;
 }
 
 body {
-    align-items: center
+    align-items: center;
 }
 
 p {
-    margin: 10px 0
+    margin: 8px 0
 }
 
 a, li, output {
@@ -31,25 +31,6 @@ a, li, output {
 
 a, label, li, output, p {
     font-size: 18px
-}
-
-.center {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center
-}
-
-.centerV, body {
-    justify-content: center
-}
-
-.centerV {
-    display: flex;
-    flex-flow: row nowrap;
-    margin-top: auto;
-    margin-bottom: auto;
-    vertical-align: center
 }
 
 body, main.join, section {
@@ -65,7 +46,7 @@ section {
     padding: 10px 20px;
     margin: 10px;
     background-color: #345678;
-    filter: drop-shadow(4px 4px 0 #000);
+    filter: drop-shadow(4px 4px 0 #012345);
     min-width: 200px
 }
 
@@ -89,8 +70,9 @@ input[type=text] {
 
 input[type=button] {
     font-size: 22px;
-    width: 100px;
-    margin: 10px auto
+    width: auto;
+    padding: 1px 16px;
+    margin: 10px auto;
 }
 
 input[type=range] {
@@ -114,10 +96,7 @@ li {
 }
 
 li:first-child {
-    border-bottom: 2px solid #234567;
-    padding-bottom: 4px;
-    margin-bottom: -3px;
-    font-weight:bold;
+    font-weight: bold;
 }
 
 hr {
@@ -125,6 +104,39 @@ hr {
     width: 100%;
     border: 0;
     border-bottom: 2px solid #234567
+}
+
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center
+}
+
+.centerV, body {
+    justify-content: center
+}
+
+.centerV {
+    display: flex;
+    flex-flow: row nowrap;
+    margin-top: auto;
+    margin-bottom: auto;
+    vertical-align: center
+}
+
+.title {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    white-space: nowrap;
+}
+
+.title > h1 {
+    filter: drop-shadow(1px 1px 0 #123456);
+    width: auto;
+    margin: 10px 0;
 }
 
 #source {
@@ -151,11 +163,7 @@ hr {
 
 #gameSettings {
     display: flex;
-    flex-flow: column nowrap
-}
-
-#timeDrawDisplay, #timeWriteDisplay {
-    width: 60px
+    flex-flow: column nowrap;
 }
 
 #gameSettings > div, main.game {
@@ -164,10 +172,25 @@ hr {
     justify-content: space-between
 }
 
+#timeDrawDisplay, #timeWriteDisplay {
+    width: 60px
+}
+
 #cornerTitle {
     position: absolute;
     margin: 10px 20px;
     top: 0;
     left: 0;
     color: #abcdef
+}
+
+#host {
+    text-align: right;
+    margin: 10px 0;
+    padding: 4px 8px;
+    background-color: #123456;
+    width: auto;
+    max-width: min(200px, max-content);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
