@@ -1,36 +1,36 @@
 @font-face {
     font-family: "OpenSans";
-    src: url("/font/OpenSans-Regular.ttf") format("truetype");
-    font-display: swap;
+    src: url(/font/OpenSans-Regular.ttf) format("truetype");
+    font-display: swap
 }
 
 * {
-    font-family: "OpenSans", sans-serif;
+    font-family: "OpenSans", sans-serif
 }
 
-html, body {
+body, html {
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background: #567890;
+    background: #567890
 }
 
 body {
-    display: flex;
-    flex-flow: column nowrap;
-    justify-content: center;
-    align-items: center;
+    align-items: center
 }
 
 p {
-    margin: 10px 0;
+    margin: 10px 0
 }
 
-p, a, label, li, output {
-    font-size: 18px;
-    color: white;
+a, li, output {
+    color: #fff
+}
+
+a, label, li, output, p {
+    font-size: 18px
 }
 
 .center {
@@ -40,68 +40,90 @@ p, a, label, li, output {
     text-align: center
 }
 
+.centerV, body {
+    justify-content: center
+}
+
 .centerV {
     display: flex;
     flex-flow: row nowrap;
-    justify-content: center;
     margin-top: auto;
     margin-bottom: auto;
-    vertical-align: center;
+    vertical-align: center
 }
 
-main.join {
+body, main.join, section {
     display: flex;
-    flex-flow: column nowrap;
+    flex-flow: column nowrap
 }
 
 main.game {
-    display: flex;
-    flex-flow: row nowrap;
-    width: 100%;
-    justify-content: space-between;
+    width: 100%
 }
 
 section {
-    display: flex;
-    flex-flow: column nowrap;
     padding: 10px 20px;
     margin: 10px;
     background-color: #345678;
-    filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 1));
-    min-width: 200px;
+    filter: drop-shadow(4px 4px 0 #000);
+    min-width: 200px
+}
+
+h1, label, p {
+    color: #fff
 }
 
 h1 {
-    color: white;
-    font-weight: bold;
+    font-weight: 700;
     margin: 10px auto;
-    width: 100%;
+    width: 100%
 }
 
 label {
-    color: white;
-    padding: 10px 4px;
+    padding: 10px 4px
 }
 
-input[type="text"] {
-    font-size: 24px;
+input[type=text] {
+    font-size: 24px
 }
 
-input[type="button"] {
+input[type=button] {
     font-size: 22px;
     width: 100px;
-    margin: 10px auto;
+    margin: 10px auto
 }
 
-input[type="range"] {
-    margin: 10px auto;
+input[type=range] {
+    margin: 10px auto
 }
 
 output {
     display: inline-block;
     min-width: 24px;
     text-align: right;
-    margin: 10px 0 10px 10px;
+    margin: 10px 0 10px 10px
+}
+
+ul {
+    margin-top: 8px
+}
+
+li {
+    margin: 8px 0;
+    word-wrap: break-word
+}
+
+li:first-child {
+    border-bottom: 2px solid #234567;
+    padding-bottom: 4px;
+    margin-bottom: -3px
+}
+
+hr {
+    margin: 8px auto;
+    width: 100%;
+    border: 0;
+    border-bottom: 2px solid #234567
 }
 
 #source {
@@ -109,58 +131,44 @@ output {
     margin: 10px 20px;
     bottom: 0;
     right: 0;
-    color: #ABCDEF;
+    color: #abcdef
 }
 
 #playerSection {
-    max-width: 200px;
+    max-width: 200px
 }
 
 #playerList {
     list-style: none;
     padding-inline: 0;
-    padding-left: 0;
+    padding-left: 0
+}
+
+#you {
+    font-weight:bold;
+}
+
+.host {
+
 }
 
 #gameSection {
-    min-width: 480px;
+    min-width: 480px
 }
 
 #gameSettings {
     display: flex;
-    flex-flow: column nowrap;
+    flex-flow: column nowrap
 }
 
-#timeWriteDisplay, #timeDrawDisplay {
-    width: 60px;
+#timeDrawDisplay, #timeWriteDisplay {
+    width: 60px
 }
 
-#gameSettings > div {
+#gameSettings > div, main.game {
     display: flex;
     flex-flow: row nowrap;
-    justify-content: space-between;
-}
-
-ul {
-    margin-top: 8px;
-}
-
-li {
-    margin: 8px 0;
-    word-wrap: break-word;
-}
-
-li:first-child {
-    border-bottom: 2px solid #234567;
-    padding-bottom: 4px;
-    margin-bottom: -3px;
-}
-
-hr {
-    margin: 8px auto;
-    width: 100%;
-    border: none;
-    border-bottom: 2px solid #234567;
+    justify-content: space-between
 }
 
 #cornerTitle {
@@ -168,5 +176,5 @@ hr {
     margin: 10px 20px;
     top: 0;
     left: 0;
-    color: #ABCDEF;
+    color: #abcdef
 }
