@@ -1,11 +1,19 @@
 <h1 id="cornerTitle">Open Picturephone v0.0.1</h1>
 <!-- todo: add option to see room code -->
 <section id="playerSection">
-    <h1>Players <span style="float:right">(<span id="playerCount">1</span>/10)</span></h1>
+    <div class="title">
+        <h1>Players</h1>
+        <h1 style="text-align:right;">(<span id="playerCount">1</span>/10)</h1>
+    </div>
+    <hr>
     <ul id="playerList"></ul>
 </section>
 <section id="gameSection">
-    <h1>Game Setup</h1>
+    <div class="title">
+        <h1>Game Setup</h1>
+        <p id="host">Host: <span id="hostName"></span></p>
+    </div>
+    <hr>
     <div id="gameSettings">
         <div>
             <p>First page</p>
@@ -52,7 +60,12 @@
             </div>
         </div>
     </div>
+    <hr>
+    <input id="inputSubmit" type="button" value="Start game">
 </section>
 <section id="bookSection">
-    <h1>Books</h1>
+    <div class="title">
+        <h1>Books</h1>
+    </div>
+    <hr>
 </section>
