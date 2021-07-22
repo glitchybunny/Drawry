@@ -47,7 +47,7 @@ section {
     margin: 10px;
     background-color: #345678;
     filter: drop-shadow(4px 4px 0 #012345);
-    min-width: 200px
+    min-width: 200px;
 }
 
 h1, label, p {
@@ -110,11 +110,11 @@ hr {
     display: block;
     margin-left: auto;
     margin-right: auto;
-    text-align: center
+    text-align: center;
 }
 
 .centerV, body {
-    justify-content: center
+    justify-content: center;
 }
 
 .centerV {
@@ -122,7 +122,7 @@ hr {
     flex-flow: row nowrap;
     margin-top: auto;
     margin-bottom: auto;
-    vertical-align: center
+    vertical-align: center;
 }
 
 .title {
@@ -158,7 +158,7 @@ hr {
 }
 
 #gameSection {
-    min-width: 480px
+    min-width: 400px
 }
 
 #gameSettings {
@@ -169,7 +169,7 @@ hr {
 #gameSettings > div, main.game {
     display: flex;
     flex-flow: row nowrap;
-    justify-content: space-between
+    justify-content: space-between;
 }
 
 #timeDrawDisplay, #timeWriteDisplay {
@@ -193,4 +193,20 @@ hr {
     max-width: min(200px, max-content);
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.isHost {
+    display: flex;
+    vertical-align: center;
+    align-items: center;
+}
+
+.isNotHost {
+    display: flex;
+    vertical-align: center;
+    align-items: center;
+}
+
+.hidden {
+    display:none;
 }
