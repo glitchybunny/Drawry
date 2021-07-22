@@ -13,7 +13,9 @@ const USERS = {};
 /// --- VARIABLES --- ///
 var name = undefined;
 var room = undefined;
+var roomSettings = {};
 var host = undefined;
+var isHost = false;
 
 // Ensure browser compatibility
 if (!('getContext' in document.createElement('canvas'))) {
@@ -21,6 +23,7 @@ if (!('getContext' in document.createElement('canvas'))) {
     alert(message);
     console.error(message);
 }
+var byId = function( id ) { return document.getElementById( id ); };
 
 
 ///// ----- ASYNC FUNCTIONS ----- /////
@@ -42,23 +45,25 @@ SOCKET.on('joined', async (data) => {
     main.innerHTML = '';
     main.className = 'game';
     await updateUI(main, '/game.html');
-    initSetup();
+
+    // setup game settings
+    initSettings();
 
     // add self and already connected players to players list
     let nameElem = document.createElement('li');
     nameElem.innerText = name;
     nameElem.title = "You!";
-    document.getElementById('playerList').appendChild(nameElem);
+    byId('playerList').appendChild(nameElem);
 
     for (let id in USERS) {
         let nameElem = document.createElement('li');
         nameElem.innerText = USERS[id].name;
         nameElem.id = id;
-        document.getElementById('playerList').appendChild(nameElem);
+        byId('playerList').appendChild(nameElem);
     }
 
     // Increment player count
-    document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+    byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
 })
 
 // Alert client to another user joining the room
@@ -69,7 +74,7 @@ SOCKET.on('userJoin', (data) => {
         name: htmlDecode(data.name)
     }
 
-    let playerList = document.getElementById('playerList');
+    let playerList = byId('playerList');
     if (playerList !== undefined && playerList !== null) {
         // Add to player list
         let nameElem = document.createElement('li');
@@ -78,14 +83,14 @@ SOCKET.on('userJoin', (data) => {
         playerList.appendChild(nameElem);
 
         // Increment player count
-        document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+        byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
     }
 });
 
 // Alert client to another user leaving the room
 SOCKET.on('userLeave', (userID) => {
     // Remove from player list
-    document.getElementById(userID).remove();
+    byId(userID).remove();
 
     // Clear user data
     if (USERS[userID] !== undefined) {
@@ -96,7 +101,7 @@ SOCKET.on('userLeave', (userID) => {
     }
 
     // Decrease player count
-    document.getElementById('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+    byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
 });
 
 // Alert client to host assignment
@@ -104,16 +109,14 @@ SOCKET.on('userHost', (userID) => {
     // Update host
     if (userID === ID) {
         host = name;
+        isHost = true;
         console.log("You are the host");
     } else {
         host = USERS[userID].name;
+        isHost = false;
         console.log(host, "is the host");
     }
-
-    let hostElem = document.getElementById('hostName');
-    if (hostElem !== undefined && hostElem !== null) {
-        hostElem.innerText = host;
-    }
+    updateHostInfo();
 });
 
 // If client is disconnected unexpectedly (i.e. booted from server or server connection lost)
@@ -155,19 +158,19 @@ async function updateUI(e, url) {
 
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
 // Join button
-let inputSubmit = document.getElementById('inputSubmit');
-inputSubmit.addEventListener('click', () => {
+let _inputSubmit = byId('inputSubmit');
+_inputSubmit.addEventListener('click', () => {
     // Receive and validate inputs
-    let nameInput = document.getElementById('nameInput');
-    let roomInput = document.getElementById('roomInput');
+    let _nameInput = byId('nameInput');
+    let _roomInput = byId('roomInput');
 
-    if (nameInput.reportValidity() && roomInput.reportValidity()) {
-        name = nameInput.value.substr(0, 32);
-        room = roomInput.value.substr(0, 8);
+    if (_nameInput.reportValidity() && _roomInput.reportValidity()) {
+        name = _nameInput.value.substr(0, 32);
+        room = _roomInput.value.substr(0, 8);
 
-        nameInput.disabled = true;
-        roomInput.disabled = true;
-        inputSubmit.disabled = true;
+        _nameInput.disabled = true;
+        _roomInput.disabled = true;
+        _inputSubmit.disabled = true;
         document.body.style.cursor = 'wait';
 
         SOCKET.emit("joinRoom", {
@@ -199,7 +202,7 @@ function setInputFilter(textbox, inputFilter) {
 }
 
 // Install input filters.
-setInputFilter(document.getElementById("roomInput"), function (value) {
+setInputFilter(byId("roomInput"), function (value) {
     return /^[a-zA-Z0-9_-]*$/i.test(value);
 });
 
@@ -210,33 +213,111 @@ function htmlDecode(input) {
 }
 
 
-// Game setup functions
-function initSetup() {
-    let pageCount = document.getElementById('pageCount');
-    pageCount.addEventListener('input', () => {
-        document.getElementById('pageCountDisplay').value = pageCount.value;
-    });
+// Game settings
+function initSettings() {
+    // Whether the first page is a writing (text) or drawing page
+    for (let _elem of document.querySelectorAll('input[name=firstPage]')) {
+        _elem.addEventListener('input', (e) => {
+            roomSettings.firstPage = e.target.value;
+            updateSettings();
+        });
+    }
+    roomSettings.firstPage = document.querySelector('input[name=firstPage]:checked').value;
 
-    let timeWrite = document.getElementById('timeWrite');
-    timeWrite.addEventListener('input', () => {
-        let timeWriteDisplay = document.getElementById('timeWriteDisplay');
-        if (timeWrite.value == 0) {
-            timeWriteDisplay.value = "none";
+    // How many pages are in each book
+    let _pageCount = byId('pageCount');
+    _pageCount.addEventListener('input', (e) => {
+        byId('pageCountDisplay').innerText = e.target.value;
+    });
+    _pageCount.addEventListener('change', (e) => {
+        roomSettings.pageCount = e.target.value;
+        updateSettings();
+    });
+    roomSettings.pageCount = _pageCount.value;
+
+    // How pages are assigned to players
+    for (let _elem of document.querySelectorAll('input[name=pageOrder]')) {
+        _elem.addEventListener('input', (e) => {
+            roomSettings.pageOrder = e.target.value;
+            updateSettings();
+        });
+    }
+    roomSettings.pageOrder = document.querySelector('input[name=pageOrder]:checked').value;
+
+    // Whether there are colour pallete restrictions for the storybook
+    let _colourPalette = byId('colourPalette')
+    _colourPalette.addEventListener('input', (e) => {
+        roomSettings.palette = e.target.value;
+        updateSettings();
+    })
+    roomSettings.palette = _colourPalette.value;
+
+    // Time limit per writing page (in minutes)
+    let _timeWrite = byId('timeWrite');
+    _timeWrite.addEventListener('input', (e) => {
+        byId('timeWriteDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
+    });
+    _timeWrite.addEventListener('change', (e) => {
+        roomSettings.timeWrite = e.target.value;
+        updateSettings();
+    })
+    roomSettings.timeWrite = _timeWrite.value;
+
+    // Time limit per drawing page (in minutes)
+    let _timeDraw = byId('timeDraw');
+    _timeDraw.addEventListener('input', (e) => {
+        byId('timeDrawDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
+    });
+    _timeDraw.addEventListener('change', (e) => {
+        roomSettings.timeDraw = e.target.value;
+        updateSettings();
+    })
+    roomSettings.timeDraw = _timeDraw.value;
+
+    // Update host information
+    updateHostInfo();
+}
+
+// Update host information on the page
+function updateHostInfo() {
+    let _elem;
+
+    // Update the host name
+    _elem = byId('hostName');
+    if (_elem !== undefined && _elem !== null) {
+        _elem.innerText = host;
+    }
+    _elem = byId('host');
+    if (_elem !== undefined && _elem !== null) {
+        _elem.title = "Host: " + host;
+    }
+
+    // Allow editing if the client is the host, otherwise only show the settings
+    _elem = byId('gameSection');
+    if (_elem !== undefined && _elem !== null) {
+        _elem.style.minWidth = isHost ? "500px" : "400px";
+    }
+    for (_elem of document.querySelectorAll('.isHost')) {
+        if (isHost) {
+            _elem.classList.remove('hidden');
         } else {
-            timeWriteDisplay.value = timeWrite.value + " min";
+            _elem.classList.add('hidden');
         }
-    });
-
-    let timeDraw = document.getElementById('timeDraw');
-    timeDraw.addEventListener('input', () => {
-        let timeDrawDisplay = document.getElementById('timeDrawDisplay');
-        if (timeDraw.value == 0) {
-            timeDrawDisplay.value = "none";
+    }
+    for (_elem of document.querySelectorAll('.isNotHost')) {
+        if (isHost) {
+            _elem.classList.add('hidden');
         } else {
-            timeDrawDisplay.value = timeDraw.value + " min";
+            _elem.classList.remove('hidden');
         }
-    });
+    }
+}
 
-    document.getElementById('hostName').innerText = host;
-    document.getElementById('host').title = "Host: " + host;
+// Update settings values
+function updateSettings() {
+    if (isHost) {
+        SOCKET.emit("updateSettings", roomSettings);
+    } else {
+        console.error("Non-host user attempting to update settings somehow. Self destructing in 3... 2... 1...");
+    }
 }
