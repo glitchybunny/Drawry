@@ -4,7 +4,7 @@
 
 # open-picturephone
 
-Alternate drawing pictures and adding captions to make funny stories with your friends.
+Take turns drawing pictures and writing captions to make fun stories with your friends.
 
 Inspired by drawception, brokenpicturephone, and a plethora of other games in this genre.
 
