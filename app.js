@@ -109,6 +109,13 @@ io.on('connection', (socket) => {
             io.to(socket.id).emit("disconnect", "server full")
         }
     });
+
+    // Update room settings
+    socket.on('updateSettings', (data) => {
+        // todo: verify whether the user is host
+        // if they are, update the settings for the room
+        // and propogate settings changes to other clients
+    })
 });
 
 

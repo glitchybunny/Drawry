@@ -17,51 +17,74 @@
     <div id="gameSettings">
         <div>
             <p>First page</p>
-            <div class="centerV">
-                <label><input checked name="firstPage" type="radio" value="write">Write</label><label><input
-                    name="firstPage" type="radio" value="draw">Draw</label>
+            <div class="isHost hidden">
+                <label><input checked name="firstPage" type="radio" value="Write">Write</label><label><input
+                    name="firstPage" type="radio" value="Draw">Draw</label>
+            </div>
+            <div class="isNotHost">
+                <p>Write</p>
             </div>
         </div>
         <div>
             <p>Pages per book</p>
-            <div class="centerV">
+            <div class="isHost hidden">
                 <input id="pageCount" max="20" min="2" name="pageCount" type="range" value="8">
                 <output for="pageCount" id="pageCountDisplay">8</output>
+            </div>
+            <div class="isNotHost">
+                <p>8</p>
             </div>
         </div>
         <div>
             <p>Page assignment</p>
-            <div class="centerV">
-                <label><input checked name="pageOrder" type="radio" value="linear">Normal</label><label><input
-                    name="pageOrder" type="radio" value="random">Random</label>
+            <div class="isHost hidden">
+                <label><input checked name="pageOrder" type="radio" value="Normal">Normal</label><label><input
+                    name="pageOrder" type="radio" value="Random">Random</label>
+            </div>
+            <div class="isNotHost">
+                <p>Normal</p>
             </div>
         </div>
         <div>
             <p>Colour palette</p>
-            <div class="centerV">
-                <select disabled>
-                    <option id="colourPalette" value="none">No palette</option>
-                </select>
+            <div class="isHost hidden">
+                <label><select id="colourPalette">
+                    <option value="No palette">No palette</option>
+                </select></label>
+            </div>
+            <div class="isNotHost">
+                <p>No palette</p>
             </div>
         </div>
         <hr>
         <div>
             <p>Write time limit</p>
-            <div class="centerV">
+            <div class="isHost hidden">
                 <input id="timeWrite" max="15" min="0" name="timeWrite" type="range" value="0">
-                <output for="timeWrite" id="timeWriteDisplay">none</output>
+                <output for="timeWrite" id="timeWriteDisplay">None</output>
+            </div>
+            <div class="isNotHost">
+                <p>None</p>
             </div>
         </div>
         <div>
             <p>Draw time limit</p>
-            <div class="centerV">
+            <div class="isHost hidden">
                 <input id="timeDraw" max="15" min="0" name="timeDraw" type="range" value="0">
-                <output for="timeDraw" id="timeDrawDisplay">none</output>
+                <output for="timeDraw" id="timeDrawDisplay">None</output>
+            </div>
+            <div class="isNotHost">
+                <p>None</p>
             </div>
         </div>
     </div>
     <hr>
-    <input id="inputSubmit" type="button" value="Start game">
+    <div class="isHost hidden">
+        <input id="inputSubmit" type="button" value="Start game">
+    </div>
+    <div class="isNotHost">
+        <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start the game...</p>
+    </div>
 </section>
 <section id="bookSection">
     <div class="title">
