@@ -12,6 +12,19 @@ const CLIENTS = [];
 const SOCKETS = [];
 const ROOMS = {};
 
+const MAX_ROOM_SIZE = 10;
+const DEFAULT_SETTINGS = {
+    firstPage: 'Write',
+    pageCount: '8',
+    pageOrder: 'Normal',
+    palette: 'No palette',
+    timeWrite: '0',
+    timeDraw: '0'
+};
+
+// If none of this makes sense it's because I'm sleep deprived and don't know what I'm doing
+// Wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+
 
 // Listen for incoming connections from clients
 io.on('connection', (socket) => {
@@ -19,122 +32,114 @@ io.on('connection', (socket) => {
     CLIENTS[socket.id] = {};
     SOCKETS[socket.id] = socket;
 
+    // Listen for client joining room
+    socket.on('joinRoom', (data) => {
+        // first of all, make sure no two clients connect with the same ID
+        for (_socketID in CLIENTS) {
+            if (data.id === CLIENTS[_socketID].id) {
+                // disconnect client with matching ID
+                SOCKETS[_socketID].disconnect();
+            }
+        }
+
+        // fetch client values
+        let _client = CLIENTS[socket.id];
+        _client.id = data.id || 0;
+        _client.name = xss(data.name.substr(0, 32));
+        _client.room = xss(data.room.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
+
+        if (_client.id && _client.room) {
+            // add client to the room
+            socket.join(_client.room);
+
+            if (!ROOMS.hasOwnProperty(_client.room)) {
+                // if room doesn't exist, create it and make client the host
+                ROOMS[_client.room] = {
+                    clients: [socket.id],
+                    host: socket.id,
+                    settings: DEFAULT_SETTINGS
+                }
+            } else if (ROOMS[_client.room].clients.length < MAX_ROOM_SIZE) {
+                // if room does exist, add client to the room if it isn't full
+                ROOMS[_client.room].clients.push(socket.id);
+            } else {
+                // if room is full, boot client
+                io.to(socket.id).emit("disconnect", "server full");
+            }
+
+            // inform the client they've joined the room
+            io.to(socket.id).emit("joined", {
+                room: _client.room,
+                users: Object.values(CLIENTS).filter((c) => {return c.room === _client.room && c.id !== _client.id}),
+                host: CLIENTS[ROOMS[_client.room].host].id,
+                settings: ROOMS[_client.room].settings
+            });
+
+            // inform users in the room about the new client
+            socket.to(_client.room).emit("userJoin", CLIENTS[socket.id]);
+
+        } else {
+            // ID or roomID is invalid, boot client
+            io.to(socket.id).emit("disconnect");
+        }
+    });
+
+    // Listen for room settings changes
+    socket.on('settings', (data) => {
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
+
+        if (socket.id === _room.host) {
+            // Verify settings are within constraints
+
+            // todo
+
+            // Host updating settings
+            _room.settings = data;
+
+            // Propogate settings to other clients
+            socket.to(_roomID).emit("settings", _room.settings);
+        } else {
+            // Non-host attempting to update settings without permission, kick from game
+            socket.disconnect();
+        }
+    });
+
     // Listen for disconnect events
     socket.on('disconnect', (data) => {
-
-        if (CLIENTS[socket.id].id !== undefined && CLIENTS[socket.id].room !== undefined) {
+        if (CLIENTS[socket.id].id && CLIENTS[socket.id].room) {
             // remove client from the room if they've joined one
             let _id = CLIENTS[socket.id].id;
-            let _room = CLIENTS[socket.id].room;
+            let _roomID = CLIENTS[socket.id].room;
+            let _room = ROOMS[_roomID];
 
             // alert others that client has left the room
-            socket.to(_room).emit('userLeave', _id);
+            socket.to(_roomID).emit('userLeave', _id);
 
             // remove client from the room
-            let _clients = ROOMS[_room].clients;
+            let _clients = _room.clients;
             let _index = _clients.indexOf(socket.id);
             if (_index !== -1) {
                 _clients.splice(_index, 1);
             } else {
-                console.error("FAILED TO REMOVE NON-EXISTENT CLIENT FROM ROOM");
+                console.error("FAILED TO REMOVE NON-EXISTENT CLIENT FROM ROOM????");
             }
 
             // delete the room if everyone has left
             if (_clients.length === 0) {
-                delete ROOMS[_room];
+                delete ROOMS[_roomID];
             } else {
-                // otherwise, assign a new host
-                ROOMS[_room].host = _clients[0];
-                socket.to(_room).emit("userHost", CLIENTS[ROOMS[_room].host].id);
+                // if the host disconnected, assign a new host
+                if (socket.id == _room.host) {
+                    _room.host = _clients[0];
+                    socket.to(_roomID).emit("host", CLIENTS[_room.host].id);
+                }
             }
         }
 
         delete CLIENTS[socket.id];
     });
-
-    // Listen for client joining room
-    socket.on('joinRoom', (data) => {
-        // fetch client values
-        let _id = data.id || 0;
-        let _name = xss(data.name.substr(0, 32));
-        let _room = xss(data.room.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '');
-
-        // make sure no two clients connect with the same ID
-        Object.keys(CLIENTS).forEach((key, index) => {
-            // if the ID matches, then drop the existing socket connection
-            if (`${CLIENTS[key].id}` == _id) {
-                // boot the existing client off the server
-                let _clientToDisconnect = `${[key]}`;
-                SOCKETS[_clientToDisconnect].disconnect();
-            }
-        })
-
-        // add client to room
-        if (_id !== 0 && _room.length > 0 && roomNotFull(_room)) {
-            CLIENTS[socket.id].id = _id;
-            CLIENTS[socket.id].name = _name;
-            CLIENTS[socket.id].room = _room;
-
-            // inform client they've joined the room
-            socket.join(_room);
-            io.to(socket.id).emit("joined", {room: _room});
-
-            if (_room in ROOMS) {
-                // room already exists
-                // add client to room
-                ROOMS[_room].clients.push(socket.id);
-
-                // alert others to new user
-                socket.to(_room).emit("userJoin", CLIENTS[socket.id]);
-
-                // send client other user info
-                for (let _socketid of roomGetClients(_room)) {
-                    if (_socketid !== socket.id) {
-                        io.to(socket.id).emit("userJoin", CLIENTS[_socketid]);
-                    }
-                }
-            } else {
-                // room doesn't exist
-                // create room and make client the host
-                ROOMS[_room] = {
-                    clients: [socket.id],
-                    host: socket.id
-                };
-            }
-
-            // tell client the host ID
-            io.to(socket.id).emit("userHost", CLIENTS[ROOMS[_room].host].id);
-        } else {
-            // don't let client join a full room
-            io.to(socket.id).emit("disconnect", "server full")
-        }
-    });
-
-    // Update room settings
-    socket.on('updateSettings', (data) => {
-        // todo: verify whether the user is host
-        // if they are, update the settings for the room
-        // and propogate settings changes to other clients
-    })
 });
-
-
-// Room management code
-function roomGetClients(r) {
-    if (r in ROOMS) {
-        return ROOMS[r].clients;
-    } else {
-        return [];
-    }
-}
-
-function roomNotFull(r) {
-    if (r in ROOMS) {
-        return ROOMS[r].clients.length < 10;
-    } else {
-        return true;
-    }
-}
 
 
 // Simple HTTP server

@@ -13,17 +13,19 @@ const USERS = {};
 /// --- VARIABLES --- ///
 var name = undefined;
 var room = undefined;
-var roomSettings = {};
+var roomSettings = undefined;
 var host = undefined;
 var isHost = false;
 
 // Ensure browser compatibility
 if (!('getContext' in document.createElement('canvas'))) {
     let message = 'Sorry, it looks like your browser does not support canvas! This game depends on canvas to be playable.';
-    alert(message);
     console.error(message);
+    alert(message);
 }
-var byId = function( id ) { return document.getElementById( id ); };
+var byId = function (id) {
+    return document.getElementById(id);
+};
 
 
 ///// ----- ASYNC FUNCTIONS ----- /////
@@ -38,53 +40,37 @@ SOCKET.on('joined', async (data) => {
     console.log("Joined room '" + data.room + "'");
     document.body.style.cursor = '';
 
-    // set cookies so game remembers room for session (in case user accidentally closes tab and needs to rejoin)
+    // update local game values
+    room = data.room;
+    roomSettings = data.settings;
+    data.users.forEach((o) => {
+        USERS[o.id] = {name: htmlDecode(o.name)}
+    })
+    isHost = (data.host === ID);
+    host = isHost ? name : USERS[data.host].name;
 
-    // clear join UI and replace it with game UI
+    // remove join UI and replace it with game UI
     let main = document.querySelector('main');
     main.innerHTML = '';
     main.className = 'game';
-    await updateUI(main, '/game.html');
+    await downloadUI(main, '/game.html');
 
-    // setup game settings
+    // setup game
     initSettings();
+    updateSettings();
+    updateHost();
+    updatePlayerList();
 
-    // add self and already connected players to players list
-    let nameElem = document.createElement('li');
-    nameElem.innerText = name;
-    nameElem.title = "You!";
-    byId('playerList').appendChild(nameElem);
-
-    for (let id in USERS) {
-        let nameElem = document.createElement('li');
-        nameElem.innerText = USERS[id].name;
-        nameElem.id = id;
-        byId('playerList').appendChild(nameElem);
-    }
-
-    // Increment player count
-    byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+    // set cookies so game remembers the session (in case user accidentally closes tab and needs to rejoin)
+    // TODO
 })
 
-// Alert client to another user joining the room
+// Add another user to the room
 SOCKET.on('userJoin', (data) => {
     // Add user data
     console.log(data.name, "joined");
-    USERS[data.id] = {
-        name: htmlDecode(data.name)
-    }
-
-    let playerList = byId('playerList');
-    if (playerList !== undefined && playerList !== null) {
-        // Add to player list
-        let nameElem = document.createElement('li');
-        nameElem.innerText = htmlDecode(data.name);
-        nameElem.id = data.id;
-        playerList.appendChild(nameElem);
-
-        // Increment player count
-        byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
-    }
+    USERS[data.id] = {name: htmlDecode(data.name)};
+    updatePlayerList();
 });
 
 // Alert client to another user leaving the room
@@ -93,31 +79,26 @@ SOCKET.on('userLeave', (userID) => {
     byId(userID).remove();
 
     // Clear user data
-    if (USERS[userID] !== undefined) {
-        console.log(USERS[userID].name, "disconnected");
-        delete USERS[userID];
-    } else {
-        console.log(userID, "disconnected");
-    }
+    console.log(USERS[userID].name, "disconnected");
+    delete USERS[userID];
 
     // Decrease player count
     byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
 });
 
-// Alert client to host assignment
-SOCKET.on('userHost', (userID) => {
-    // Update host
-    if (userID === ID) {
-        host = name;
-        isHost = true;
-        console.log("You are the host");
-    } else {
-        host = USERS[userID].name;
-        isHost = false;
-        console.log(host, "is the host");
-    }
-    updateHostInfo();
+// Update host assignment
+SOCKET.on('host', (userID) => {
+    isHost = (userID === ID);
+    host = isHost ? name : USERS[userID].name;
+    updateHost();
 });
+
+// Update settings
+SOCKET.on('settings', (data) => {
+    // Update the settings on the client to reflect the new settings
+    roomSettings = data;
+    updateSettings();
+})
 
 // If client is disconnected unexpectedly (i.e. booted from server or server connection lost)
 SOCKET.on('disconnect', (data) => {
@@ -138,18 +119,19 @@ SOCKET.on('disconnect', (data) => {
         default:
             alert("Disconnected due to an unknown error.\nPlease reconnect.");
     }
+    window.location.reload(true);
 });
 
 
 // Update UI (load from other HTML file instead of having code inline in js - it's just cleaner ok)
-async function updateUI(e, url) {
+async function downloadUI(e, url) {
     document.body.style.cursor = "wait";
 
-    let response = await fetch(url).catch(function (err) {
+    let _response = await fetch(url).catch(function (err) {
         console.warn('Something went wrong', err);
         alert("Failed to connect to server");
     });
-    e.innerHTML = await response.text();
+    e.innerHTML = await _response.text();
 
     document.body.style.cursor = "";
     return 1;
@@ -185,7 +167,7 @@ _inputSubmit.addEventListener('click', () => {
 // Restrict inputs for a textbox to the given inputFilter.
 // If you're reading this, I'm aware you can bypass the restrictions - there's serverside checks too, ya bozo
 function setInputFilter(textbox, inputFilter) {
-    ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function (event) {
+    ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach((event) => {
         textbox.addEventListener(event, function () {
             if (inputFilter(this.value)) {
                 this.oldValue = this.value;
@@ -208,116 +190,145 @@ setInputFilter(byId("roomInput"), function (value) {
 
 // Decode names to html
 function htmlDecode(input) {
-    let doc = new DOMParser().parseFromString(input, "text/html");
-    return doc.documentElement.textContent;
+    let _doc = new DOMParser().parseFromString(input, "text/html");
+    return _doc.documentElement.textContent;
 }
 
 
 // Game settings
 function initSettings() {
-    // Whether the first page is a writing (text) or drawing page
-    for (let _elem of document.querySelectorAll('input[name=firstPage]')) {
-        _elem.addEventListener('input', (e) => {
+    // First page
+    document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
+        elem.addEventListener('input', (e) => {
             roomSettings.firstPage = e.target.value;
-            updateSettings();
-        });
-    }
-    roomSettings.firstPage = document.querySelector('input[name=firstPage]:checked').value;
+            emitSettings();
+        })
+    });
 
-    // How many pages are in each book
+    // Pages per book
     let _pageCount = byId('pageCount');
     _pageCount.addEventListener('input', (e) => {
         byId('pageCountDisplay').innerText = e.target.value;
     });
     _pageCount.addEventListener('change', (e) => {
         roomSettings.pageCount = e.target.value;
-        updateSettings();
+        emitSettings();
     });
-    roomSettings.pageCount = _pageCount.value;
 
-    // How pages are assigned to players
-    for (let _elem of document.querySelectorAll('input[name=pageOrder]')) {
-        _elem.addEventListener('input', (e) => {
+    // Page assignment
+    document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
+        elem.addEventListener('input', (e) => {
             roomSettings.pageOrder = e.target.value;
-            updateSettings();
+            emitSettings();
         });
-    }
-    roomSettings.pageOrder = document.querySelector('input[name=pageOrder]:checked').value;
+    });
 
-    // Whether there are colour pallete restrictions for the storybook
-    let _colourPalette = byId('colourPalette')
-    _colourPalette.addEventListener('input', (e) => {
+    // Colour palette
+    byId('colourPalette').addEventListener('input', (e) => {
         roomSettings.palette = e.target.value;
-        updateSettings();
-    })
-    roomSettings.palette = _colourPalette.value;
+        emitSettings();
+    });
 
-    // Time limit per writing page (in minutes)
+    // Write time limit
     let _timeWrite = byId('timeWrite');
     _timeWrite.addEventListener('input', (e) => {
         byId('timeWriteDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
     });
     _timeWrite.addEventListener('change', (e) => {
         roomSettings.timeWrite = e.target.value;
-        updateSettings();
-    })
-    roomSettings.timeWrite = _timeWrite.value;
+        emitSettings();
+    });
 
-    // Time limit per drawing page (in minutes)
+    // Draw time limit
     let _timeDraw = byId('timeDraw');
     _timeDraw.addEventListener('input', (e) => {
         byId('timeDrawDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
     });
     _timeDraw.addEventListener('change', (e) => {
         roomSettings.timeDraw = e.target.value;
-        updateSettings();
-    })
-    roomSettings.timeDraw = _timeDraw.value;
+        emitSettings();
+    });
 
-    // Update host information
-    updateHostInfo();
+    // Send settings to the server
+    function emitSettings() {
+        isHost ? SOCKET.emit("settings", roomSettings) : SOCKET.disconnect();
+    }
+}
+
+// Update settings in the DOM
+function updateSettings() {
+    // First page
+    document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
+        elem.checked = (elem.value === roomSettings.firstPage);
+    });
+    byId('firstPageDisplay').value = roomSettings.firstPage;
+
+    // Pages per book
+    byId('pageCount').value = roomSettings.pageCount;
+    byId('pageCountDisplay').value = roomSettings.pageCount;
+
+    // Page assignment
+    document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
+        elem.checked = (elem.value === roomSettings.pageOrder);
+    });
+    byId('pageOrderDisplay').value = roomSettings.pageOrder;
+
+    // Color palette
+    document.querySelector('#colourPalette [value="' + roomSettings.palette + '"]').selected = true;
+    byId('colourPaletteDisplay').value = roomSettings.palette;
+
+    // Write time limit
+    byId('timeWrite').value = roomSettings.timeWrite;
+    byId('timeWriteDisplay').value = parseInt(roomSettings.timeWrite) ? roomSettings.timeWrite + " min" : 'None';
+
+    // Draw time limit
+    byId('timeDraw').value = roomSettings.timeDraw;
+    byId('timeDrawDisplay').value = parseInt(roomSettings.timeDraw) ? roomSettings.timeDraw + " min" : 'None';
 }
 
 // Update host information on the page
-function updateHostInfo() {
-    let _elem;
-
-    // Update the host name
-    _elem = byId('hostName');
-    if (_elem !== undefined && _elem !== null) {
-        _elem.innerText = host;
-    }
-    _elem = byId('host');
-    if (_elem !== undefined && _elem !== null) {
-        _elem.title = "Host: " + host;
+function updateHost() {
+    // Update the host name in the DOM
+    let _hostName = byId('hostName');
+    if (_hostName) {
+        _hostName.innerText = "Host: " + host;
+        _hostName.title = _hostName.innerText;
     }
 
-    // Allow editing if the client is the host, otherwise only show the settings
-    _elem = byId('gameSection');
-    if (_elem !== undefined && _elem !== null) {
-        _elem.style.minWidth = isHost ? "500px" : "400px";
+    // Allow the client to edit settings if they're the host
+    let _gameSection = byId('gameSection');
+    if (_gameSection) {
+        _gameSection.style.minWidth = isHost ? "500px" : "400px";
     }
-    for (_elem of document.querySelectorAll('.isHost')) {
-        if (isHost) {
-            _elem.classList.remove('hidden');
-        } else {
-            _elem.classList.add('hidden');
-        }
-    }
-    for (_elem of document.querySelectorAll('.isNotHost')) {
-        if (isHost) {
-            _elem.classList.add('hidden');
-        } else {
-            _elem.classList.remove('hidden');
-        }
-    }
+
+    document.querySelectorAll('.isHost').forEach((elem) => {
+        isHost ? elem.classList.remove('hidden') : elem.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.isNotHost').forEach((elem) => {
+        isHost ? elem.classList.add('hidden') : elem.classList.remove('hidden');
+    });
 }
 
-// Update settings values
-function updateSettings() {
-    if (isHost) {
-        SOCKET.emit("updateSettings", roomSettings);
-    } else {
-        console.error("Non-host user attempting to update settings somehow. Self destructing in 3... 2... 1...");
+// Update player list on the page
+function updatePlayerList() {
+    let _playerList = byId('playerList');
+    _playerList.innerHTML = '';
+
+    // Add self to player list
+    let nameElem = document.createElement('li');
+    nameElem.innerText = name;
+    nameElem.title = "You!";
+    _playerList.appendChild(nameElem);
+
+    // Add other players to player list
+    for (let id in USERS) {
+        let nameElem = document.createElement('li');
+        nameElem.innerText = USERS[id].name;
+        nameElem.id = id;
+        _playerList.appendChild(nameElem);
     }
+
+    // Increment player count
+    byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
 }
