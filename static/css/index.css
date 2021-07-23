@@ -106,13 +106,6 @@ hr {
     border-bottom: 2px solid #234567
 }
 
-.center {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-}
-
 .centerV, body {
     justify-content: center;
 }
@@ -184,7 +177,7 @@ hr {
     color: #abcdef
 }
 
-#host {
+#hostName {
     text-align: right;
     margin: 10px 0;
     padding: 4px 8px;
@@ -195,13 +188,7 @@ hr {
     text-overflow: ellipsis;
 }
 
-.isHost {
-    display: flex;
-    vertical-align: center;
-    align-items: center;
-}
-
-.isNotHost {
+.isHost, .isNotHost, .center {
     display: flex;
     vertical-align: center;
     align-items: center;

@@ -11,38 +11,37 @@
 <section id="gameSection">
     <div class="title">
         <h1>Game Setup</h1>
-        <p id="host">Host: <span id="hostName"></span></p>
+        <p id="hostName">Host:</p>
     </div>
     <hr>
     <div id="gameSettings">
         <div>
             <p>First page</p>
             <div class="isHost hidden">
-                <label><input checked name="firstPage" type="radio" value="Write">Write</label><label><input
+                <label><input name="firstPage" type="radio" value="Write">Write</label><label><input
                     name="firstPage" type="radio" value="Draw">Draw</label>
             </div>
             <div class="isNotHost">
-                <p>Write</p>
+                <output for="firstPage" id="firstPageDisplay"></output>
             </div>
         </div>
         <div>
             <p>Pages per book</p>
-            <div class="isHost hidden">
-                <input id="pageCount" max="20" min="2" name="pageCount" type="range" value="8">
-                <output for="pageCount" id="pageCountDisplay">8</output>
-            </div>
-            <div class="isNotHost">
-                <p>8</p>
+            <div class="center">
+                <div class="isHost hidden">
+                    <input id="pageCount" max="20" min="2" name="pageCount" type="range">
+                </div>
+                <output for="pageCount" id="pageCountDisplay"></output>
             </div>
         </div>
         <div>
             <p>Page assignment</p>
             <div class="isHost hidden">
-                <label><input checked name="pageOrder" type="radio" value="Normal">Normal</label><label><input
+                <label><input name="pageOrder" type="radio" value="Normal">Normal</label><label><input
                     name="pageOrder" type="radio" value="Random">Random</label>
             </div>
             <div class="isNotHost">
-                <p>Normal</p>
+                <output for="pageOrder" id="pageOrderDisplay"></output>
             </div>
         </div>
         <div>
@@ -53,28 +52,26 @@
                 </select></label>
             </div>
             <div class="isNotHost">
-                <p>No palette</p>
+                <output for="colourPalette" id="colourPaletteDisplay"></output>
             </div>
         </div>
         <hr>
         <div>
             <p>Write time limit</p>
-            <div class="isHost hidden">
-                <input id="timeWrite" max="15" min="0" name="timeWrite" type="range" value="0">
-                <output for="timeWrite" id="timeWriteDisplay">None</output>
-            </div>
-            <div class="isNotHost">
-                <p>None</p>
+            <div class="center">
+                <div class="isHost hidden">
+                    <input id="timeWrite" max="15" min="0" name="timeWrite" type="range">
+                </div>
+                <output for="timeWrite" id="timeWriteDisplay"></output>
             </div>
         </div>
         <div>
             <p>Draw time limit</p>
-            <div class="isHost hidden">
-                <input id="timeDraw" max="15" min="0" name="timeDraw" type="range" value="0">
-                <output for="timeDraw" id="timeDrawDisplay">None</output>
-            </div>
-            <div class="isNotHost">
-                <p>None</p>
+            <div class="center">
+                <div class="isHost hidden">
+                    <input id="timeDraw" max="15" min="0" name="timeDraw" type="range">
+                </div>
+                <output for="timeDraw" id="timeDrawDisplay"></output>
             </div>
         </div>
     </div>
