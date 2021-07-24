@@ -28,9 +28,6 @@ const DEFAULT_SETTINGS = {
     timeDraw: '0'
 };
 
-// If none of this makes sense it's because I'm sleep deprived and don't know what I'm doing
-// Wheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-
 
 // Listen for incoming connections from clients
 io.on('connection', (socket) => {
@@ -76,7 +73,9 @@ io.on('connection', (socket) => {
             // inform the client they've joined the room
             io.to(socket.id).emit("joined", {
                 room: _client.room,
-                users: Object.values(CLIENTS).filter((c) => {return c.room === _client.room && c.id !== _client.id}),
+                users: Object.values(CLIENTS).filter((c) => {
+                    return c.room === _client.room && c.id !== _client.id
+                }),
                 host: CLIENTS[ROOMS[_client.room].host].id,
                 settings: ROOMS[_client.room].settings
             });
@@ -95,9 +94,9 @@ io.on('connection', (socket) => {
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
+        // Make sure user is the host
         if (socket.id === _room.host) {
             // Verify settings are within constraints
-
             // todo
 
             // Host updating settings
@@ -107,6 +106,28 @@ io.on('connection', (socket) => {
             socket.to(_roomID).emit("settings", _room.settings);
         } else {
             // Non-host attempting to update settings without permission, kick from game
+            socket.disconnect();
+        }
+    });
+
+    socket.on('startGame', (data) => {
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
+
+        // Make sure user is the host
+        if (socket.id === _room.host) {
+            // Verify settings are within constraints
+
+            // Host updating settings
+            _room.settings = data.settings;
+
+            // Generate page assignment order for books
+
+            // Tell clients game has started
+            io.to(_roomID).emit('gameStart', {});
+
+        } else {
+            // Non-host attempting to start game without permission, kick from game
             socket.disconnect();
         }
     });
