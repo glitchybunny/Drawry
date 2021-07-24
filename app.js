@@ -1,3 +1,10 @@
+/*
+    picturephone
+    app.js
+    a multiplayer art experiment by Riley Taylor (rtay.io)
+*/
+"use strict";
+
 // Including libraries
 const express = require('express');
 const app = express();
@@ -11,7 +18,6 @@ const path = require('path');
 const CLIENTS = [];
 const SOCKETS = [];
 const ROOMS = {};
-
 const MAX_ROOM_SIZE = 10;
 const DEFAULT_SETTINGS = {
     firstPage: 'Write',
@@ -35,7 +41,7 @@ io.on('connection', (socket) => {
     // Listen for client joining room
     socket.on('joinRoom', (data) => {
         // first of all, make sure no two clients connect with the same ID
-        for (_socketID in CLIENTS) {
+        for (let _socketID in CLIENTS) {
             if (data.id === CLIENTS[_socketID].id) {
                 // disconnect client with matching ID
                 SOCKETS[_socketID].disconnect();
@@ -60,7 +66,7 @@ io.on('connection', (socket) => {
                     settings: DEFAULT_SETTINGS
                 }
             } else if (ROOMS[_client.room].clients.length < MAX_ROOM_SIZE) {
-                // if room does exist, add client to the room if it isn't full
+                // if room does exist and isn't full, add client to the room
                 ROOMS[_client.room].clients.push(socket.id);
             } else {
                 // if room is full, boot client

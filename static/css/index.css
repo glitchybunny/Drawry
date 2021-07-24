@@ -33,12 +33,12 @@ a, label, li, output, p {
     font-size: 18px
 }
 
-body, main.join, section {
+body, #mainJoin, section {
     display: flex;
     flex-flow: column nowrap
 }
 
-main.game {
+#mainGame {
     width: 100%
 }
 
@@ -159,7 +159,7 @@ hr {
     flex-flow: column nowrap;
 }
 
-#gameSettings > div, main.game {
+#gameSettings > div, #mainGame {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
@@ -195,5 +195,5 @@ hr {
 }
 
 .hidden {
-    display:none;
+    display:none !important;
 }
