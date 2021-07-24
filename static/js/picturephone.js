@@ -94,6 +94,12 @@ SOCKET.on('settings', (data) => {
     updateSettings();
 })
 
+// Start the game
+SOCKET.on('gameStart', (data) => {
+    hide(byId('setupSection'));
+    show(byId('gameSection'));
+});
+
 // If client is disconnected unexpectedly (i.e. booted from server or server connection lost)
 SOCKET.on('disconnect', (data) => {
     // Determine which disconnect has occurred and display relevant error
@@ -189,7 +195,7 @@ function updateHost() {
     _hostName.title = _hostName.innerText = "Host: " + host;
 
     // Allow the client to edit settings if they're the host
-    byId('gameSection').style.minWidth = isHost ? "500px" : "400px";
+    byId('setupSection').style.minWidth = isHost ? "500px" : "400px";
     document.querySelectorAll('.isHost').forEach((elem) => {
         isHost ? show(elem) : hide(elem);
     });
@@ -219,6 +225,15 @@ function updatePlayerList() {
 
     // Increment player count
     byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+
+    // Show/hide start button/minimum player warning depending on player count
+    if (Object.keys(USERS).length) {
+        show(byId('inputStart'));
+        hide(byId('inputStartWarning'));
+    } else {
+        hide(byId('inputStart'));
+        show(byId('inputStartWarning'));
+    }
 }
 
 // Hide an element in the DOM
@@ -237,8 +252,7 @@ function show(e) {
 ///// ----- INPUTS AND INTERACTIONS ----- /////
 {
     // Join button
-    let _inputJoin = byId('inputJoin');
-    _inputJoin.addEventListener('click', () => {
+    byId('inputJoin').addEventListener('click', (e) => {
         // Receive and validate inputs
         let _inputName = byId('inputName');
         let _inputRoom = byId('inputRoom');
@@ -249,7 +263,7 @@ function show(e) {
 
             _inputName.disabled = true;
             _inputRoom.disabled = true;
-            _inputJoin.disabled = true;
+            e.target.disabled = true;
             document.body.style.cursor = 'wait';
 
             SOCKET.emit("joinRoom", {
@@ -311,4 +325,9 @@ function show(e) {
         roomSettings.timeDraw = e.target.value;
         emitSettings();
     });
+
+    // Setup: Start game button
+    byId('inputStart').addEventListener('click', () => {
+        SOCKET.emit('startGame', {settings:roomSettings});
+    })
 }
