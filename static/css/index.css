@@ -14,7 +14,7 @@ body, html {
     margin: 0;
     padding: 0;
     background: #567890;
-    overflow:hidden;
+    overflow: hidden;
 }
 
 body {
@@ -150,7 +150,7 @@ hr {
     padding-left: 0;
 }
 
-#gameSection {
+#setupSection {
     min-width: 400px
 }
 
@@ -195,5 +195,5 @@ hr {
 }
 
 .hidden {
-    display:none !important;
+    display: none !important;
 }

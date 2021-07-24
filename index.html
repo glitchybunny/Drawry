@@ -20,7 +20,7 @@
         <input id="inputJoin" type="button" value="Join">
     </section>
 </main>
-<main id="mainGame" class="hidden" hidden>
+<main class="hidden" hidden id="mainGame">
     <h1 id="cornerTitle">Open Picturephone v0.0.1</h1>
     <section id="playerSection">
         <div class="title">
@@ -30,7 +30,7 @@
         <hr>
         <ul id="playerList"></ul>
     </section>
-    <section id="gameSection">
+    <section id="setupSection">
         <div class="title">
             <h1>Game Setup</h1>
             <p id="hostName">Host:</p>
@@ -99,11 +99,16 @@
         </div>
         <hr>
         <div class="isHost hidden">
-            <input id="inputSubmit" type="button" value="Start game">
+            <p id="inputStartWarning" style="text-align:center; font-style:italic; width:100%;">Two or more players
+                required to start...</p>
+            <input class="hidden" hidden id="inputStart" type="button" value="Start game">
         </div>
         <div class="isNotHost">
             <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start the game...</p>
         </div>
+    </section>
+    <section id="gameSection" class="hidden" hidden>
+        <p>the game is a lie</p>
     </section>
     <section id="bookSection">
         <div class="title">
