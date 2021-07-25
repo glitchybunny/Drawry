@@ -193,7 +193,7 @@ app.use(express.static('static'));
 server.listen(process.env.PORT || 80);
 
 
-///// ----- SERVER VALIDATION FUNCTIONS ----- /////
+///// ----- SYNCHRONOUS SERVER FUNCTIONS ----- /////
 // Ensure game settings are within reasonable constraints
 function verifySettings(settings) {
     // todo
@@ -201,5 +201,65 @@ function verifySettings(settings) {
 
 // Generate books for a room
 function generateBooks(room) {
-    // todo
+    // create books
+    room.books = {};
+    room.clients.forEach((id) => {
+        room.books[CLIENTS[id].id] = [CLIENTS[id].id.toString()];
+    });
+    let _players = Object.keys(room.books);
+
+    // assign pages
+    if (room.settings.pageOrder === "Normal") {
+        // normal order (cyclical)
+        for (let i=1; i<room.settings.pageCount; i++) {
+            for (let j=0; j<_players.length; j++) {
+                room.books[_players[(j+i) % _players.length]].push(_players[j]);
+            }
+        }
+    } else if (room.settings.pageOrder === "Random") {
+        // random order
+        let _assigned = [_players]; // variable to keep track of previous rounds
+
+        for (let i=1; i<room.settings.pageCount; i++) {
+            let _prev = _assigned[i-1];
+            let _next = _prev.slice(); // copy previous array
+
+            // randomly shuffle
+            shuffle(_next);
+
+            // ensure no pages match the previous round
+            for (let j=0; j<_players.length; j++) {
+                if (_prev[j] === _next[j]) {
+                    // pages match, generate random index to swap with
+                    let _swap = Math.floor(Math.random() * (_players.length-1));
+                    if (_swap >= j) {
+                        _swap += 1;
+                    }
+
+                    // swap values
+                    [_next[j], _next[_swap]] = [_next[_swap], _next[j]];
+                }
+            }
+
+            // add round to books
+            _assigned.push(_next);
+            for (let j=0; j<_players.length; j++) {
+                room.books[_players[j]].push(_next[j]);
+            }
+        }
+    }
+
+    console.log(room.books);
+}
+
+// Shuffle array (fisher yates)
+function shuffle(array) {
+    var m = array.length, t, i;
+    while (m) {
+        i = Math.floor(Math.random() * m--);
+        t = array[m];
+        array[m] = array[i];
+        array[i] = t;
+    }
+    return array;
 }
