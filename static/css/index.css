@@ -48,6 +48,8 @@ section {
     background-color: #345678;
     filter: drop-shadow(4px 4px 0 #012345);
     min-width: 200px;
+    min-height: 300px;
+    height: min-content;
 }
 
 h1, label, p {
@@ -140,6 +142,10 @@ hr {
     color: #abcdef
 }
 
+#joinSection {
+    min-height:200px;
+}
+
 #playerSection {
     max-width: 200px
 }
@@ -163,6 +169,7 @@ hr {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
+    align-items: center;
 }
 
 #timeDrawDisplay, #timeWriteDisplay {
