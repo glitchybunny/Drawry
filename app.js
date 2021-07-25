@@ -14,10 +14,12 @@ const http = require('http');
 const xss = require("xss");
 const path = require('path');
 
-// Basic client list (to keep track of currently connected client IDs and names only, nothing more)
+// Server side variables (to keep track of games)
 const CLIENTS = [];
 const SOCKETS = [];
 const ROOMS = {};
+
+// Important values
 const MAX_ROOM_SIZE = 10;
 const DEFAULT_SETTINGS = {
     firstPage: 'Write',
@@ -27,6 +29,11 @@ const DEFAULT_SETTINGS = {
     timeWrite: '0',
     timeDraw: '0'
 };
+const STATE = {
+    LOBBY: 0,
+    PLAYING: 1,
+    END: 2
+}
 
 
 // Listen for incoming connections from clients
@@ -55,34 +62,39 @@ io.on('connection', (socket) => {
             // add client to the room
             socket.join(_client.room);
 
+            // if room doesn't exist, create it and make client the host
             if (!ROOMS.hasOwnProperty(_client.room)) {
-                // if room doesn't exist, create it and make client the host
                 ROOMS[_client.room] = {
-                    clients: [socket.id],
+                    clients: [],
                     host: socket.id,
-                    settings: DEFAULT_SETTINGS
+                    settings: DEFAULT_SETTINGS,
+                    state: STATE.LOBBY
                 }
-            } else if (ROOMS[_client.room].clients.length < MAX_ROOM_SIZE) {
-                // if room does exist and isn't full, add client to the room
-                ROOMS[_client.room].clients.push(socket.id);
-            } else {
-                // if room is full, boot client
-                io.to(socket.id).emit("disconnect", "server full");
             }
 
-            // inform the client they've joined the room
-            io.to(socket.id).emit("joined", {
-                room: _client.room,
-                users: Object.values(CLIENTS).filter((c) => {
-                    return c.room === _client.room && c.id !== _client.id
-                }),
-                host: CLIENTS[ROOMS[_client.room].host].id,
-                settings: ROOMS[_client.room].settings
-            });
+            // check if room can be joined
+            let _room = ROOMS[_client.room];
+            if (_room.clients.length < MAX_ROOM_SIZE && _room.state === STATE.LOBBY) {
+                // if room isn't full and is in lobby, add client to the room
+                _room.clients.push(socket.id);
 
-            // inform users in the room about the new client
-            socket.to(_client.room).emit("userJoin", CLIENTS[socket.id]);
+                // inform the client they've joined the room
+                io.to(socket.id).emit("joined", {
+                    room: _client.room,
+                    users: Object.values(CLIENTS).filter((c) => {
+                        return c.room === _client.room && c.id !== _client.id
+                    }),
+                    host: CLIENTS[ROOMS[_client.room].host].id,
+                    settings: ROOMS[_client.room].settings
+                });
 
+                // inform users in the room about the new client
+                socket.to(_client.room).emit("userJoin", CLIENTS[socket.id]);
+
+            } else {
+                // room is full, boot client
+                io.to(socket.id).emit("disconnect", "server full");
+            }
         } else {
             // ID or roomID is invalid, boot client
             io.to(socket.id).emit("disconnect");
@@ -97,7 +109,7 @@ io.on('connection', (socket) => {
         // Make sure user is the host
         if (socket.id === _room.host) {
             // Verify settings are within constraints
-            // todo
+            verifySettings(data.settings);
 
             // Host updating settings
             _room.settings = data;
@@ -114,14 +126,17 @@ io.on('connection', (socket) => {
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
-        // Make sure user is the host
-        if (socket.id === _room.host) {
+        // Make sure user is the host and the minimum player count is reached
+        if (socket.id === _room.host && _room.clients.length >= 2) {
             // Verify settings are within constraints
+            verifySettings(data.settings);
 
-            // Host updating settings
+            // Update settings, change room state
             _room.settings = data.settings;
+            _room.state = STATE.PLAYING;
 
             // Generate page assignment order for books
+            generateBooks(_room);
 
             // Tell clients game has started
             io.to(_roomID).emit('gameStart', {});
@@ -148,8 +163,6 @@ io.on('connection', (socket) => {
             let _index = _clients.indexOf(socket.id);
             if (_index !== -1) {
                 _clients.splice(_index, 1);
-            } else {
-                console.error("FAILED TO REMOVE NON-EXISTENT CLIENT FROM ROOM????");
             }
 
             // delete the room if everyone has left
@@ -178,3 +191,15 @@ app.use(express.static('static'));
 
 // Open server to manage server things
 server.listen(process.env.PORT || 80);
+
+
+///// ----- SERVER VALIDATION FUNCTIONS ----- /////
+// Ensure game settings are within reasonable constraints
+function verifySettings(settings) {
+    // todo
+}
+
+// Generate books for a room
+function generateBooks(room) {
+    // todo
+}
