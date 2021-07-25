@@ -48,7 +48,6 @@ section {
     background-color: #345678;
     filter: drop-shadow(4px 4px 0 #012345);
     min-width: 200px;
-    min-height: 300px;
     height: min-content;
 }
 
@@ -142,12 +141,9 @@ hr {
     color: #abcdef
 }
 
-#joinSection {
-    min-height:200px;
-}
-
-#playerSection {
-    max-width: 200px
+#playerSection, #bookSection {
+    max-width: 200px;
+    min-height: 300px;
 }
 
 #playerList {
