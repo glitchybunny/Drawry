@@ -21,7 +21,7 @@ const ROOMS = {};
 
 // Important values
 const MAX_ROOM_SIZE = 10;
-const DEFAULT_SETTINGS = {
+const SETTINGS_DEFAULT = {
     firstPage: 'Write',
     pageCount: '8',
     pageOrder: 'Normal',
@@ -29,11 +29,19 @@ const DEFAULT_SETTINGS = {
     timeWrite: '0',
     timeDraw: '0'
 };
+const SETTINGS_CONSTRAINTS = {
+    firstPage: ['string', ['Write', 'Draw']],
+    pageCount: ['number', [2, 20]],
+    pageOrder: ['string', ['Normal', 'Random']],
+    palette: ['string', ['No palette']],
+    timeWrite: ['number', [0, 15]],
+    timeDraw: ['number', [0, 15]]
+};
 const STATE = {
     LOBBY: 0,
     PLAYING: 1,
     END: 2
-}
+};
 
 
 // Listen for incoming connections from clients
@@ -67,7 +75,7 @@ io.on('connection', (socket) => {
                 ROOMS[_client.room] = {
                     clients: [],
                     host: socket.id,
-                    settings: DEFAULT_SETTINGS,
+                    settings: SETTINGS_DEFAULT,
                     state: STATE.LOBBY
                 }
             }
@@ -106,18 +114,16 @@ io.on('connection', (socket) => {
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
-        // Make sure user is the host
-        if (socket.id === _room.host) {
-            // Verify settings are within constraints
-            verifySettings(data.settings);
-
+        // Make sure user is the host and settings are within constraints
+        if (socket.id === _room.host && verifySettings(data.settings)) {
             // Host updating settings
-            _room.settings = data;
+            _room.settings = data.settings;
 
             // Propogate settings to other clients
             socket.to(_roomID).emit("settings", _room.settings);
+
         } else {
-            // Non-host attempting to update settings without permission, kick from game
+            // Invalid request, kick from game
             socket.disconnect();
         }
     });
@@ -126,11 +132,8 @@ io.on('connection', (socket) => {
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
-        // Make sure user is the host and the minimum player count is reached
-        if (socket.id === _room.host && _room.clients.length >= 2) {
-            // Verify settings are within constraints
-            verifySettings(data.settings);
-
+        // Make sure user is the host, player count is reached, and settings are valid
+        if (socket.id === _room.host && _room.clients.length >= 2 && verifySettings(data.settings)) {
             // Update settings, change room state
             _room.settings = data.settings;
             _room.state = STATE.PLAYING;
@@ -138,11 +141,11 @@ io.on('connection', (socket) => {
             // Generate page assignment order for books
             generateBooks(_room);
 
-            // Tell clients game has started
+            // Start gane
             io.to(_roomID).emit('gameStart', {});
 
         } else {
-            // Non-host attempting to start game without permission, kick from game
+            // Invalid request, kick from game
             socket.disconnect();
         }
     });
@@ -196,7 +199,34 @@ server.listen(process.env.PORT || 80);
 ///// ----- SYNCHRONOUS SERVER FUNCTIONS ----- /////
 // Ensure game settings are within reasonable constraints
 function verifySettings(settings) {
-    // todo
+    let _valid = true;
+
+    for (let _rule in settings) {
+        let _setting = settings[_rule];
+        let _constraint = SETTINGS_CONSTRAINTS[_rule];
+
+        switch (_constraint[0]) {
+            case 'string':
+                // Ensure string is in the list of valid strings
+                if (!_constraint[1].includes(_setting)) {
+                    _valid = false;
+                }
+                break;
+            case 'number':
+                // Ensure value is a valid integer, and is within the valid range
+                if (/^[0-9]+$/.test(_setting)) {
+                    _setting = +_setting;
+                    if (_setting < _constraint[1][0] || _setting > _constraint[1][1]) {
+                        _valid = false;
+                    }
+                } else {
+                    _valid = false;
+                }
+                break;
+        }
+    }
+
+    return _valid;
 }
 
 // Generate books for a room
@@ -211,27 +241,27 @@ function generateBooks(room) {
     // assign pages
     if (room.settings.pageOrder === "Normal") {
         // normal order (cyclical)
-        for (let i=1; i<room.settings.pageCount; i++) {
-            for (let j=0; j<_players.length; j++) {
-                room.books[_players[(j+i) % _players.length]].push(_players[j]);
+        for (let i = 1; i < room.settings.pageCount; i++) {
+            for (let j = 0; j < _players.length; j++) {
+                room.books[_players[(j + i) % _players.length]].push(_players[j]);
             }
         }
     } else if (room.settings.pageOrder === "Random") {
         // random order
         let _assigned = [_players]; // variable to keep track of previous rounds
 
-        for (let i=1; i<room.settings.pageCount; i++) {
-            let _prev = _assigned[i-1];
+        for (let i = 1; i < room.settings.pageCount; i++) {
+            let _prev = _assigned[i - 1];
             let _next = _prev.slice(); // copy previous array
 
             // randomly shuffle
             shuffle(_next);
 
             // ensure no pages match the previous round
-            for (let j=0; j<_players.length; j++) {
+            for (let j = 0; j < _players.length; j++) {
                 if (_prev[j] === _next[j]) {
                     // pages match, generate random index to swap with
-                    let _swap = Math.floor(Math.random() * (_players.length-1));
+                    let _swap = Math.floor(Math.random() * (_players.length - 1));
                     if (_swap >= j) {
                         _swap += 1;
                     }
@@ -243,13 +273,11 @@ function generateBooks(room) {
 
             // add round to books
             _assigned.push(_next);
-            for (let j=0; j<_players.length; j++) {
+            for (let j = 0; j < _players.length; j++) {
                 room.books[_players[j]].push(_next[j]);
             }
         }
     }
-
-    console.log(room.books);
 }
 
 // Shuffle array (fisher yates)
