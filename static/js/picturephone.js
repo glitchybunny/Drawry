@@ -154,7 +154,7 @@ function htmlDecode(input) {
 
 // Send settings to the server
 function emitSettings() {
-    isHost ? SOCKET.emit("settings", roomSettings) : SOCKET.disconnect();
+    isHost ? SOCKET.emit("settings", {settings:roomSettings}) : SOCKET.disconnect();
 }
 
 // Update settings in the DOM
