@@ -251,6 +251,14 @@ function show(e) {
 
 ///// ----- INPUTS AND INTERACTIONS ----- /////
 {
+    // Prefill join fields with URL parameters
+    let _url = window.location.href;
+    let _params = new URLSearchParams(_url.slice(_url.indexOf('?')+1));
+    if (_params.has("room")) {
+        byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 8);
+    }
+
+
     // Join button
     byId('inputJoin').addEventListener('click', (e) => {
         // Receive and validate inputs
@@ -265,6 +273,8 @@ function show(e) {
             _inputRoom.disabled = true;
             e.target.disabled = true;
             document.body.style.cursor = 'wait';
+
+            window.history.pushState({room:room}, '', '?room=' + room);
 
             SOCKET.emit("joinRoom", {
                 id: ID,

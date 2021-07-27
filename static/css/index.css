@@ -1,11 +1,11 @@
 @font-face {
     font-family: "OpenSans";
-    src: url(/font/OpenSans-Regular.ttf) format("truetype");
-    font-display: swap
+    src: local("/font/OpenSans-Regular.ttf"), url("/font/OpenSans-Regular.ttf") format("truetype");
+    font-display: swap;
 }
 
 * {
-    font-family: "OpenSans", sans-serif
+    font-family: "OpenSans", sans-serif;
 }
 
 body, html {
@@ -21,28 +21,38 @@ body {
     align-items: center;
 }
 
-p {
+p, dfn {
     margin: 8px 0
 }
 
-a, li, output {
+a, li, output, p, dfn {
     color: #fff
 }
 
-a, label, li, output, p {
+a, label, li, output, p, dfn {
     font-size: 18px
 }
 
-body, #mainJoin, section {
+dfn {
+    text-decoration: underline dotted;
+    font-style: normal;
+    cursor: help;
+}
+
+body, #mainJoin, section, aside {
     display: flex;
-    flex-flow: column nowrap
+    flex-flow: column nowrap;
+}
+
+#mainJoin {
+    align-items: center;
 }
 
 #mainGame {
     width: 100%
 }
 
-section {
+section, aside {
     padding: 10px 20px;
     margin: 10px;
     background-color: #345678;
@@ -62,11 +72,11 @@ h1 {
 }
 
 label {
-    padding: 10px 4px
+    padding: 10px 4px;
 }
 
 input[type=text] {
-    font-size: 24px
+    font-size: 24px;
 }
 
 input[type=button] {
@@ -133,12 +143,21 @@ hr {
     margin: 10px 0;
 }
 
-#source {
+#copyright {
     position: absolute;
     margin: 10px 20px;
     bottom: 0;
     right: 0;
     color: #abcdef
+}
+
+#joinSection {
+    max-width: 300px;
+}
+
+#inputName, #inputRoom {
+    width: auto;
+    max-width: 280px;
 }
 
 #playerSection, #bookSection {
@@ -186,7 +205,7 @@ hr {
     padding: 4px 8px;
     background-color: #123456;
     width: auto;
-    max-width: min(200px, max-content);
+    max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
