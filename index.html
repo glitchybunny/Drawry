@@ -11,25 +11,25 @@
     <section id="joinSection">
         <label>
             Name:<br/>
-            <input autocomplete="off" id="inputName" maxlength="32" required type="text">
+            <input autocomplete="on" id="inputName" maxlength="32" required type="text" onkeypress="return enterPress(event, 'inputJoin')">
         </label>
         <label>
             Room Code:<br/>
-            <input autocomplete="off" id="inputRoom" maxlength="8" required type="text">
+            <input autocomplete="on" id="inputRoom" maxlength="8" required type="text" onkeypress="return enterPress(event, 'inputJoin')">
         </label>
         <input id="inputJoin" type="button" value="Join">
     </section>
 </main>
 <main class="hidden" hidden id="mainGame">
     <h1 id="cornerTitle">Open Picturephone v0.0.1</h1>
-    <section id="playerSection">
+    <aside id="playerSection">
         <div class="title">
             <h1>Players</h1>
             <h1 style="text-align:right;">(<span id="playerCount">1</span>/10)</h1>
         </div>
         <hr>
         <ul id="playerList"></ul>
-    </section>
+    </aside>
     <section id="setupSection">
         <div class="title">
             <h1>Game Setup</h1>
@@ -38,40 +38,62 @@
         <hr>
         <div id="gameSettings">
             <div>
-                <p>First page</p>
+                <dfn title="Whether the first page is written or drawn" aria-label="Whether the first page is written or drawn">
+                    First page
+                </dfn>
                 <div class="isHost hidden">
-                    <label><input name="firstPage" type="radio" value="Write">Write</label><label><input
-                        name="firstPage" type="radio" value="Draw">Draw</label>
+                    <label>
+                        <input name="firstPage" type="radio" value="Write" aria-label="The first page is a text input">
+                        Write
+                    </label>
+                    <label>
+                        <input name="firstPage" type="radio" value="Draw" aria-label="The first page is a drawable canvas input">
+                        Draw
+                    </label>
                 </div>
                 <div class="isNotHost">
                     <output for="firstPage" id="firstPageDisplay"></output>
                 </div>
             </div>
             <div>
-                <p>Pages per book</p>
+                <dfn id="isHostLabel" title="Number of pages in each book" aria-label="Number of pages in each book">
+                    Pages per book
+                </dfn>
                 <div class="center">
                     <div class="isHost hidden">
-                        <input id="pageCount" max="20" min="2" name="pageCount" type="range">
+                        <input id="pageCount" max="20" min="2" name="pageCount" type="range" aria-labelledby="isHostLabel">
                     </div>
                     <output for="pageCount" id="pageCountDisplay"></output>
                 </div>
             </div>
             <div>
-                <p>Page assignment</p>
+                <dfn title="How pages are assigned to players" aria-label="How pages are assigned to players">
+                    Page assignment
+                </dfn>
                 <div class="isHost hidden">
-                    <label><input name="pageOrder" type="radio" value="Normal">Normal</label><label><input
-                        name="pageOrder" type="radio" value="Random">Random</label>
+                    <label>
+                        <input name="pageOrder" type="radio" value="Normal" aria-label="Pages are assigned in a cyclic order">
+                        Normal
+                    </label>
+                    <label>
+                        <input name="pageOrder" type="radio" value="Random" aria-label="Pages are assigned in a semi-random order">
+                        Random
+                    </label>
                 </div>
                 <div class="isNotHost">
                     <output for="pageOrder" id="pageOrderDisplay"></output>
                 </div>
             </div>
             <div>
-                <p>Colour palette</p>
+                <dfn title="Whether there are colour palette restrictions on the drawings" aria-label="Whether there are colour palette restrictions on the drawings">
+                    Colour palette
+                </dfn>
                 <div class="isHost hidden">
-                    <label><select id="colourPalette">
-                        <option value="No palette">No palette</option>
-                    </select></label>
+                    <label>
+                        <select id="colourPalette">
+                            <option value="No palette">No palette</option>
+                        </select>
+                    </label>
                 </div>
                 <div class="isNotHost">
                     <output for="colourPalette" id="colourPaletteDisplay"></output>
@@ -79,19 +101,23 @@
             </div>
             <hr>
             <div>
-                <p>Write time limit</p>
+                <dfn id="timeWriteLabel" title="Time limit per writing page (in minutes)" aria-label="Time limit per writing page (in minutes)">
+                    Write time limit
+                </dfn>
                 <div class="center">
                     <div class="isHost hidden">
-                        <input id="timeWrite" max="15" min="0" name="timeWrite" type="range">
+                        <input id="timeWrite" max="15" min="0" name="timeWrite" type="range" aria-labelledby="timeWriteLabel">
                     </div>
                     <output for="timeWrite" id="timeWriteDisplay"></output>
                 </div>
             </div>
             <div>
-                <p>Draw time limit</p>
+                <dfn id="timeDrawLabel" title="Time limit per drawing page (in minutes)" aria-labe="Time limit per drawing page (in minutes)">
+                    Draw time limit
+                </dfn>
                 <div class="center">
                     <div class="isHost hidden">
-                        <input id="timeDraw" max="15" min="0" name="timeDraw" type="range">
+                        <input id="timeDraw" max="15" min="0" name="timeDraw" type="range" aria-labelledby="timeDrawLabel">
                     </div>
                     <output for="timeDraw" id="timeDrawDisplay"></output>
                 </div>
@@ -107,18 +133,36 @@
             <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start the game...</p>
         </div>
     </section>
-    <section id="gameSection" class="hidden" hidden>
-        <p>the game is a lie</p>
+    <section class="hidden" hidden id="gameSection">
+        <section id="gameTitle">
+
+        </section>
+        <section class="hidden" hidden id="gameWrite">
+
+        </section>
+        <section class="hidden" hidden id="gameDraw">
+
+        </section>
     </section>
-    <section id="bookSection">
+    <aside id="bookSection">
         <div class="title">
             <h1>Books</h1>
         </div>
         <hr>
-    </section>
+    </aside>
 </main>
-<a href="https://github.com/darkrilin/open-picturephone" id="source">&copy; darkrilin 2021</a>
+<a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
 <script src="/js/socket.io.js"></script>
-<script src="/js/picturephone.js" type="module"></script>
+<script src="/js/picturephone.js"></script>
+<script>
+    function enterPress(e, id) {
+        e = e || window.event;
+        if (e.keyCode === 13) {
+            document.getElementById(id).click();
+            return false;
+        }
+        return true;
+    }
+</script>
 </body>
 </html>
