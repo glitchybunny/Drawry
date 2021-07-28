@@ -11,11 +11,15 @@
     <section id="joinSection">
         <label>
             Name:<br/>
-            <input autocomplete="on" id="inputName" maxlength="32" required type="text" onkeypress="return enterPress(event, 'inputJoin')">
+            <input autocomplete="on" id="inputName" maxlength="32" minlength="1"
+                   onkeydown="return enterPress(event, 'inputJoin')" required
+                   type="text">
         </label>
         <label>
             Room Code:<br/>
-            <input autocomplete="on" id="inputRoom" maxlength="8" required type="text" onkeypress="return enterPress(event, 'inputJoin')">
+            <input autocomplete="on" id="inputRoom" maxlength="8" minlength="1"
+                   onkeydown="return enterPress(event, 'inputJoin')" required
+                   type="text">
         </label>
         <input id="inputJoin" type="button" value="Join">
     </section>
@@ -33,21 +37,23 @@
     <section id="setupSection">
         <div class="title">
             <h1>Game Setup</h1>
-            <p id="hostName">Host:</p>
+            <p class="corner" id="hostName">Host:</p>
         </div>
         <hr>
         <div id="gameSettings">
             <div>
-                <dfn title="Whether the first page is written or drawn" aria-label="Whether the first page is written or drawn">
+                <dfn aria-label="Whether the first page is written or drawn"
+                     title="Whether the first page is written or drawn">
                     First page
                 </dfn>
                 <div class="isHost hidden">
                     <label>
-                        <input name="firstPage" type="radio" value="Write" aria-label="The first page is a text input">
+                        <input aria-label="The first page is a text input" name="firstPage" type="radio" value="Write">
                         Write
                     </label>
                     <label>
-                        <input name="firstPage" type="radio" value="Draw" aria-label="The first page is a drawable canvas input">
+                        <input aria-label="The first page is a drawable canvas input" name="firstPage" type="radio"
+                               value="Draw">
                         Draw
                     </label>
                 </div>
@@ -56,27 +62,30 @@
                 </div>
             </div>
             <div>
-                <dfn id="isHostLabel" title="Number of pages in each book" aria-label="Number of pages in each book">
+                <dfn aria-label="Number of pages in each book" id="isHostLabel" title="Number of pages in each book">
                     Pages per book
                 </dfn>
                 <div class="center">
                     <div class="isHost hidden">
-                        <input id="pageCount" max="20" min="2" name="pageCount" type="range" aria-labelledby="isHostLabel">
+                        <input aria-labelledby="isHostLabel" id="pageCount" max="20" min="2" name="pageCount"
+                               type="range">
                     </div>
                     <output for="pageCount" id="pageCountDisplay"></output>
                 </div>
             </div>
             <div>
-                <dfn title="How pages are assigned to players" aria-label="How pages are assigned to players">
+                <dfn aria-label="How pages are assigned to players" title="How pages are assigned to players">
                     Page assignment
                 </dfn>
                 <div class="isHost hidden">
                     <label>
-                        <input name="pageOrder" type="radio" value="Normal" aria-label="Pages are assigned in a cyclic order">
+                        <input aria-label="Pages are assigned in a cyclic order" name="pageOrder" type="radio"
+                               value="Normal">
                         Normal
                     </label>
                     <label>
-                        <input name="pageOrder" type="radio" value="Random" aria-label="Pages are assigned in a semi-random order">
+                        <input aria-label="Pages are assigned in a semi-random order" name="pageOrder" type="radio"
+                               value="Random">
                         Random
                     </label>
                 </div>
@@ -85,7 +94,8 @@
                 </div>
             </div>
             <div>
-                <dfn title="Whether there are colour palette restrictions on the drawings" aria-label="Whether there are colour palette restrictions on the drawings">
+                <dfn aria-label="Whether there are colour palette restrictions on the drawings"
+                     title="Whether there are colour palette restrictions on the drawings">
                     Colour palette
                 </dfn>
                 <div class="isHost hidden">
@@ -101,23 +111,27 @@
             </div>
             <hr>
             <div>
-                <dfn id="timeWriteLabel" title="Time limit per writing page (in minutes)" aria-label="Time limit per writing page (in minutes)">
+                <dfn aria-label="Time limit per writing page (in minutes)" id="timeWriteLabel"
+                     title="Time limit per writing page (in minutes)">
                     Write time limit
                 </dfn>
                 <div class="center">
                     <div class="isHost hidden">
-                        <input id="timeWrite" max="15" min="0" name="timeWrite" type="range" aria-labelledby="timeWriteLabel">
+                        <input aria-labelledby="timeWriteLabel" id="timeWrite" max="15" min="0" name="timeWrite"
+                               type="range">
                     </div>
                     <output for="timeWrite" id="timeWriteDisplay"></output>
                 </div>
             </div>
             <div>
-                <dfn id="timeDrawLabel" title="Time limit per drawing page (in minutes)" aria-labe="Time limit per drawing page (in minutes)">
+                <dfn aria-labe="Time limit per drawing page (in minutes)" id="timeDrawLabel"
+                     title="Time limit per drawing page (in minutes)">
                     Draw time limit
                 </dfn>
                 <div class="center">
                     <div class="isHost hidden">
-                        <input id="timeDraw" max="15" min="0" name="timeDraw" type="range" aria-labelledby="timeDrawLabel">
+                        <input aria-labelledby="timeDrawLabel" id="timeDraw" max="15" min="0" name="timeDraw"
+                               type="range">
                     </div>
                     <output for="timeDraw" id="timeDrawDisplay"></output>
                 </div>
@@ -133,17 +147,36 @@
             <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start the game...</p>
         </div>
     </section>
-    <section class="hidden" hidden id="gameSection">
+    <div class="hidden" hidden id="gameSection">
         <section id="gameTitle">
-
+            <label for="inputTitle">
+                <b>Book Title</b>
+            </label>
+            <br/>
+            <input id="inputTitle" maxlength="40" minlength="1" placeholder="Enter a title for your book" required
+                   size="25" spellcheck="true" type="text">
         </section>
-        <section class="hidden" hidden id="gameWrite">
-
+        <section id="gameArea">
+            <div class="title">
+                <h1 id="pageType"></h1>
+                <p class="corner">Page <span id="pageCurrent">-</span>/<span id="pageMax">-</span></p>
+            </div>
+            <hr>
+            <div class="hidden" hidden id="gameWrite">
+                <label for="inputWrite">
+                    What should the first page say?
+                </label>
+                <br/>
+                <input id="inputWrite" maxlength="80" minlength="1" placeholder="Keep it simple!" required
+                       size="40" spellcheck="true" type="text">
+            </div>
+            <div class="hidden" hidden id="gameDraw">
+                <p>draw something</p>
+            </div>
+            <hr>
+            <input class="right" type="button" value="Submit">
         </section>
-        <section class="hidden" hidden id="gameDraw">
-
-        </section>
-    </section>
+    </div>
     <aside id="bookSection">
         <div class="title">
             <h1>Books</h1>
