@@ -1,9 +1,11 @@
+/* Font stuff */
 @font-face {
     font-family: "OpenSans";
     src: local("/font/OpenSans-Regular.ttf"), url("/font/OpenSans-Regular.ttf") format("truetype");
     font-display: swap;
 }
 
+/* Default html elements */
 * {
     font-family: "OpenSans", sans-serif;
 }
@@ -18,6 +20,7 @@ body, html {
 }
 
 body {
+    justify-content: center;
     align-items: center;
 }
 
@@ -39,17 +42,9 @@ dfn {
     cursor: help;
 }
 
-body, #mainJoin, section, aside {
+body, section, aside {
     display: flex;
     flex-flow: column nowrap;
-}
-
-#mainJoin {
-    align-items: center;
-}
-
-#mainGame {
-    width: 100%
 }
 
 section, aside {
@@ -58,6 +53,7 @@ section, aside {
     background-color: #345678;
     filter: drop-shadow(4px 4px 0 #012345);
     min-width: 200px;
+    width: max-content;
     height: min-content;
 }
 
@@ -73,28 +69,7 @@ h1 {
 
 label {
     padding: 10px 4px;
-}
-
-input[type=text] {
-    font-size: 24px;
-}
-
-input[type=button] {
-    font-size: 22px;
-    width: auto;
-    padding: 1px 16px;
-    margin: 10px auto;
-}
-
-input[type=range] {
-    margin: 10px auto
-}
-
-output {
-    display: inline-block;
-    min-width: 24px;
-    text-align: right;
-    margin: 10px 0 10px 10px
+    margin: 0;
 }
 
 ul {
@@ -117,16 +92,19 @@ hr {
     border-bottom: 2px solid #234567
 }
 
-.centerV, body {
-    justify-content: center;
-}
 
+/* Classes */
 .centerV {
     display: flex;
     flex-flow: row nowrap;
     margin-top: auto;
     margin-bottom: auto;
     vertical-align: center;
+    justify-content: center;
+}
+
+.right {
+    margin: 10px 8px 10px auto !important;
 }
 
 .title {
@@ -143,6 +121,21 @@ hr {
     margin: 10px 0;
 }
 
+
+/* Basic page layout IDs */
+#mainJoin, #gameWrite {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+#mainJoin {
+    align-items: center;
+}
+
+#mainGame {
+    width: 100%
+}
+
 #copyright {
     position: absolute;
     margin: 10px 20px;
@@ -151,13 +144,18 @@ hr {
     color: #abcdef
 }
 
-#joinSection {
-    max-width: 300px;
+#cornerTitle {
+    position: absolute;
+    margin: 10px 20px;
+    top: 0;
+    left: 0;
+    color: #abcdef
 }
 
-#inputName, #inputRoom {
-    width: auto;
-    max-width: 280px;
+
+/* Sections */
+#joinSection {
+    max-width: 300px;
 }
 
 #playerSection, #bookSection {
@@ -165,14 +163,15 @@ hr {
     min-height: 300px;
 }
 
-#playerList {
-    list-style: none;
-    padding-inline: 0;
-    padding-left: 0;
-}
-
 #setupSection {
     min-width: 400px
+}
+
+#gameSection {
+    display: flex;
+    flex-flow: column nowrap;
+    width: auto;
+    align-items: center;
 }
 
 #gameSettings {
@@ -187,19 +186,52 @@ hr {
     align-items: center;
 }
 
+
+/* Inputs and outputs */
+input[type=text] {
+    font-size: 24px;
+}
+
+input[type=button] {
+    font-size: 22px;
+    width: auto;
+    padding: 1px 16px;
+    margin: 10px auto;
+}
+
+input[type=range] {
+    margin: 10px auto
+}
+
+#inputName, #inputRoom {
+    width: auto;
+    max-width: 280px;
+}
+
+#inputWrite, #inputTitle {
+    margin-bottom: 10px;
+}
+
+output {
+    display: inline-block;
+    min-width: 24px;
+    text-align: right;
+    margin: 10px 0 10px 10px
+}
+
 #timeDrawDisplay, #timeWriteDisplay {
     width: 60px
 }
 
-#cornerTitle {
-    position: absolute;
-    margin: 10px 20px;
-    top: 0;
-    left: 0;
-    color: #abcdef
+
+/* Other IDs */
+#playerList {
+    list-style: none;
+    padding-inline: 0;
+    padding-left: 0;
 }
 
-#hostName {
+.corner {
     text-align: right;
     margin: 10px 0;
     padding: 4px 8px;
@@ -210,6 +242,8 @@ hr {
     text-overflow: ellipsis;
 }
 
+
+/* Class overrides */
 .isHost, .isNotHost, .center {
     display: flex;
     vertical-align: center;

@@ -18,6 +18,8 @@ var room = undefined;
 var roomSettings = undefined;
 var host = undefined;
 var isHost = false;
+var books = undefined;
+var round = undefined;
 
 // Ensure browser compatibility
 if (!('getContext' in document.createElement('canvas'))) {
@@ -98,6 +100,33 @@ SOCKET.on('settings', (data) => {
 SOCKET.on('gameStart', (data) => {
     hide(byId('setupSection'));
     show(byId('gameSection'));
+
+    // Load book page information
+    books = {};
+    Object.keys(data.books).forEach((id) => {
+        id = parseInt(id);
+        books[id] = {
+            title: "",
+            author: id === ID ? name : USERS[id].name,
+            book: data.books[id]
+        }
+    });
+
+    // Load start page
+    switch (data.start) {
+        case("Write"):
+            show(byId('gameWrite'));
+            byId('pageType').innerText = "Writing";
+            break;
+        case("Draw"):
+            show(byId('gameDraw'));
+            byId('pageType').innerText = "Drawing";
+            break;
+    }
+    byId('pageCurrent').innerText = 1;
+
+    // Set round number
+    round = 0;
 });
 
 // If client is disconnected unexpectedly (i.e. booted from server or server connection lost)
@@ -168,6 +197,7 @@ function updateSettings() {
     // Pages per book
     byId('pageCount').value = roomSettings.pageCount;
     byId('pageCountDisplay').value = roomSettings.pageCount;
+    byId('pageMax').innerText = roomSettings.pageCount;
 
     // Page assignment
     document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {

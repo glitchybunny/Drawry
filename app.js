@@ -142,7 +142,7 @@ io.on('connection', (socket) => {
             generateBooks(_room);
 
             // Start gane
-            io.to(_roomID).emit('gameStart', {});
+            io.to(_roomID).emit('gameStart', {books: _room.books, start: _room.settings.firstPage});
 
         } else {
             // Invalid request, kick from game
@@ -161,21 +161,23 @@ io.on('connection', (socket) => {
             // alert others that client has left the room
             socket.to(_roomID).emit('userLeave', _id);
 
-            // remove client from the room
-            let _clients = _room.clients;
-            let _index = _clients.indexOf(socket.id);
-            if (_index !== -1) {
-                _clients.splice(_index, 1);
-            }
+            if (_room) {
+                // remove client from the room
+                let _clients = _room.clients;
+                let _index = _clients.indexOf(socket.id);
+                if (_index !== -1) {
+                    _clients.splice(_index, 1);
+                }
 
-            // delete the room if everyone has left
-            if (_clients.length === 0) {
-                delete ROOMS[_roomID];
-            } else {
-                // if the host disconnected, assign a new host
-                if (socket.id == _room.host) {
-                    _room.host = _clients[0];
-                    socket.to(_roomID).emit("host", CLIENTS[_room.host].id);
+                // delete the room if everyone has left
+                if (_clients.length === 0) {
+                    delete ROOMS[_roomID];
+                } else {
+                    // if the host disconnected, assign a new host
+                    if (socket.id == _room.host) {
+                        _room.host = _clients[0];
+                        socket.to(_roomID).emit("host", CLIENTS[_room.host].id);
+                    }
                 }
             }
         }
@@ -206,13 +208,13 @@ function verifySettings(settings) {
         let _constraint = SETTINGS_CONSTRAINTS[_rule];
 
         switch (_constraint[0]) {
-            case 'string':
+            case('string'):
                 // Ensure string is in the list of valid strings
                 if (!_constraint[1].includes(_setting)) {
                     _valid = false;
                 }
                 break;
-            case 'number':
+            case('number'):
                 // Ensure value is a valid integer, and is within the valid range
                 if (/^[0-9]+$/.test(_setting)) {
                     _setting = +_setting;
