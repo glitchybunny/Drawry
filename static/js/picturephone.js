@@ -6,9 +6,10 @@
 "use strict";
 
 /// --- SOCKET CONSTANTS --- ///
-let array = new Uint32Array(1);
+let array = new Uint32Array(3);
 window.crypto.getRandomValues(array);
-const ID = array[0].valueOf() + 1;
+const ID = Cookies.get('id') | 0 ? Cookies.get('id') : (array[0].valueOf() + 1).toString();
+const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 const USERS = {};
 
@@ -29,6 +30,10 @@ if (!('getContext' in document.createElement('canvas'))) {
 }
 var byId = function (id) {
     return document.getElementById(id);
+};
+Cookies.defaults = {
+    expires: 600,
+    sameSite: 'Strict'
 };
 
 
@@ -63,7 +68,9 @@ SOCKET.on('joined', (data) => {
     updateSettings();
 
     // set cookies so game remembers the session (in case user accidentally closes tab and needs to rejoin)
-    // TODO
+    Cookies.set('name', name);
+    Cookies.set('room', room);
+    Cookies.set('id', ID);
 })
 
 // Add another user to the room
@@ -104,13 +111,13 @@ SOCKET.on('gameStart', (data) => {
     // Load book page information
     books = {};
     Object.keys(data.books).forEach((id) => {
-        id = parseInt(id);
         books[id] = {
-            title: "",
+            title: (id === ID ? name : USERS[id].name) + "'s book",
             author: id === ID ? name : USERS[id].name,
             book: data.books[id]
         }
     });
+    updateBookList();
 
     // Load start page
     switch (data.start) {
@@ -129,26 +136,37 @@ SOCKET.on('gameStart', (data) => {
     round = 0;
 });
 
-// If client is disconnected unexpectedly (i.e. booted from server or server connection lost)
+// Disconnect from the server
 SOCKET.on('disconnect', (data) => {
     // Determine which disconnect has occurred and display relevant error
     switch (data) {
         case("io server disconnect"):
             alert("Kicked from server!");
+            window.location.reload(true);
             break;
         case("ping timeout"):
             alert("Timed out from server.");
+            window.location.reload(true);
             break;
         case("transport close"):
-            alert("Lost connection to server.");
+            //alert("Lost connection to server.");
             break;
         case("server full"):
             alert("Server full! Can't connect.");
             break;
         default:
             alert("Disconnected due to an unknown error.\nPlease reconnect.");
+            window.location.reload(true);
     }
-    window.location.reload(true);
+});
+
+/// GAME EVENTS ///
+SOCKET.on('bookTitle', (data) => {
+    let _title = htmlDecode(data.title);
+
+    // update title
+    books[data.id].title = _title;
+    updateBookList();
 });
 
 
@@ -183,7 +201,7 @@ function htmlDecode(input) {
 
 // Send settings to the server
 function emitSettings() {
-    isHost ? SOCKET.emit("settings", {settings:roomSettings}) : SOCKET.disconnect();
+    isHost ? SOCKET.emit("settings", {settings: roomSettings}) : SOCKET.disconnect();
 }
 
 // Update settings in the DOM
@@ -249,7 +267,6 @@ function updatePlayerList() {
     for (let id in USERS) {
         let nameElem = document.createElement('li');
         nameElem.innerText = USERS[id].name;
-        nameElem.id = id;
         _playerList.appendChild(nameElem);
     }
 
@@ -263,6 +280,31 @@ function updatePlayerList() {
     } else {
         hide(byId('inputStart'));
         show(byId('inputStartWarning'));
+    }
+}
+
+// Update book list on the page
+function updateBookList() {
+    let _bookList = byId('bookList');
+    _bookList.innerHTML = '';
+
+    // Update the list of books
+    for (let _id in books) {
+        // Create elements
+        let _book = document.createElement('li');
+        let _bookTitle = document.createElement('span');
+        let _bookAuthor = document.createElement('span');
+
+        // Change their values
+        _bookTitle.innerText = books[_id].title;
+        _bookTitle.className = "bookTitle";
+        _bookAuthor.innerText = "by " + books[_id].author;
+        _bookAuthor.className = "bookAuthor";
+
+        // Add to DOM
+        _book.appendChild(_bookTitle);
+        _book.appendChild(_bookAuthor);
+        _bookList.appendChild(_book);
     }
 }
 
@@ -281,13 +323,17 @@ function show(e) {
 
 ///// ----- INPUTS AND INTERACTIONS ----- /////
 {
-    // Prefill join fields with URL parameters
+    // Prefill name field with cookie
+    if (Cookies.get('name')) {
+        byId('inputName').value = Cookies.get('name');
+    }
+
+    // Prefill room ID field with URL parameters
     let _url = window.location.href;
-    let _params = new URLSearchParams(_url.slice(_url.indexOf('?')+1));
+    let _params = new URLSearchParams(_url.slice(_url.indexOf('?') + 1));
     if (_params.has("room")) {
         byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 8);
     }
-
 
     // Join button
     byId('inputJoin').addEventListener('click', (e) => {
@@ -304,7 +350,7 @@ function show(e) {
             e.target.disabled = true;
             document.body.style.cursor = 'wait';
 
-            window.history.pushState({room:room}, '', '?room=' + room);
+            window.history.pushState({room: room}, '', '?room=' + room);
 
             SOCKET.emit("joinRoom", {
                 id: ID,
@@ -368,6 +414,13 @@ function show(e) {
 
     // Setup: Start game button
     byId('inputStart').addEventListener('click', () => {
-        SOCKET.emit('startGame', {settings:roomSettings});
+        SOCKET.emit('startGame', {settings: roomSettings});
+    })
+
+    // Game: Let player change their title
+    byId('inputTitle').addEventListener('change', (e) => {
+        SOCKET.emit('updateBookTitle', e.target.value);
+        books[ID].title = e.target.value;
+        updateBookList();
     })
 }
