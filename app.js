@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
 
         // fetch client values
         let _client = CLIENTS[socket.id];
-        _client.id = data.id || 0;
+        _client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, '')  || 0;
         _client.name = xss(data.name.substr(0, 32));
         _client.room = xss(data.room.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
 
@@ -128,6 +128,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Start the game for the room
     socket.on('startGame', (data) => {
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
@@ -137,6 +138,7 @@ io.on('connection', (socket) => {
             // Update settings, change room state
             _room.settings = data.settings;
             _room.state = STATE.PLAYING;
+            _room.page = 0;
 
             // Generate page assignment order for books
             generateBooks(_room);
@@ -149,6 +151,21 @@ io.on('connection', (socket) => {
             socket.disconnect();
         }
     });
+
+    // Update a player's book title
+    socket.on('updateBookTitle', (data) => {
+        let _id = CLIENTS[socket.id].id
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
+
+        // make sure to sanitise title string
+        let _title = xss(data.substr(0, 40));
+
+        // send title to other players
+        if (_room.page === 0) {
+            socket.to(_roomID).emit("bookTitle", {id:_id, title:_title});
+        }
+    })
 
     // Listen for disconnect events
     socket.on('disconnect', (data) => {

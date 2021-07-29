@@ -52,7 +52,6 @@ section, aside {
     margin: 10px;
     background-color: #345678;
     filter: drop-shadow(4px 4px 0 #012345);
-    min-width: 200px;
     width: max-content;
     height: min-content;
 }
@@ -79,10 +78,6 @@ ul {
 li {
     margin: 8px 0;
     word-wrap: break-word
-}
-
-li:first-child {
-    font-weight: bold;
 }
 
 hr {
@@ -159,12 +154,14 @@ hr {
 }
 
 #playerSection, #bookSection {
-    max-width: 200px;
+    width:auto;
+    min-width:220px;
     min-height: 300px;
+    max-width:300px;
 }
 
 #setupSection {
-    min-width: 400px
+    min-width: 400px;
 }
 
 #gameSection {
@@ -224,11 +221,25 @@ output {
 }
 
 
-/* Other IDs */
-#playerList {
+/* Other Stuff */
+#playerList, #bookList {
     list-style: none;
     padding-inline: 0;
     padding-left: 0;
+}
+
+#playerList > li:first-child {
+    font-weight: bold;
+}
+
+#bookList > li {
+    display:flex;
+    flex-flow:column nowrap;
+}
+
+.bookAuthor {
+    font-size:12px;
+    font-style:italic;
 }
 
 .corner {
