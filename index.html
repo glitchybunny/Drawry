@@ -29,7 +29,7 @@
     <aside id="playerSection">
         <div class="title">
             <h1>Players</h1>
-            <h1 style="text-align:right;">(<span id="playerCount">1</span>/10)</h1>
+            <h1 id="playerCount" style="text-align:right;">1</h1>
         </div>
         <hr>
         <ul id="playerList"></ul>
@@ -37,7 +37,7 @@
     <section id="setupSection">
         <div class="title">
             <h1>Game Setup</h1>
-            <p class="corner" id="hostName">Host:</p>
+            <p class="corner" id="hostName"></p>
         </div>
         <hr>
         <div id="gameSettings">
@@ -153,37 +153,53 @@
                 <b>Book Title</b>
             </label>
             <br/>
-            <input id="inputTitle" maxlength="40" minlength="1" placeholder="Enter a title for your book" required
-                   size="25" spellcheck="true" type="text">
+            <input autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
+                   placeholder="Enter a title for your book"
+                   required size="25" spellcheck="true" type="text">
+        </section>
+        <section class="hidden" hidden id="gamePrevious">
+            <p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
+            <p class="hidden" hidden id="previousWrite"></p>
+            <img alt="" class="hidden" hidden id="previousDraw" src="img/placeholder.png"/>
         </section>
         <section id="gameArea">
             <div class="title">
                 <h1 id="pageType"></h1>
-                <p class="corner">Page <span id="pageCurrent">-</span>/<span id="pageMax">-</span></p>
+                <p class="corner"><span id="pageCurrent">-</span>/<span id="pageMax">-</span></p>
             </div>
             <hr>
             <div class="hidden" hidden id="gameWrite">
-                <label for="inputWrite">
+                <label for="inputWrite" id="writePrompt">
                     What should the first page say?
                 </label>
                 <br/>
-                <input id="inputWrite" maxlength="80" minlength="1" placeholder="Keep it simple!" required
-                       size="40" spellcheck="true" type="text">
+                <input autocomplete="off" id="inputWrite" maxlength="80" minlength="1" placeholder="Keep it simple!"
+                       required size="40" spellcheck="true" type="text">
             </div>
             <div class="hidden" hidden id="gameDraw">
-                <p>draw something</p>
+                <p id="drawPrompt">Draw the first page!</p>
             </div>
             <hr>
-            <input class="right" type="button" value="Submit">
+            <input class="right" id="inputPageSubmit" type="button" value="Submit">
         </section>
     </div>
-    <aside id="bookSection">
+    <aside id="inviteSection">
+        <div class="title">
+            <h1>Invite others!</h1>
+        </div>
+        <hr>
+        <div class="title">
+            <p>Room code: </p>
+            <p class="corner" id="roomCode"></p>
+        </div>
+    </aside>
+    <aside class="hidden" hidden id="bookSection">
         <div class="title">
             <h1>Books</h1>
         </div>
         <hr>
         <ul id="bookList">
-            <li style="font-style:italic">Waiting for game to start...</li>
+            <li style="font-style:italic"></li>
         </ul>
     </aside>
 </main>
