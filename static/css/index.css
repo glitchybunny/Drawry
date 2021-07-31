@@ -52,7 +52,7 @@ section, aside {
     margin: 10px;
     background-color: #345678;
     filter: drop-shadow(4px 4px 0 #012345);
-    width: max-content;
+    width: auto;
     height: min-content;
 }
 
@@ -63,7 +63,7 @@ h1, label, p {
 h1 {
     font-weight: 700;
     margin: 10px auto;
-    width: 100%
+    width: 100%;
 }
 
 label {
@@ -73,6 +73,7 @@ label {
 
 ul {
     margin-top: 0;
+    margin-bottom: 8px;
 }
 
 li {
@@ -106,7 +107,7 @@ hr {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     white-space: nowrap;
 }
 
@@ -153,11 +154,10 @@ hr {
     max-width: 300px;
 }
 
-#playerSection, #bookSection {
-    width:auto;
-    min-width:220px;
-    min-height: 300px;
-    max-width:300px;
+#playerSection, #bookSection, #inviteSection {
+    min-width: 220px;
+    width: 220px;
+    min-height: 100px;
 }
 
 #setupSection {
@@ -169,6 +169,7 @@ hr {
     flex-flow: column nowrap;
     width: auto;
     align-items: center;
+    max-width: 800px;
 }
 
 #gameSettings {
@@ -176,6 +177,7 @@ hr {
     flex-flow: column nowrap;
 }
 
+/*noinspection CssInvalidPropertyValue*/
 #gameSettings > div, #mainGame {
     display: flex;
     flex-flow: row nowrap;
@@ -233,18 +235,60 @@ output {
 }
 
 #bookList > li {
-    display:flex;
-    flex-flow:column nowrap;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+#hostName:before {
+    content: "Host: ";
+}
+
+#pageCurrent:before {
+    content: "Page ";
+}
+
+#playerCount:before {
+    content: "(";
+}
+
+#playerCount:after {
+    content: "/10)";
+}
+
+#previousWrite {
+    font-size: 21px;
+    overflow-wrap: anywhere;
+    font-style: italic;
+    min-width: 300px;
+}
+
+#previousWrite:before {
+    content: '\201C';
+}
+
+#previousWrite:after {
+    content: '\201D';
+}
+
+#roomCode {
+    padding: 4px 8px;
+    background-color: #123456;
+    width: auto;
+    color:transparent;
+    text-shadow: rgba(255, 255, 255, 1) 0 0 10px;
+}
+
+#roomCode:hover {
+    cursor:pointer;
 }
 
 .bookAuthor {
-    font-size:12px;
-    font-style:italic;
+    font-size: 12px;
+    font-style: italic;
 }
 
 .corner {
     text-align: right;
-    margin: 10px 0;
     padding: 4px 8px;
     background-color: #123456;
     width: auto;

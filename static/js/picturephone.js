@@ -12,15 +12,15 @@ const ID = Cookies.get('id') | 0 ? Cookies.get('id') : (array[0].valueOf() + 1).
 const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 const USERS = {};
+const BOOKS = {};
 
 /// --- VARIABLES --- ///
 var name = undefined;
 var room = undefined;
 var roomSettings = undefined;
+var round = undefined;
 var host = undefined;
 var isHost = false;
-var books = undefined;
-var round = undefined;
 
 // Ensure browser compatibility
 if (!('getContext' in document.createElement('canvas'))) {
@@ -63,6 +63,7 @@ SOCKET.on('joined', (data) => {
     show(byId('mainGame'));
 
     // update DOM
+    byId('roomCode').innerText = room;
     updatePlayerList();
     updateHost();
     updateSettings();
@@ -106,17 +107,25 @@ SOCKET.on('settings', (data) => {
 // Start the game
 SOCKET.on('gameStart', (data) => {
     hide(byId('setupSection'));
+    hide(byId('inviteSection'));
     show(byId('gameSection'));
+    show(byId('bookSection'));
+
+    // Set round info
+    round = {
+        number: 0,
+        book: ID,
+        type: data.start
+    };
 
     // Load book page information
-    books = {};
-    Object.keys(data.books).forEach((id) => {
-        books[id] = {
-            title: (id === ID ? name : USERS[id].name) + "'s book",
-            author: id === ID ? name : USERS[id].name,
-            book: data.books[id]
+    for (let _id in data.books) {
+        BOOKS[_id] = {
+            title: (_id === ID ? name : USERS[_id].name) + "'s book",
+            author: _id === ID ? name : USERS[_id].name,
+            book: data.books[_id]
         }
-    });
+    }
     updateBookList();
 
     // Load start page
@@ -130,10 +139,7 @@ SOCKET.on('gameStart', (data) => {
             byId('pageType').innerText = "Drawing";
             break;
     }
-    byId('pageCurrent').innerText = 1;
-
-    // Set round number
-    round = 0;
+    byId('pageCurrent').innerText = (round.number + 1).toString();
 });
 
 // Disconnect from the server
@@ -161,12 +167,81 @@ SOCKET.on('disconnect', (data) => {
 });
 
 /// GAME EVENTS ///
+// Update book title
 SOCKET.on('bookTitle', (data) => {
-    let _title = htmlDecode(data.title);
-
-    // update title
-    books[data.id].title = _title;
+    BOOKS[data.id].title = htmlDecode(data.title);
     updateBookList();
+});
+
+// Get page info
+SOCKET.on('page', (data) => {
+    // Update local book variables
+    BOOKS[data.id].book[data.page] = {value: data.value, author: USERS[data.author].name};
+});
+
+// Go to next page in books
+SOCKET.on('nextPage', () => {
+    //                                      This function is SO MESSY
+    //                          Somebody raise an issue about this or I'm going to scream
+    document.body.style.cursor = '';
+    byId('inputPageSubmit').disabled = false;
+
+    // Ensure title input is hidden and previous page is visible
+    hide(byId('gameTitle'));
+    show(byId('gamePrevious'));
+
+    // Increment page number
+    round.number += 1;
+    byId('pageCurrent').innerText = (round.number + 1).toString();
+
+    // Figure out book and previous page
+    for (let _id in BOOKS) {
+        if (BOOKS[_id].book[round.number] === ID) {
+            round.book = _id;
+        }
+    }
+    let _previousPage = BOOKS[round.book].book[round.number-1];
+    byId('gamePreviousTitle').innerText = BOOKS[round.book].title;
+
+    // Change drawing <=> writing mode
+    if (round.type === "Write") {
+        // Change to drawing mode
+        byId('pageType').innerText = "Drawing";
+        byId('drawPrompt').innerText = "Draw what happens next!";
+        round.type = "Draw";
+        show(byId('gameDraw'));
+        hide(byId('gameWrite'));
+
+        // Show previous page
+        byId('previousWrite').innerText = htmlDecode(_previousPage.value);
+        show(byId('previousWrite'));
+        hide(byId('previousDraw'));
+
+    } else if (round.type === "Draw") {
+        // Change to writing mode
+        byId('pageType').innerText = "Writing";
+        byId('writePrompt').innerText = "What happens next?";
+        round.type = "Write";
+        show(byId('gameWrite'));
+        hide(byId('gameDraw'));
+
+        // Unlock input
+        byId('inputWrite').disabled = false;
+        byId('inputWrite').value = "";
+
+        // Show previous page
+        byId('previousDraw').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
+        show(byId('previousDraw'));
+        hide(byId('previousWrite'));
+    }
+
+    // Update book list info
+    updateBookList();
+
+    // Reset timer
+
+    // Done?
+    console.log(BOOKS[round.book]);
 });
 
 
@@ -202,6 +277,7 @@ function htmlDecode(input) {
 // Send settings to the server
 function emitSettings() {
     isHost ? SOCKET.emit("settings", {settings: roomSettings}) : SOCKET.disconnect();
+    updateSettings();
 }
 
 // Update settings in the DOM
@@ -239,8 +315,7 @@ function updateSettings() {
 // Update host information on the page
 function updateHost() {
     // Update the host name in the DOM
-    let _hostName = byId('hostName');
-    _hostName.title = _hostName.innerText = "Host: " + host;
+    byId('hostName').innerText = host;
 
     // Allow the client to edit settings if they're the host
     byId('setupSection').style.minWidth = isHost ? "500px" : "400px";
@@ -289,17 +364,22 @@ function updateBookList() {
     _bookList.innerHTML = '';
 
     // Update the list of books
-    for (let _id in books) {
+    for (let _id in BOOKS) {
         // Create elements
         let _book = document.createElement('li');
         let _bookTitle = document.createElement('span');
         let _bookAuthor = document.createElement('span');
 
-        // Change their values
-        _bookTitle.innerText = books[_id].title;
+        // Assign the correct classes for styling
         _bookTitle.className = "bookTitle";
-        _bookAuthor.innerText = "by " + books[_id].author;
         _bookAuthor.className = "bookAuthor";
+
+        // Display who's working on the current page of the book
+        let _num = (round.number + 1).toString();
+        let _page = BOOKS[_id].book[round.number];
+        let _author = _page.author ?? (_page === ID) ? name : USERS[_page].name;
+        _bookTitle.innerText = BOOKS[_id].title;
+        _bookAuthor.innerText = "Pg " + _num + " - " + _author;
 
         // Add to DOM
         _book.appendChild(_bookTitle);
@@ -419,8 +499,59 @@ function show(e) {
 
     // Game: Let player change their title
     byId('inputTitle').addEventListener('change', (e) => {
-        SOCKET.emit('updateBookTitle', e.target.value);
-        books[ID].title = e.target.value;
+        let _title = e.target.value.substr(0, 40);
+        SOCKET.emit('updateBookTitle', _title);
+        BOOKS[ID].title = _title;
         updateBookList();
     })
+
+    // Game: Submit page
+    byId('inputPageSubmit').addEventListener('click', (e) => {
+        let _value;
+
+        // Put client in waiting state
+        e.target.disabled = true;
+        document.body.style.cursor = 'wait';
+
+        // Get title input if it's the first round
+        if (round.number === 0) {
+            let _inputTitle, _title;
+            _inputTitle = byId('inputTitle');
+            _inputTitle.disabled = true;
+
+            if (_inputTitle.reportValidity()) {
+                _title = _inputTitle.value.substr(0, 40);
+
+                // If a title has been entered, update it
+                if (_title) {
+                    SOCKET.emit('updateBookTitle', _title);
+                    BOOKS[ID].title = _title;
+                }
+            }
+        }
+
+        // Get write input if it's a writing round
+        if (round.type === "Write") {
+            let _inputWrite;
+            _inputWrite = byId('inputWrite');
+            _inputWrite.disabled = true;
+
+            if (_inputWrite.reportValidity()) {
+                _value = _inputWrite.value.substr(0, 80);
+            }
+        }
+
+        // Get draw input if it's a drawing round
+        else if (round.type === "Draw") {
+            let _inputDraw;
+            _value = "draw"; // canvas data, etc
+        }
+
+        // Send page to the server
+        if (_value === undefined) {
+            SOCKET.emit('submitPage', {type: undefined, value: _value});
+        } else {
+            SOCKET.emit('submitPage', {type: round.type, value: _value});
+        }
+    });
 }
