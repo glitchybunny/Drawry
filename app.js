@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
 
         // fetch client values
         let _client = CLIENTS[socket.id];
-        _client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, '')  || 0;
+        _client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, '') || 0;
         _client.name = xss(data.name.substr(0, 32));
         _client.room = xss(data.room.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
 
@@ -72,11 +72,15 @@ io.on('connection', (socket) => {
 
             // if room doesn't exist, create it and make client the host
             if (!ROOMS.hasOwnProperty(_client.room)) {
+                // create room
                 ROOMS[_client.room] = {
                     clients: [],
                     host: socket.id,
                     settings: SETTINGS_DEFAULT,
-                    state: STATE.LOBBY
+                    state: STATE.LOBBY,
+                    page: 0,
+                    submitted: 0,
+                    books: undefined
                 }
             }
 
@@ -134,7 +138,7 @@ io.on('connection', (socket) => {
         let _room = ROOMS[_roomID];
 
         // Make sure user is the host, player count is reached, and settings are valid
-        if (socket.id === _room.host && _room.clients.length >= 2 && verifySettings(data.settings)) {
+        if (socket.id === _room.host && _room.clients.length >= 2 && verifySettings(data.settings) && _room.state === STATE.LOBBY) {
             // Update settings, change room state
             _room.settings = data.settings;
             _room.state = STATE.PLAYING;
@@ -154,7 +158,7 @@ io.on('connection', (socket) => {
 
     // Update a player's book title
     socket.on('updateBookTitle', (data) => {
-        let _id = CLIENTS[socket.id].id
+        let _id = CLIENTS[socket.id].id;
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
@@ -163,9 +167,52 @@ io.on('connection', (socket) => {
 
         // send title to other players
         if (_room.page === 0) {
-            socket.to(_roomID).emit("bookTitle", {id:_id, title:_title});
+            socket.to(_roomID).emit("bookTitle", {id: _id, title: _title});
         }
-    })
+    });
+
+    // Get writing page from player
+    socket.on('submitPage', (data) => {
+        let _id = CLIENTS[socket.id].id;
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
+        let _value = undefined;
+
+        // Fetch page data
+        if (data.type === "Write") {
+            // Data is text
+            _value = xss(data.value.substr(0, 80));
+
+        } else if (data.type === "Draw") {
+            // Data is encoded image
+            // make sure the ArrayBuffer is expected size
+        }
+
+        // Identify book ID to update
+        let _bookID;
+        for (let i of Object.keys(_room.books)) {
+            if (_room.books[i][_room.page] === _id) {
+                _bookID = i;
+                break;
+            }
+        }
+
+        // Verify data.type is valid
+        let _expected = ((_room.firstPage === "Write") ^ (_room.page % 2)) ? "Draw" : "Write";
+        if (_expected !== data.type) {
+            // Client trying to send tampered data, overwrite
+            _value = undefined;
+        }
+
+        socket.to(_roomID).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id});
+
+        // Check if all players have submitted
+        _room.submitted += 1;
+        if (_room.submitted === _room.clients.length) {
+            _room.submitted = 0;
+            io.to(_roomID).emit('nextPage');
+        }
+    });
 
     // Listen for disconnect events
     socket.on('disconnect', (data) => {
