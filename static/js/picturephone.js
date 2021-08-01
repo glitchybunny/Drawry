@@ -176,7 +176,7 @@ SOCKET.on('bookTitle', (data) => {
 // Get page info
 SOCKET.on('page', (data) => {
     // Update local book variables
-    BOOKS[data.id].book[data.page] = {value: data.value, author: USERS[data.author].name};
+    BOOKS[data.id].book[data.page] = {value: data.value, author: data.author};
 });
 
 // Go to next page in books
@@ -241,7 +241,7 @@ SOCKET.on('nextPage', () => {
     // Reset timer
 
     // Done?
-    console.log(BOOKS[round.book]);
+    console.log(BOOKS);
 });
 
 
@@ -377,7 +377,8 @@ function updateBookList() {
         // Display who's working on the current page of the book
         let _num = (round.number + 1).toString();
         let _page = BOOKS[_id].book[round.number];
-        let _author = _page.author ?? (_page === ID) ? name : USERS[_page].name;
+        let _authorID = _page.author ?? _page;
+        let _author = (_authorID === ID) ? name : USERS[_authorID].name;
         _bookTitle.innerText = BOOKS[_id].title;
         _bookAuthor.innerText = "Pg " + _num + " - " + _author;
 
@@ -443,8 +444,10 @@ function show(e) {
     // Setup: First page
     document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
         elem.addEventListener('input', (e) => {
-            roomSettings.firstPage = e.target.value;
-            emitSettings();
+            if (roomSettings) {
+                roomSettings.firstPage = e.target.value;
+                emitSettings();
+            }
         })
     });
 
@@ -454,22 +457,28 @@ function show(e) {
         byId('pageCountDisplay').innerText = e.target.value;
     });
     _pageCount.addEventListener('change', (e) => {
-        roomSettings.pageCount = e.target.value;
-        emitSettings();
+        if (roomSettings) {
+            roomSettings.pageCount = e.target.value;
+            emitSettings();
+        }
     });
 
     // Setup: Page assignment
     document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
         elem.addEventListener('input', (e) => {
-            roomSettings.pageOrder = e.target.value;
-            emitSettings();
+            if (roomSettings) {
+                roomSettings.pageOrder = e.target.value;
+                emitSettings();
+            }
         });
     });
 
     // Setup: Colour palette
     byId('colourPalette').addEventListener('input', (e) => {
-        roomSettings.palette = e.target.value;
-        emitSettings();
+        if (roomSettings) {
+            roomSettings.palette = e.target.value;
+            emitSettings();
+        }
     });
 
     // Setup: Write time limit
@@ -478,8 +487,10 @@ function show(e) {
         byId('timeWriteDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
     });
     _timeWrite.addEventListener('change', (e) => {
-        roomSettings.timeWrite = e.target.value;
-        emitSettings();
+        if (roomSettings) {
+            roomSettings.timeWrite = e.target.value;
+            emitSettings();
+        }
     });
 
     // Setup: Draw time limit
@@ -488,13 +499,17 @@ function show(e) {
         byId('timeDrawDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
     });
     _timeDraw.addEventListener('change', (e) => {
-        roomSettings.timeDraw = e.target.value;
-        emitSettings();
+        if (roomSettings) {
+            roomSettings.timeDraw = e.target.value;
+            emitSettings();
+        }
     });
 
     // Setup: Start game button
     byId('inputStart').addEventListener('click', () => {
-        SOCKET.emit('startGame', {settings: roomSettings});
+        if (roomSettings) {
+            SOCKET.emit('startGame', {settings: roomSettings});
+        }
     })
 
     // Game: Let player change their title
@@ -553,5 +568,8 @@ function show(e) {
         } else {
             SOCKET.emit('submitPage', {type: round.type, value: _value});
         }
+
+        // Update page in your own books
+        BOOKS[round.book].book[round.number] = {value: _value, author: ID};
     });
 }
