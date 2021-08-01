@@ -1,6 +1,6 @@
 /*
     picturephone
-    picturephone.js
+    client.js
     a multiplayer art experiment by Riley Taylor (rtay.io)
 */
 "use strict";

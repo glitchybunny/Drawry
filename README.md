@@ -11,13 +11,13 @@ Inspired by drawception, brokenpicturephone, and a plethora of other games in th
 :art:
 
 ### Running your own server
-For reference, app.js is the node server, and /static/js/picturephone.js is the main javascript module loaded by the client when they connect.
+For reference, server.js is the node server, and /static/js/client.js is the main javascript module for the client.
 
 **How to run locally:**
 1. Make sure you have npm and nodejs installed - they're required for this.
 2. Clone the repo and navigate to the cloned directory.
 3. Run `npm install` to download all the dependencies.
-4. Run `node app.js` to test the server locally.
+4. Run `node server.js` to test the server locally.
 5. Connect to the server by going to `localhost` or `127.0.0.1` in your browser.
 
 **How to run on heroku:**
