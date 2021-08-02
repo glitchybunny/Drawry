@@ -124,7 +124,7 @@
                 </div>
             </div>
             <div>
-                <dfn aria-labe="Time limit per drawing page (in minutes)" id="timeDrawLabel"
+                <dfn aria-label="Time limit per drawing page (in minutes)" id="timeDrawLabel"
                      title="Time limit per drawing page (in minutes)">
                     Draw time limit
                 </dfn>
@@ -160,7 +160,9 @@
         <section class="hidden" hidden id="gamePrevious">
             <p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
             <p class="hidden" hidden id="previousWrite"></p>
-            <img alt="" class="hidden" hidden id="previousDraw" src="img/placeholder.png"/>
+            <div id="previousDraw" class="hidden" hidden>
+                <img id="previousDrawImg" alt="" src="img/placeholder.png"/>
+            </div>
         </section>
         <section id="gameArea">
             <div class="title">
@@ -174,7 +176,7 @@
                 </label>
                 <br/>
                 <input autocomplete="off" id="inputWrite" maxlength="80" minlength="1" placeholder="Keep it simple!"
-                       required size="40" spellcheck="true" type="text">
+                       required size="35" spellcheck="true" type="text">
             </div>
             <div class="hidden" hidden id="gameDraw">
                 <p id="drawPrompt">Draw the first page!</p>
