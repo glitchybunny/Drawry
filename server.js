@@ -19,7 +19,8 @@ const CLIENTS = [];
 const SOCKETS = [];
 const ROOMS = {};
 
-// Important values
+// Other constants
+const VERBOSE = false;
 const MAX_ROOM_SIZE = 10;
 const SETTINGS_DEFAULT = {
     firstPage: 'Write',
@@ -52,6 +53,10 @@ io.on('connection', (socket) => {
 
     // Listen for client joining room
     socket.on('joinRoom', (data) => {
+        if (VERBOSE) {
+            console.log('joinRoom', data);
+        }
+
         // first of all, make sure no two clients connect with the same ID
         for (let _socketID in CLIENTS) {
             if (data.id === CLIENTS[_socketID].id) {
@@ -115,6 +120,10 @@ io.on('connection', (socket) => {
 
     // Listen for room settings changes
     socket.on('settings', (data) => {
+        if (VERBOSE) {
+            console.log('settings', CLIENTS[socket.id].id, data);
+        }
+
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
@@ -134,6 +143,10 @@ io.on('connection', (socket) => {
 
     // Start the game for the room
     socket.on('startGame', (data) => {
+        if (VERBOSE) {
+            console.log('startGame', CLIENTS[socket.id].id, data);
+        }
+
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
 
@@ -158,6 +171,10 @@ io.on('connection', (socket) => {
 
     // Update a player's book title
     socket.on('updateBookTitle', (data) => {
+        if (VERBOSE) {
+            console.log('updateBookTitle', CLIENTS[socket.id].id, data);
+        }
+
         let _id = CLIENTS[socket.id].id;
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
@@ -173,6 +190,10 @@ io.on('connection', (socket) => {
 
     // Get writing page from player
     socket.on('submitPage', (data) => {
+        if (VERBOSE) {
+            console.log('submitPage', CLIENTS[socket.id].id, data);
+        }
+
         let _id = CLIENTS[socket.id].id;
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
@@ -198,24 +219,38 @@ io.on('connection', (socket) => {
         }
 
         // Verify data.type is valid
-        let _expected = ((_room.firstPage === "Write") ^ (_room.page % 2)) ? "Draw" : "Write";
+        let _expected = ((_room.settings.firstPage === "Write") ^ (_room.page % 2)) ? "Write" : "Draw";
         if (_expected !== data.type) {
             // Client trying to send tampered data, overwrite
             _value = undefined;
         }
 
-        socket.to(_roomID).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id});
+        // Send page data to all players
+        io.to(_roomID).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id});
 
         // Check if all players have submitted
         _room.submitted += 1;
         if (_room.submitted === _room.clients.length) {
             _room.submitted = 0;
-            io.to(_roomID).emit('nextPage');
+            _room.page += 1;
+
+            if (_room.page === parseInt(_room.settings.pageCount)) {
+                // Finished game, don't go to next page and instead show end screen
+                io.to(_roomID).emit('donezo');
+
+            } else {
+                // Go to next page
+                io.to(_roomID).emit('nextPage');
+            }
         }
     });
 
     // Listen for disconnect events
     socket.on('disconnect', (data) => {
+        if (VERBOSE) {
+            console.log('disconnect', CLIENTS[socket.id].id, data);
+        }
+
         if (CLIENTS[socket.id].id && CLIENTS[socket.id].room) {
             // remove client from the room if they've joined one
             let _id = CLIENTS[socket.id].id;
@@ -238,7 +273,7 @@ io.on('connection', (socket) => {
                     delete ROOMS[_roomID];
                 } else {
                     // if the host disconnected, assign a new host
-                    if (socket.id == _room.host) {
+                    if (socket.id === _room.host) {
                         _room.host = _clients[0];
                         socket.to(_roomID).emit("host", CLIENTS[_room.host].id);
                     }
