@@ -45,8 +45,8 @@ dfn {
 }
 
 img {
-    height:calc(100vh - 360px);
-    min-height:100px;
+    height: calc(100vh - 360px);
+    min-height: 100px;
 }
 
 body, section, aside {
@@ -176,7 +176,7 @@ hr {
     flex-flow: column nowrap;
     width: auto;
     max-width: 800px;
-    height:100vh;
+    height: 100vh;
     align-items: center;
     justify-content: center;
 }
@@ -280,10 +280,11 @@ output {
 }
 
 #previousDraw {
-    display:flex;
-    max-width:100%;
-    max-height:calc(100vh - 360px);
-    min-height:100px;
+    display: flex;
+    justify-content: center;
+    max-width: 100%;
+    max-height: calc(100vh - 360px);
+    min-height: 100px;
 }
 
 #roomCode {
