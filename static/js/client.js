@@ -528,23 +528,6 @@ function show(e) {
         e.target.disabled = true;
         document.body.style.cursor = 'wait';
 
-        // Get title input if it's the first round
-        if (round.number === 0) {
-            let _inputTitle, _title;
-            _inputTitle = byId('inputTitle');
-            _inputTitle.disabled = true;
-
-            if (_inputTitle.reportValidity()) {
-                _title = _inputTitle.value.substr(0, 40);
-
-                // If a title has been entered, update it
-                if (_title) {
-                    SOCKET.emit('updateBookTitle', _title);
-                    BOOKS[ID].title = _title;
-                }
-            }
-        }
-
         // Get write input if it's a writing round
         if (round.type === "Write") {
             let _inputWrite;
@@ -570,6 +553,6 @@ function show(e) {
         }
 
         // Update page in your own books
-        BOOKS[round.book].book[round.number] = {value: _value, author: ID};
+        //BOOKS[round.book].book[round.number] = {value: _value, author: ID};
     });
 }
