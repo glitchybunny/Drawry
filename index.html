@@ -160,8 +160,8 @@
         <section class="hidden" hidden id="gamePrevious">
             <p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
             <p class="hidden" hidden id="previousWrite"></p>
-            <div id="previousDraw" class="hidden" hidden>
-                <img id="previousDrawImg" alt="" src="img/placeholder.png"/>
+            <div class="hidden" hidden id="previousDraw">
+                <img alt="" id="previousDrawImg" src="img/placeholder.png"/>
             </div>
         </section>
         <section id="gameArea">
@@ -179,7 +179,8 @@
                        required size="35" spellcheck="true" type="text">
             </div>
             <div class="hidden" hidden id="gameDraw">
-                <p id="drawPrompt">Draw the first page!</p>
+                <img alt="" id="canvasBase" src="img/base.png">
+                <canvas height="600" id="c" width="800"></canvas>
             </div>
             <hr>
             <input class="right" id="inputPageSubmit" type="button" value="Submit">
@@ -208,7 +209,8 @@
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
 <script src="/js/socket.io.js"></script>
 <script src="/js/cookies.min.js"></script>
-<script src="/js/client.js"></script>
+<script src="/js/fabric.min.js"></script>
+<script src="/js/client.js" type="module"></script>
 <script>
     function enterPress(e, id) {
         e = e || window.event;
