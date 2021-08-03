@@ -137,6 +137,7 @@ SOCKET.on('gameStart', (data) => {
         case("Draw"):
             show(byId('gameDraw'));
             byId('pageType').innerText = "Drawing";
+            resizeCanvas();
             break;
     }
     byId('pageCurrent').innerText = (round.number + 1).toString();
@@ -200,17 +201,24 @@ SOCKET.on('nextPage', () => {
             round.book = _id;
         }
     }
-    let _previousPage = BOOKS[round.book].book[round.number-1];
+    let _previousPage = BOOKS[round.book].book[round.number - 1];
     byId('gamePreviousTitle').innerText = BOOKS[round.book].title;
 
     // Change drawing <=> writing mode
     if (round.type === "Write") {
         // Change to drawing mode
         byId('pageType').innerText = "Drawing";
-        byId('drawPrompt').innerText = "Draw what happens next!";
         round.type = "Draw";
         show(byId('gameDraw'));
         hide(byId('gameWrite'));
+
+        // Resize, clear and enable canvas
+        resizeCanvas();
+        CANVAS.clear();
+        CANVAS.setBackgroundColor('#FFFFFF');
+        document.querySelectorAll("canvas").forEach((elem) => {
+            elem.style.pointerEvents = 'auto';
+        });
 
         // Show previous page
         byId('previousWrite').innerText = htmlDecode(_previousPage.value);
@@ -541,8 +549,16 @@ function show(e) {
 
         // Get draw input if it's a drawing round
         else if (round.type === "Draw") {
-            let _inputDraw;
-            _value = "draw"; // canvas data, etc
+            // Export canvas data to base64
+            _value = CANVAS.toDataURL({
+                format: 'png',
+                multiplier: (800 / CANVAS.getWidth())
+            });
+
+            // Lock canvas from any further drawing/editing
+            document.querySelectorAll("canvas").forEach((elem) => {
+                elem.style.pointerEvents = 'none';
+            });
         }
 
         // Send page to the server
@@ -556,3 +572,21 @@ function show(e) {
         //BOOKS[round.book].book[round.number] = {value: _value, author: ID};
     });
 }
+
+/// --- CANVAS --- ///
+// Canvas drawing
+const CANVAS = new fabric.Canvas('c', {
+    isDrawingMode: true
+});
+CANVAS.setBackgroundColor('#FFFFFF');
+
+// Resize the drawing canvas
+function resizeCanvas() {
+    let base = byId('canvasBase');
+    let zoom = CANVAS.getZoom() * (base.clientWidth / CANVAS.getWidth());
+
+    CANVAS.setDimensions({width: base.clientWidth, height: base.clientHeight});
+    CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+}
+
+window.addEventListener('resize', resizeCanvas);
