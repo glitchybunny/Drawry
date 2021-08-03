@@ -47,6 +47,7 @@ dfn {
 img {
     height: calc(100vh - 360px);
     min-height: 100px;
+    background-color: white;
 }
 
 body, section, aside {
@@ -122,6 +123,10 @@ hr {
     filter: drop-shadow(1px 1px 0 #123456);
     width: auto;
     margin: 10px 0;
+}
+
+.canvas-container {
+    position: absolute !important;
 }
 
 
@@ -279,7 +284,7 @@ output {
     content: '\201D';
 }
 
-#previousDraw {
+#previousDraw, #gameDraw {
     display: flex;
     justify-content: center;
     max-width: 100%;
