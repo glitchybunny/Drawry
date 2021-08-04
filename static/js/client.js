@@ -216,9 +216,7 @@ SOCKET.on('nextPage', () => {
         resizeCanvas();
         CANVAS.clear();
         CANVAS.setBackgroundColor('#FFFFFF');
-        document.querySelectorAll("canvas").forEach((elem) => {
-            elem.style.pointerEvents = 'auto';
-        });
+        CANVAS.isDrawingMode = true;
 
         // Show previous page
         byId('previousWrite').innerText = htmlDecode(_previousPage.value);
@@ -238,7 +236,7 @@ SOCKET.on('nextPage', () => {
         byId('inputWrite').value = "";
 
         // Show previous page
-        byId('previousDraw').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
+        byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
         show(byId('previousDraw'));
         hide(byId('previousWrite'));
     }
@@ -249,7 +247,6 @@ SOCKET.on('nextPage', () => {
     // Reset timer
 
     // Done?
-    console.log(BOOKS);
 });
 
 
@@ -556,8 +553,11 @@ function show(e) {
             });
 
             // Lock canvas from any further drawing/editing
-            document.querySelectorAll("canvas").forEach((elem) => {
-                elem.style.pointerEvents = 'none';
+            CANVAS.isDrawingMode = false;
+            CANVAS.selection = false;
+            CANVAS.forEachObject(function (object) {
+                object.selectable = false;
+                object.evented = false;
             });
         }
 
