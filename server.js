@@ -13,6 +13,7 @@ const io = require('socket.io')(server);
 const http = require('http');
 const xss = require("xss");
 const path = require('path');
+const sizeOf = require('image-size');
 
 // Server side variables (to keep track of games)
 const CLIENTS = [];
@@ -191,7 +192,7 @@ io.on('connection', (socket) => {
     // Get writing page from player
     socket.on('submitPage', (data) => {
         if (VERBOSE) {
-            console.log('submitPage', CLIENTS[socket.id].id, data);
+            console.log('submitPage', CLIENTS[socket.id].id, data.type, data.value.substr(0, 50));
         }
 
         let _id = CLIENTS[socket.id].id;
@@ -206,7 +207,20 @@ io.on('connection', (socket) => {
 
         } else if (data.type === "Draw") {
             // Data is encoded image
-            // make sure the ArrayBuffer is expected size
+            // make sure the image is expected format
+            if (data.value.indexOf('data:image/png;base64,') === 0) {
+                let img = Buffer.from(data.value.split(';base64,').pop(), 'base64')
+                let dimensions = sizeOf(img);
+
+                // make sure image is correct size
+                if (dimensions.width === 800 && dimensions.height === 600) {
+                    _value = data.value;
+                } else {
+                    console.log("unexpected image size", dimensions.width, dimensions.height);
+                }
+            } else {
+                console.log("unexpected image format", data.value.substr(0, 22));
+            }
         }
 
         // Identify book ID to update
