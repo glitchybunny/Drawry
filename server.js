@@ -53,6 +53,9 @@ io.on('connection', (socket) => {
     CLIENTS[socket.id] = {};
     SOCKETS[socket.id] = socket;
 
+
+    /// --- LOBBY --- ///
+
     // Listen for client joining room
     socket.on('joinRoom', (data) => {
         if (VERBOSE) {
@@ -143,6 +146,9 @@ io.on('connection', (socket) => {
         }
     });
 
+
+    /// --- GAME --- ///
+
     // Start the game for the room
     socket.on('startGame', (data) => {
         if (VERBOSE) {
@@ -162,8 +168,8 @@ io.on('connection', (socket) => {
             // Generate page assignment order for books
             generateBooks(_room);
 
-            // Start gane
-            io.to(_roomID).emit('gameStart', {books: _room.books, start: _room.settings.firstPage});
+            // Start game
+            io.to(_roomID).emit('startGame', {books: _room.books, start: _room.settings.firstPage});
 
         } else {
             // Invalid request, kick from game
@@ -263,12 +269,21 @@ io.on('connection', (socket) => {
             if (_room.page === parseInt(_room.settings.pageCount)) {
                 // Finished creation part of game, move to presenting
                 _room.state = STATE.PRESENTING;
+                io.to(_roomID).emit('startPresenting')
             } else {
                 // Go to next page
                 io.to(_roomID).emit('nextPage');
             }
         }
     });
+
+
+    /// --- PRESENTING --- ///
+
+
+
+
+    /// --- END --- ///
 
     // Listen for disconnect events
     socket.on('disconnect', (data) => {
@@ -300,7 +315,7 @@ io.on('connection', (socket) => {
                     // if the host disconnected, assign a new host
                     if (socket.id === _room.host) {
                         _room.host = _clients[0];
-                        socket.to(_roomID).emit("host", CLIENTS[_room.host].id);
+                        socket.to(_roomID).emit("userHost", CLIENTS[_room.host].id);
                     }
                 }
             }
