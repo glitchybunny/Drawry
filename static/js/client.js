@@ -217,6 +217,7 @@ SOCKET.on('nextPage', () => {
         CANVAS.clear();
         CANVAS.setBackgroundColor('#FFFFFF');
         CANVAS.isDrawingMode = true;
+        CANVAS.selection = true;
 
         // Show previous page
         byId('previousWrite').innerText = htmlDecode(_previousPage.value);
@@ -281,7 +282,7 @@ function htmlDecode(input) {
 
 // Send settings to the server
 function emitSettings() {
-    isHost ? SOCKET.emit("settings", {settings: roomSettings}) : SOCKET.disconnect();
+    isHost ? SOCKET.emit("settings", {settings: roomSettings, key: SESSION_KEY}) : SOCKET.disconnect();
     updateSettings();
 }
 
@@ -441,7 +442,8 @@ function show(e) {
             SOCKET.emit("joinRoom", {
                 id: ID,
                 name: name,
-                room: room
+                room: room,
+                key: SESSION_KEY
             });
         }
     });
@@ -513,14 +515,14 @@ function show(e) {
     // Setup: Start game button
     byId('inputStart').addEventListener('click', () => {
         if (roomSettings) {
-            SOCKET.emit('startGame', {settings: roomSettings});
+            SOCKET.emit('startGame', {settings: roomSettings, key: SESSION_KEY});
         }
     })
 
     // Game: Let player change their title
     byId('inputTitle').addEventListener('change', (e) => {
         let _title = e.target.value.substr(0, 40);
-        SOCKET.emit('updateBookTitle', _title);
+        SOCKET.emit('updateBookTitle', {title: _title, key: SESSION_KEY});
         BOOKS[ID].title = _title;
         updateBookList();
     })
@@ -563,9 +565,9 @@ function show(e) {
 
         // Send page to the server
         if (_value === undefined) {
-            SOCKET.emit('submitPage', {type: undefined, value: _value});
+            SOCKET.emit('submitPage', {type: undefined, value: _value, key: SESSION_KEY});
         } else {
-            SOCKET.emit('submitPage', {type: round.type, value: _value});
+            SOCKET.emit('submitPage', {type: round.type, value: _value, key: SESSION_KEY});
         }
 
         // Update page in your own books
