@@ -42,7 +42,8 @@ const SETTINGS_CONSTRAINTS = {
 const STATE = {
     LOBBY: 0,
     PLAYING: 1,
-    END: 2
+    PRESENTING: 2,
+    END: 3
 };
 
 
@@ -55,7 +56,7 @@ io.on('connection', (socket) => {
     // Listen for client joining room
     socket.on('joinRoom', (data) => {
         if (VERBOSE) {
-            console.log('joinRoom', data);
+            console.log('joinRoom', data.id, {name: data.name, room: data.room});
         }
 
         // first of all, make sure no two clients connect with the same ID
@@ -122,7 +123,7 @@ io.on('connection', (socket) => {
     // Listen for room settings changes
     socket.on('settings', (data) => {
         if (VERBOSE) {
-            console.log('settings', CLIENTS[socket.id].id, data);
+            console.log('settings', CLIENTS[socket.id].id, data.settings);
         }
 
         let _roomID = CLIENTS[socket.id].room;
@@ -145,7 +146,7 @@ io.on('connection', (socket) => {
     // Start the game for the room
     socket.on('startGame', (data) => {
         if (VERBOSE) {
-            console.log('startGame', CLIENTS[socket.id].id, data);
+            console.log('startGame', CLIENTS[socket.id].id, data.settings);
         }
 
         let _roomID = CLIENTS[socket.id].room;
@@ -173,7 +174,7 @@ io.on('connection', (socket) => {
     // Update a player's book title
     socket.on('updateBookTitle', (data) => {
         if (VERBOSE) {
-            console.log('updateBookTitle', CLIENTS[socket.id].id, data);
+            console.log('updateBookTitle', CLIENTS[socket.id].id, {title: data.title});
         }
 
         let _id = CLIENTS[socket.id].id;
@@ -181,7 +182,7 @@ io.on('connection', (socket) => {
         let _room = ROOMS[_roomID];
 
         // make sure to sanitise title string
-        let _title = xss(data.substr(0, 40));
+        let _title = xss(data.title.substr(0, 40));
 
         // send title to other players
         if (_room.page === 0) {
@@ -192,9 +193,11 @@ io.on('connection', (socket) => {
     // Get writing page from player
     socket.on('submitPage', (data) => {
         if (VERBOSE) {
-            console.log('submitPage', CLIENTS[socket.id].id, data.type, data.value.substr(0, 50));
+            console.log('submitPage', CLIENTS[socket.id].id, {
+                type: data.type,
+                value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : "")
+            });
         }
-
         let _id = CLIENTS[socket.id].id;
         let _roomID = CLIENTS[socket.id].room;
         let _room = ROOMS[_roomID];
@@ -216,10 +219,19 @@ io.on('connection', (socket) => {
                 if (dimensions.width === 800 && dimensions.height === 600) {
                     _value = data.value;
                 } else {
-                    console.log("unexpected image size", dimensions.width, dimensions.height);
+                    // if it's not the correct size, check if it's within a reasonable tolerance range (1%)
+                    let _diffWidth = Math.abs(dimensions.width - 800);
+                    let _diffHeight = Math.abs(dimensions.height - 600);
+                    if (_diffWidth < 8 && _diffHeight < 6) {
+                        // Send image data anyway, it's close enough
+                        _value = data.value;
+                        // TODO: Either resize on server or tell client to resize image?
+                    } else {
+                        console.log("ERROR unexpected image size", [dimensions.width, dimensions.height]);
+                    }
                 }
             } else {
-                console.log("unexpected image format", data.value.substr(0, 22));
+                console.log("ERROR unexpected image format", {format: data.value.substr(0, 22)});
             }
         }
 
@@ -249,9 +261,8 @@ io.on('connection', (socket) => {
             _room.page += 1;
 
             if (_room.page === parseInt(_room.settings.pageCount)) {
-                // Finished game, don't go to next page and instead show end screen
-                io.to(_roomID).emit('donezo');
-
+                // Finished creation part of game, move to presenting
+                _room.state = STATE.PRESENTING;
             } else {
                 // Go to next page
                 io.to(_roomID).emit('nextPage');
@@ -262,7 +273,7 @@ io.on('connection', (socket) => {
     // Listen for disconnect events
     socket.on('disconnect', (data) => {
         if (VERBOSE) {
-            console.log('disconnect', CLIENTS[socket.id].id, data);
+            console.log('disconnect', CLIENTS[socket.id].id, {type: data});
         }
 
         if (CLIENTS[socket.id].id && CLIENTS[socket.id].room) {
