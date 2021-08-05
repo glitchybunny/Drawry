@@ -161,12 +161,8 @@ SOCKET.on('page', (data) => {
 
 // Go to next page in books
 SOCKET.on('nextPage', () => {
-    //                                      This function is SO MESSY
-    //                          Somebody raise an issue about this or I'm going to scream
+    // Update DOM
     document.body.style.cursor = '';
-    byId('inputPageSubmit').disabled = false;
-
-    // Ensure title input is hidden and previous page is visible
     hide(byId('gameTitle'));
     show(byId('gamePrevious'));
 
@@ -186,17 +182,10 @@ SOCKET.on('nextPage', () => {
     // Change drawing <=> writing mode
     if (round.type === "Write") {
         // Change to drawing mode
-        byId('pageType').innerText = "Drawing";
         round.type = "Draw";
+        byId('pageType').innerText = "Drawing";
         show(byId('gameDraw'));
         hide(byId('gameWrite'));
-
-        // Resize, clear and enable canvas
-        resizeCanvas();
-        CANVAS.clear();
-        CANVAS.setBackgroundColor('#FFFFFF');
-        CANVAS.isDrawingMode = true;
-        CANVAS.selection = true;
 
         // Show previous page
         byId('previousWrite').innerText = htmlDecode(_previousPage.value);
@@ -205,15 +194,11 @@ SOCKET.on('nextPage', () => {
 
     } else if (round.type === "Draw") {
         // Change to writing mode
+        round.type = "Write";
         byId('pageType').innerText = "Writing";
         byId('writePrompt').innerText = "What happens next?";
-        round.type = "Write";
         show(byId('gameWrite'));
         hide(byId('gameDraw'));
-
-        // Unlock input
-        byId('inputWrite').disabled = false;
-        byId('inputWrite').value = "";
 
         // Show previous page
         byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
@@ -221,10 +206,22 @@ SOCKET.on('nextPage', () => {
         hide(byId('previousWrite'));
     }
 
+    /// Reset and clear inputs
+    byId('inputPageSubmit').disabled = false;
+    // Drawing
+    resizeCanvas();
+    CANVAS.clear();
+    CANVAS.setBackgroundColor('#FFFFFF');
+    CANVAS.isDrawingMode = true;
+    CANVAS.selection = true;
+    // Writing
+    byId('inputWrite').disabled = false;
+    byId('inputWrite').value = "";
+
     // Update book list info
     updateBookList();
 
-    // Reset timer
+    // Set timer
 
     // Done?
 });
@@ -233,6 +230,8 @@ SOCKET.on('nextPage', () => {
 /// --- PRESENTING --- ///
 // Start presenting mode
 SOCKET.on('startPresenting', () => {
+    // Update DOM
+    document.body.style.cursor = '';
     hide(byId('gameSection'));
     show(byId('presentSection'));
 });
@@ -330,7 +329,9 @@ function updateSettings() {
 // Update host information on the page
 function updateHost() {
     // Update the host name in the DOM
-    byId('hostName').innerText = host;
+    document.querySelectorAll('.hostName').forEach((elem) => {
+        elem.innerText = host;
+    })
 
     // Allow the client to edit settings if they're the host
     byId('setupSection').style.minWidth = isHost ? "500px" : "400px";
