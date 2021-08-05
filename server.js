@@ -280,7 +280,16 @@ io.on('connection', (socket) => {
 
     /// --- PRESENTING --- ///
 
+    // Let the host choose which book to present
 
+
+    // Go to next page of presentation
+
+
+    // Go to previous page of presentation (hide most recently shown page)
+
+
+    // Return to lobby for next book
 
 
     /// --- END --- ///

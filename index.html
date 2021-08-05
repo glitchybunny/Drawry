@@ -34,10 +34,11 @@
         <hr>
         <ul id="playerList"></ul>
     </aside>
+
     <section id="setupSection">
         <div class="title">
             <h1>Game Setup</h1>
-            <p class="corner" id="hostName"></p>
+            <p class="corner hostName"></p>
         </div>
         <hr>
         <div id="gameSettings">
@@ -138,7 +139,7 @@
             </div>
         </div>
         <hr>
-        <div class="isHost hidden">
+        <div class="isHost hidden" hidden>
             <p id="inputStartWarning" style="text-align:center; font-style:italic; width:100%;">Two or more players
                 required to start...</p>
             <input class="hidden" hidden id="inputStart" type="button" value="Start game">
@@ -147,6 +148,7 @@
             <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start the game...</p>
         </div>
     </section>
+
     <div class="hidden" hidden id="gameSection">
         <section id="gameTitle">
             <label for="inputTitle">
@@ -186,9 +188,36 @@
             <input class="right" id="inputPageSubmit" type="button" value="Submit">
         </section>
     </div>
-    <div class="hidden" hidden id="presentSection">
 
-    </div>
+    <section class="hidden" hidden id="presentSection">
+        <div class="title">
+            <h1>Presenting</h1>
+            <p class="corner hostName"></p>
+        </div>
+        <hr>
+        <div class="isHost hidden" hidden style="flex-flow:column nowrap">
+            <ul id="presentList">
+                <li>
+                    <span>Alice's book</span>
+                    <div>
+                        <input type="button" value="Present">
+                        <input type="button" value="Let Alice present">
+                    </div>
+                </li>
+                <li>
+                    <span>The Lengend of Zelma</span>
+                    <div>
+                        <input type="button" value="Present">
+                        <input type="button" value="Let Bob present">
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="isNotHost">
+            <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start presenting...</p>
+        </div>
+    </section>
+
     <aside id="inviteSection">
         <div class="title">
             <h1>Invite others!</h1>
