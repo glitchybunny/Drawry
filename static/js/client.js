@@ -38,6 +38,7 @@ Cookies.defaults = {
 
 
 ///// ----- ASYNC FUNCTIONS ----- /////
+/// --- LOBBY --- ///
 // Establish connection
 SOCKET.on('connect', () => {
     console.log("Established connection to the server");
@@ -90,8 +91,8 @@ SOCKET.on('userLeave', (userID) => {
     updatePlayerList();
 });
 
-// Update host assignment
-SOCKET.on('host', (userID) => {
+// Update which user is the host
+SOCKET.on('userHost', (userID) => {
     isHost = (userID === ID);
     host = isHost ? name : USERS[userID].name;
     updateHost();
@@ -104,8 +105,11 @@ SOCKET.on('settings', (data) => {
     updateSettings();
 })
 
+
+/// --- GAME --- ///
 // Start the game
-SOCKET.on('gameStart', (data) => {
+SOCKET.on('startGame', (data) => {
+    // Update DOM
     hide(byId('setupSection'));
     hide(byId('inviteSection'));
     show(byId('gameSection'));
@@ -143,31 +147,6 @@ SOCKET.on('gameStart', (data) => {
     byId('pageCurrent').innerText = (round.number + 1).toString();
 });
 
-// Disconnect from the server
-SOCKET.on('disconnect', (data) => {
-    // Determine which disconnect has occurred and display relevant error
-    switch (data) {
-        case("io server disconnect"):
-            alert("Kicked from server!");
-            window.location.reload(true);
-            break;
-        case("ping timeout"):
-            alert("Timed out from server.");
-            window.location.reload(true);
-            break;
-        case("transport close"):
-            //alert("Lost connection to server.");
-            break;
-        case("server full"):
-            alert("Server full! Can't connect.");
-            break;
-        default:
-            alert("Disconnected due to an unknown error.\nPlease reconnect.");
-            window.location.reload(true);
-    }
-});
-
-/// GAME EVENTS ///
 // Update book title
 SOCKET.on('bookTitle', (data) => {
     BOOKS[data.id].title = htmlDecode(data.title);
@@ -251,6 +230,40 @@ SOCKET.on('nextPage', () => {
 });
 
 
+/// --- PRESENTING --- ///
+// Start presenting mode
+SOCKET.on('startPresenting', () => {
+    hide(byId('gameSection'));
+    show(byId('presentSection'));
+});
+
+
+/// --- END --- ///
+// Disconnect from the server
+SOCKET.on('disconnect', (data) => {
+    // Determine which disconnect has occurred and display relevant error
+    switch (data) {
+        case("io server disconnect"):
+            alert("Kicked from server!");
+            window.location.reload(true);
+            break;
+        case("ping timeout"):
+            alert("Timed out from server.");
+            window.location.reload(true);
+            break;
+        case("transport close"):
+            //alert("Lost connection to server.");
+            break;
+        case("server full"):
+            alert("Server full! Can't connect.");
+            break;
+        default:
+            alert("Disconnected due to an unknown error.\nPlease reconnect.");
+            window.location.reload(true);
+    }
+});
+
+
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
 // Restrict inputs with a filter function
 function setInputFilter(textbox, inputFilter) {
@@ -280,13 +293,9 @@ function htmlDecode(input) {
     return _doc.documentElement.textContent;
 }
 
-// Send settings to the server
-function emitSettings() {
-    isHost ? SOCKET.emit("settings", {settings: roomSettings, key: SESSION_KEY}) : SOCKET.disconnect();
-    updateSettings();
-}
 
-// Update settings in the DOM
+/// --- UPDATE DOM --- ///
+// Update settings
 function updateSettings() {
     // First page
     document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
@@ -408,7 +417,7 @@ function show(e) {
 }
 
 
-///// ----- INPUTS AND INTERACTIONS ----- /////
+/// --- CONFIGURE INPUTS --- ///
 {
     // Prefill name field with cookie
     if (Cookies.get('name')) {
@@ -447,6 +456,12 @@ function show(e) {
             });
         }
     });
+
+    // Setup: Send settings to the server
+    function emitSettings() {
+        isHost ? SOCKET.emit("settings", {settings: roomSettings, key: SESSION_KEY}) : SOCKET.disconnect();
+        updateSettings();
+    }
 
     // Setup: First page
     document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
@@ -581,6 +596,7 @@ const CANVAS = new fabric.Canvas('c', {
     isDrawingMode: true
 });
 CANVAS.setBackgroundColor('#FFFFFF');
+CANVAS.freeDrawingBrush.width = 4;
 
 // Resize the drawing canvas
 function resizeCanvas() {
