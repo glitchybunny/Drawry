@@ -80,6 +80,7 @@ label {
 }
 
 ul {
+    width: 100%;
     margin-top: 0;
     margin-bottom: 8px;
 }
@@ -172,7 +173,7 @@ hr {
     min-height: 100px;
 }
 
-#setupSection {
+#setupSection, #presentSection {
     min-width: 400px;
 }
 
@@ -191,11 +192,17 @@ hr {
     flex-flow: column nowrap;
 }
 
-/*noinspection CssInvalidPropertyValue*/
 #gameSettings > div, #mainGame {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
+    align-items: center;
+}
+
+#presentList div {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
     align-items: center;
 }
 
@@ -238,7 +245,7 @@ output {
 
 
 /* Other Stuff */
-#playerList, #bookList {
+#playerList, #bookList, #presentList {
     list-style: none;
     padding-inline: 0;
     padding-left: 0;
@@ -253,7 +260,7 @@ output {
     flex-flow: column nowrap;
 }
 
-#hostName:before {
+.hostName:before {
     content: "Host: ";
 }
 
