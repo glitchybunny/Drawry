@@ -243,6 +243,13 @@ SOCKET.on('startPresenting', () => {
     updatePresentList();
 });
 
+SOCKET.on('presentBook', (data) => {
+    console.log('presentBook', data);
+
+    hide(byId('presentMenu'));
+    show(byId('presentWindow'));
+});
+
 
 /// --- END --- ///
 // Disconnect from the server
@@ -450,12 +457,19 @@ function updatePresentList() {
             _inputUser.type = "button";
         }
 
+        // Add event listeners
+        const _present = function(args) {SOCKET.emit("presentBook", args);}
+        _inputHost.addEventListener('click', _present.bind(this, {book: _id, host: true, key: SESSION_KEY}), false);
+        if (_id !== ID) {
+            _inputUser.addEventListener('click', _present.bind(this, {book: _id, host: false, key: SESSION_KEY}), false);
+        }
+
         // Add to DOM
         _li.appendChild(_title);
         _li.appendChild(_div);
         _div.appendChild(_inputHost);
         if (_id !== ID) {
-            _div.appendChild(_inputUser)
+            _div.appendChild(_inputUser);
         }
         _presentList.appendChild(_li);
     }
