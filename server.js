@@ -21,7 +21,7 @@ const SOCKETS = [];
 const ROOMS = {};
 
 // Other constants
-const VERBOSE = false;
+const VERBOSE = true;
 const MAX_ROOM_SIZE = 10;
 const SETTINGS_DEFAULT = {
     firstPage: 'Write',
@@ -47,6 +47,7 @@ const STATE = {
 };
 
 
+///// ----- ASYNC SERVER FUNCTIONS ----- /////
 // Listen for incoming connections from clients
 io.on('connection', (socket) => {
 
@@ -255,6 +256,7 @@ io.on('connection', (socket) => {
         if (_expected !== data.type) {
             // Client trying to send tampered data, overwrite
             _value = undefined;
+            console.log("ERROR unexpected data.type", {received: data.type, expected: _expected})
         }
 
         // Send page data to all players
@@ -334,13 +336,11 @@ io.on('connection', (socket) => {
     });
 });
 
-
 // Simple HTTP server
 app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname + '/index.html'));
 });
 app.use(express.static('static'));
-
 
 // Open server to manage server things
 server.listen(process.env.PORT || 80);

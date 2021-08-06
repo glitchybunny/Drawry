@@ -64,7 +64,7 @@ SOCKET.on('joined', (data) => {
     show(byId('mainGame'));
 
     // update DOM
-    byId('roomCode').innerText = room;
+    byId('roomCode').textContent = room;
     updatePlayerList();
     updateHost();
     updateSettings();
@@ -136,15 +136,15 @@ SOCKET.on('startGame', (data) => {
     switch (data.start) {
         case("Write"):
             show(byId('gameWrite'));
-            byId('pageType').innerText = "Writing";
+            byId('pageType').textContent = "Writing";
             break;
         case("Draw"):
             show(byId('gameDraw'));
-            byId('pageType').innerText = "Drawing";
+            byId('pageType').textContent = "Drawing";
             resizeCanvas();
             break;
     }
-    byId('pageCurrent').innerText = (round.number + 1).toString();
+    byId('pageCurrent').textContent = (round.number + 1).toString();
 });
 
 // Update book title
@@ -163,12 +163,13 @@ SOCKET.on('page', (data) => {
 SOCKET.on('nextPage', () => {
     // Update DOM
     document.body.style.cursor = '';
+    byId('inputPageSubmit').disabled = false;
     hide(byId('gameTitle'));
     show(byId('gamePrevious'));
 
     // Increment page number
     round.number += 1;
-    byId('pageCurrent').innerText = (round.number + 1).toString();
+    byId('pageCurrent').textContent = (round.number + 1).toString();
 
     // Figure out book and previous page
     for (let _id in BOOKS) {
@@ -177,26 +178,33 @@ SOCKET.on('nextPage', () => {
         }
     }
     let _previousPage = BOOKS[round.book].book[round.number - 1];
-    byId('gamePreviousTitle').innerText = BOOKS[round.book].title;
+    byId('gamePreviousTitle').textContent = BOOKS[round.book].title;
 
     // Change drawing <=> writing mode
     if (round.type === "Write") {
         // Change to drawing mode
         round.type = "Draw";
-        byId('pageType').innerText = "Drawing";
+        byId('pageType').textContent = "Drawing";
         show(byId('gameDraw'));
         hide(byId('gameWrite'));
 
         // Show previous page
-        byId('previousWrite').innerText = htmlDecode(_previousPage.value);
+        byId('previousWrite').textContent = htmlDecode(_previousPage.value);
         show(byId('previousWrite'));
         hide(byId('previousDraw'));
+
+        // Reset and clear inputs
+        resizeCanvas();
+        CANVAS.clear();
+        CANVAS.setBackgroundColor('#FFFFFF');
+        CANVAS.isDrawingMode = true;
+        CANVAS.selection = true;
 
     } else if (round.type === "Draw") {
         // Change to writing mode
         round.type = "Write";
-        byId('pageType').innerText = "Writing";
-        byId('writePrompt').innerText = "What happens next?";
+        byId('pageType').textContent = "Writing";
+        byId('writePrompt').textContent = "What happens next?";
         show(byId('gameWrite'));
         hide(byId('gameDraw'));
 
@@ -204,19 +212,11 @@ SOCKET.on('nextPage', () => {
         byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
         show(byId('previousDraw'));
         hide(byId('previousWrite'));
-    }
 
-    /// Reset and clear inputs
-    byId('inputPageSubmit').disabled = false;
-    // Drawing
-    resizeCanvas();
-    CANVAS.clear();
-    CANVAS.setBackgroundColor('#FFFFFF');
-    CANVAS.isDrawingMode = true;
-    CANVAS.selection = true;
-    // Writing
-    byId('inputWrite').disabled = false;
-    byId('inputWrite').value = "";
+        // Reset and clear inputs
+        byId('inputWrite').disabled = false;
+        byId('inputWrite').value = "";
+    }
 
     // Update book list info
     updateBookList();
@@ -234,6 +234,13 @@ SOCKET.on('startPresenting', () => {
     document.body.style.cursor = '';
     hide(byId('gameSection'));
     show(byId('presentSection'));
+
+    // Update round state
+    round = {number: undefined, book: undefined, type: "Presenting"}
+
+    // Add books to DOM for presenting
+    updateBookList();
+    updatePresentList();
 });
 
 
@@ -288,8 +295,12 @@ setInputFilter(byId("inputRoom"), function (value) {
 
 // Decode strings to html
 function htmlDecode(input) {
-    let _doc = new DOMParser().parseFromString(input, "text/html");
-    return _doc.documentElement.textContent;
+    if (input) {
+        let _doc = new DOMParser().parseFromString(input, "text/html");
+        return _doc.documentElement.textContent;
+    } else {
+        return "";
+    }
 }
 
 
@@ -305,7 +316,7 @@ function updateSettings() {
     // Pages per book
     byId('pageCount').value = roomSettings.pageCount;
     byId('pageCountDisplay').value = roomSettings.pageCount;
-    byId('pageMax').innerText = roomSettings.pageCount;
+    byId('pageMax').textContent = roomSettings.pageCount;
 
     // Page assignment
     document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
@@ -330,7 +341,7 @@ function updateSettings() {
 function updateHost() {
     // Update the host name in the DOM
     document.querySelectorAll('.hostName').forEach((elem) => {
-        elem.innerText = host;
+        elem.textContent = host;
     })
 
     // Allow the client to edit settings if they're the host
@@ -350,19 +361,19 @@ function updatePlayerList() {
 
     // Add self to player list
     let nameElem = document.createElement('li');
-    nameElem.innerText = name;
+    nameElem.textContent = name;
     nameElem.title = "You!";
     _playerList.appendChild(nameElem);
 
     // Add other players to player list
     for (let id in USERS) {
         let nameElem = document.createElement('li');
-        nameElem.innerText = USERS[id].name;
+        nameElem.textContent = USERS[id].name;
         _playerList.appendChild(nameElem);
     }
 
     // Increment player count
-    byId('playerCount').innerText = (Object.keys(USERS).length + 1).toString();
+    byId('playerCount').textContent = (Object.keys(USERS).length + 1).toString();
 
     // Show/hide start button/minimum player warning depending on player count
     if (Object.keys(USERS).length) {
@@ -376,32 +387,77 @@ function updatePlayerList() {
 
 // Update book list on the page
 function updateBookList() {
-    let _bookList = byId('bookList');
+    let _bookList, _id, _book, _bookTitle, _bookAuthor;
+    _bookList = byId('bookList');
     _bookList.innerHTML = '';
 
     // Update the list of books
-    for (let _id in BOOKS) {
+    for (_id in BOOKS) {
         // Create elements
-        let _book = document.createElement('li');
-        let _bookTitle = document.createElement('span');
-        let _bookAuthor = document.createElement('span');
+        _book = document.createElement('li');
+        _bookTitle = document.createElement('span');
+        _bookAuthor = document.createElement('span');
 
         // Assign the correct classes for styling
         _bookTitle.className = "bookTitle";
         _bookAuthor.className = "bookAuthor";
 
         // Display who's working on the current page of the book
-        let _num = (round.number + 1).toString();
-        let _page = BOOKS[_id].book[round.number];
-        let _authorID = _page.author ?? _page;
-        let _author = (_authorID === ID) ? name : USERS[_authorID].name;
-        _bookTitle.innerText = BOOKS[_id].title;
-        _bookAuthor.innerText = "Pg " + _num + " - " + _author;
+        if (round.type === "Presenting") {
+            _bookTitle.textContent = BOOKS[_id].title;
+            _bookAuthor.textContent = "by\u00a0" + BOOKS[_id].author;
+        } else {
+            let _num, _page, _authorID, _author;
+            _num = (round.number + 1).toString();
+            _page = BOOKS[_id].book[round.number];
+            _authorID = _page.author ?? _page;
+            _author = (_authorID === ID) ? name : USERS[_authorID].name;
+            _bookTitle.textContent = BOOKS[_id].title;
+            _bookAuthor.textContent = "Pg\u00a0" + _num + "\u00a0-\u00a0" + _author;
+        }
 
         // Add to DOM
         _book.appendChild(_bookTitle);
         _book.appendChild(_bookAuthor);
         _bookList.appendChild(_book);
+    }
+}
+
+// Update presenting buttons for host
+function updatePresentList() {
+    let _presentList, _id, _li, _title, _div, _inputHost, _inputUser;
+    _presentList = byId('presentList');
+    _presentList.innerHTML = '';
+
+    // Update list of books
+    for (_id in BOOKS) {
+        // Create elements
+        _li = document.createElement('li');
+        _title = document.createElement('span');
+        _div = document.createElement('div');
+        _inputHost = document.createElement('input');
+        if (_id !== ID) {
+            _inputUser = document.createElement('input');
+        }
+
+        // Fill in appropriate information
+        _div.id = _id;
+        _title.textContent = BOOKS[_id].title;
+        _inputHost.value = "Present";
+        _inputHost.type = "button";
+        if (_id !== ID) {
+            _inputUser.value = "Let " + USERS[_id].name.substr(0, 12) + (USERS[_id].name.length > 12 ? "…" : "") + " present";
+            _inputUser.type = "button";
+        }
+
+        // Add to DOM
+        _li.appendChild(_title);
+        _li.appendChild(_div);
+        _div.appendChild(_inputHost);
+        if (_id !== ID) {
+            _div.appendChild(_inputUser)
+        }
+        _presentList.appendChild(_li);
     }
 }
 
@@ -477,7 +533,7 @@ function show(e) {
     // Setup: Pages per book
     let _pageCount = byId('pageCount');
     _pageCount.addEventListener('input', (e) => {
-        byId('pageCountDisplay').innerText = e.target.value;
+        byId('pageCountDisplay').textContent = e.target.value;
     });
     _pageCount.addEventListener('change', (e) => {
         if (roomSettings) {
@@ -545,30 +601,35 @@ function show(e) {
 
     // Game: Submit page
     byId('inputPageSubmit').addEventListener('click', (e) => {
-        let _value;
-
-        // Put client in waiting state
-        e.target.disabled = true;
-        document.body.style.cursor = 'wait';
-
         // Get write input if it's a writing round
         if (round.type === "Write") {
-            let _inputWrite;
-            _inputWrite = byId('inputWrite');
-            _inputWrite.disabled = true;
-
+            let _inputWrite = byId('inputWrite');
             if (_inputWrite.reportValidity()) {
-                _value = _inputWrite.value.substr(0, 80);
+                // Send page to the server
+                let _value = _inputWrite.value.substr(0, 80);
+                SOCKET.emit('submitPage', {type: round.type, value: _value, key: SESSION_KEY});
+
+                // Put client in waiting state
+                e.target.disabled = true;
+                document.body.style.cursor = 'wait';
+                _inputWrite.disabled = true;
             }
         }
 
         // Get draw input if it's a drawing round
         else if (round.type === "Draw") {
             // Export canvas data to base64
-            _value = CANVAS.toDataURL({
+            let _value = CANVAS.toDataURL({
                 format: 'png',
                 multiplier: (800 / CANVAS.getWidth())
             });
+
+            // Send page to the server
+            SOCKET.emit('submitPage', {type: round.type, value: _value, key: SESSION_KEY});
+
+            // Put client in waiting state
+            e.target.disabled = true;
+            document.body.style.cursor = 'wait';
 
             // Lock canvas from any further drawing/editing
             CANVAS.isDrawingMode = false;
@@ -578,16 +639,6 @@ function show(e) {
                 object.evented = false;
             });
         }
-
-        // Send page to the server
-        if (_value === undefined) {
-            SOCKET.emit('submitPage', {type: undefined, value: _value, key: SESSION_KEY});
-        } else {
-            SOCKET.emit('submitPage', {type: round.type, value: _value, key: SESSION_KEY});
-        }
-
-        // Update page in your own books
-        //BOOKS[round.book].book[round.number] = {value: _value, author: ID};
     });
 }
 
@@ -601,11 +652,14 @@ CANVAS.freeDrawingBrush.width = 4;
 
 // Resize the drawing canvas
 function resizeCanvas() {
-    let base = byId('canvasBase');
-    let zoom = CANVAS.getZoom() * (base.clientWidth / CANVAS.getWidth());
+    let _base = byId('canvasBase');
+    let _w = _base.scrollWidth, _h = _base.scrollHeight;
 
-    CANVAS.setDimensions({width: base.clientWidth, height: base.clientHeight});
-    CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+    if (_w && _h) {
+        let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
+        CANVAS.setDimensions({width: _w, height: _h});
+        CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+    }
 }
 
 window.addEventListener('resize', resizeCanvas);

@@ -11,15 +11,13 @@
     <section id="joinSection">
         <label>
             Name:<br/>
-            <input autocomplete="on" id="inputName" maxlength="32" minlength="1"
-                   onkeydown="return enterPress(event, 'inputJoin')" required
-                   type="text">
+            <input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
+                   onkeydown="return enterPress(event, 'inputJoin')" required="required" type="text">
         </label>
         <label>
             Room Code:<br/>
-            <input autocomplete="on" id="inputRoom" maxlength="8" minlength="1"
-                   onkeydown="return enterPress(event, 'inputJoin')" required
-                   type="text">
+            <input aria-required="true" autocomplete="on" id="inputRoom" maxlength="8" minlength="1"
+                   onkeydown="return enterPress(event, 'inputJoin')" required="required" type="text">
         </label>
         <input id="inputJoin" type="button" value="Join">
     </section>
@@ -155,9 +153,9 @@
                 <b>Book Title</b>
             </label>
             <br/>
-            <input autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
-                   placeholder="Enter a title for your book"
-                   required size="25" spellcheck="true" type="text">
+            <input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
+                   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
+                   type="text">
         </section>
         <section class="hidden" hidden id="gamePrevious">
             <p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
@@ -177,8 +175,9 @@
                     What should the first page say?
                 </label>
                 <br/>
-                <input autocomplete="off" id="inputWrite" maxlength="80" minlength="1" placeholder="Keep it simple!"
-                       required size="35" spellcheck="true" type="text">
+                <input aria-required="true" autocomplete="off" id="inputWrite" maxlength="80" minlength="1"
+                       placeholder="Keep it simple!" required="required" size="35" spellcheck="true" type="text"
+                       onkeydown="return enterPress(event, 'inputPageSubmit')">
             </div>
             <div class="hidden" hidden id="gameDraw">
                 <img alt="" id="canvasBase" src="img/base.png">
@@ -196,22 +195,7 @@
         </div>
         <hr>
         <div class="isHost hidden" hidden style="flex-flow:column nowrap">
-            <ul id="presentList">
-                <li>
-                    <span>Alice's book</span>
-                    <div>
-                        <input type="button" value="Present">
-                        <input type="button" value="Let Alice present">
-                    </div>
-                </li>
-                <li>
-                    <span>The Lengend of Zelma</span>
-                    <div>
-                        <input type="button" value="Present">
-                        <input type="button" value="Let Bob present">
-                    </div>
-                </li>
-            </ul>
+            <ul id="presentList"></ul>
         </div>
         <div class="isNotHost">
             <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start presenting...</p>
