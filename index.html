@@ -23,7 +23,6 @@
     </section>
 </main>
 <main class="hidden" hidden id="mainGame">
-    <h1 id="cornerTitle">Open Picturephone</h1>
     <aside id="playerSection">
         <div class="title">
             <h1>Players</h1>
@@ -176,8 +175,8 @@
                 </label>
                 <br/>
                 <input aria-required="true" autocomplete="off" id="inputWrite" maxlength="80" minlength="1"
-                       placeholder="Keep it simple!" required="required" size="35" spellcheck="true" type="text"
-                       onkeydown="return enterPress(event, 'inputPageSubmit')">
+                       onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!" required="required" size="35" spellcheck="true"
+                       type="text">
             </div>
             <div class="hidden" hidden id="gameDraw">
                 <img alt="" id="canvasBase" src="img/base.png">
@@ -194,11 +193,16 @@
             <p class="corner hostName"></p>
         </div>
         <hr>
-        <div class="isHost hidden" hidden style="flex-flow:column nowrap">
-            <ul id="presentList"></ul>
+        <div id="presentMenu">
+            <div class="isHost hidden" hidden style="flex-flow:column nowrap">
+                <ul id="presentList"></ul>
+            </div>
+            <div class="isNotHost">
+                <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start presenting...</p>
+            </div>
         </div>
-        <div class="isNotHost">
-            <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start presenting...</p>
+        <div id="presentWindow" class="hidden" hidden>
+            <h2 id="presentBookTitle">[BOOK TITLE]</h2>
         </div>
     </section>
 
@@ -221,6 +225,8 @@
             <li style="font-style:italic"></li>
         </ul>
     </aside>
+
+    <h1 id="cornerTitle"></h1>
 </main>
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
 <script src="/js/socket.io.js"></script>

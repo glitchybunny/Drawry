@@ -56,7 +56,6 @@ io.on('connection', (socket) => {
 
 
     /// --- LOBBY --- ///
-
     // Listen for client joining room
     socket.on('joinRoom', (data) => {
         if (VERBOSE) {
@@ -149,7 +148,6 @@ io.on('connection', (socket) => {
 
 
     /// --- GAME --- ///
-
     // Start the game for the room
     socket.on('startGame', (data) => {
         if (VERBOSE) {
@@ -281,8 +279,25 @@ io.on('connection', (socket) => {
 
 
     /// --- PRESENTING --- ///
+    // Begin presenting a book
+    socket.on('presentBook', (data) => {
+        if (VERBOSE) {
+            console.log('presentBook', CLIENTS[socket.id].id, {book: data.book, host: data.host});
+        }
+        let _id = CLIENTS[socket.id].id;
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
 
-    // Let the host choose which book to present
+        // Make sure request is from the host
+        if (socket.id === _room.host) {
+            // Tell all clients that a book is being presented
+            if (data.host) {
+                io.to(_roomID).emit('presentBook', {book: data.book, presenter: _id});
+            } else {
+                io.to(_roomID).emit('presentBook', {book: data.book, presenter: data.book});
+            }
+        }
+    });
 
 
     // Go to next page of presentation
@@ -295,7 +310,6 @@ io.on('connection', (socket) => {
 
 
     /// --- END --- ///
-
     // Listen for disconnect events
     socket.on('disconnect', (data) => {
         if (VERBOSE) {

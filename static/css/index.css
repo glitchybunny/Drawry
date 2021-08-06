@@ -30,7 +30,7 @@ p, dfn {
     margin: 8px 0
 }
 
-a, li, output, p, dfn {
+a, li, output, p, dfn, h1, label, p {
     color: #fff
 }
 
@@ -64,14 +64,18 @@ section, aside {
     height: min-content;
 }
 
-h1, label, p {
-    color: #fff
-}
-
 h1 {
     font-weight: 700;
     margin: 10px auto;
     width: 100%;
+}
+
+h2 {
+    font-weight: 700;
+    margin: 40px auto;
+    width: 100%;
+    text-align: center;
+    /* should book titles have a fancy font when presenting? */
 }
 
 label {
@@ -158,7 +162,13 @@ hr {
     margin: 10px 20px;
     top: 0;
     left: 0;
-    color: #abcdef
+    color: #abcdef;
+    width: 0;
+    overflow: visible;
+}
+
+#cornerTitle:after {
+    content: "Open\00a0Picturephone"
 }
 
 
@@ -201,7 +211,13 @@ hr {
 
 #presentSection {
     min-width: 400px;
-    max-width: 600px;
+    width: 100%;
+    max-width: min(calc(calc(100vh - 200px) * 1.3), 820px);
+}
+
+#presentMenu {
+    width:auto;
+    max-width:500px;
 }
 
 #presentList div {
@@ -218,6 +234,18 @@ hr {
     font-size: 20px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+#presentWindow {
+    display:flex;
+    flex-flow: column nowrap;
+    overflow-y: scroll;
+    width: 100%;
+    max-width: min(calc(calc(100vh - 200px) * 1.3), 820px);
+    height: calc(100vh - 200px);
+    min-height: 200px;
+    background-color: white;
+    border: 2px solid #234567;
 }
 
 
