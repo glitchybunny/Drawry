@@ -187,7 +187,7 @@
         </section>
     </div>
 
-    <section class="hidden" hidden id="presentSection">
+    <section class="presentLobby hidden" hidden id="presentSection">
         <div class="title">
             <h1>Presenting</h1>
             <p class="corner hostName"></p>
@@ -202,7 +202,19 @@
             </div>
         </div>
         <div id="presentWindow" class="hidden" hidden>
-            <h2 id="presentBookTitle">[BOOK TITLE]</h2>
+            <h1 id="presentBookTitle"></h1>
+            <p style="text-align:center">
+                <span id="presentBookAuthors"></span>
+                <br>
+                <span id="presentBookPresenter"></span>
+            </p>
+        </div>
+        <div id="presentControls" class="hidden" hidden>
+            <input type="button" value="< Prev" id="inputPresentBack" disabled="disabled">
+            <input type="button" value="Next >" id="inputPresentForward">
+        </div>
+        <div id="presentControlsFinish" class="hidden" hidden>
+            <input type="button" value="Finished presenting" id="inputPresentFinish">
         </div>
     </section>
 
@@ -226,7 +238,7 @@
         </ul>
     </aside>
 
-    <h1 id="cornerTitle"></h1>
+    <h1 id="cornerTitle" title="Open Picturephone"></h1>
 </main>
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
 <script src="/js/socket.io.js"></script>

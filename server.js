@@ -290,23 +290,70 @@ io.on('connection', (socket) => {
 
         // Make sure request is from the host
         if (socket.id === _room.host) {
+            ROOMS[_roomID].page = -1;
+
             // Tell all clients that a book is being presented
             if (data.host) {
-                io.to(_roomID).emit('presentBook', {book: data.book, presenter: _id});
+                ROOMS[_roomID].presenter = _id;
             } else {
-                io.to(_roomID).emit('presentBook', {book: data.book, presenter: data.book});
+                ROOMS[_roomID].presenter = data.book;
+            }
+            io.to(_roomID).emit('presentBook', {book: data.book, presenter: ROOMS[_roomID].presenter});
+        }
+    });
+
+    // Go to next page of presentation
+    socket.on('presentForward', (data) => {
+        if (VERBOSE) {
+            console.log('presentForward', CLIENTS[socket.id].id);
+        }
+        let _id = CLIENTS[socket.id].id;
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
+
+        // Make sure request is from the presenter
+        if (_id === _room.presenter) {
+            if (ROOMS[_roomID].page < parseInt(_room.settings.pageCount) - 1) {
+                ROOMS[_roomID].page += 1;
+                io.to(_roomID).emit('presentForward');
             }
         }
     });
 
-
-    // Go to next page of presentation
-
-
     // Go to previous page of presentation (hide most recently shown page)
+    socket.on('presentBack', (data) => {
+        if (VERBOSE) {
+            console.log('presentBack', CLIENTS[socket.id].id);
+        }
+        let _id = CLIENTS[socket.id].id;
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
 
+        // Make sure request is from the presenter
+        if (_id === _room.presenter) {
+            if (ROOMS[_roomID].page > -1) {
+                ROOMS[_roomID].page -= 1;
+                io.to(_roomID).emit('presentBack');
+            }
+        }
+    });
 
     // Return to lobby for next book
+    socket.on('presentFinish', (data) => {
+        if (VERBOSE) {
+            console.log('presentFinish', CLIENTS[socket.id].id);
+        }
+        let _id = CLIENTS[socket.id].id;
+        let _roomID = CLIENTS[socket.id].room;
+        let _room = ROOMS[_roomID];
+
+        // Make sure request is from the presenter
+        if (_id === _room.presenter) {
+            ROOMS[_roomID].page = undefined;
+            ROOMS[_roomID].presenter = undefined;
+            io.to(_roomID).emit('presentFinish');
+        }
+    })
 
 
     /// --- END --- ///
