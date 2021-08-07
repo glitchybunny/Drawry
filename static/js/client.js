@@ -8,7 +8,7 @@
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
 window.crypto.getRandomValues(array);
-const ID = Cookies.get('id') | 0 ? Cookies.get('id') : (array[0].valueOf() + 1).toString();
+const ID = Cookies.get('id') ? Cookies.get('id') : (array[0].valueOf() + 1).toString();
 const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 const USERS = {};
@@ -28,7 +28,7 @@ if (!('getContext' in document.createElement('canvas'))) {
     console.error(message);
     alert(message);
 }
-var byId = function (id) {
+const byId = function (id) {
     return document.getElementById(id);
 };
 Cookies.defaults = {
@@ -57,7 +57,7 @@ SOCKET.on('joined', (data) => {
         USERS[o.id] = {name: htmlDecode(o.name)}
     })
     isHost = (data.host === ID);
-    host = isHost ? name : USERS[data.host].name;
+    host = getName(data.host);
 
     // switch to game screen
     hide(byId('mainJoin'));
@@ -86,7 +86,7 @@ SOCKET.on('userJoin', (data) => {
 // Remove user from room
 SOCKET.on('userLeave', (userID) => {
     // Clear user data
-    console.log(USERS[userID].name, "disconnected");
+    console.log(getName(userID), "disconnected");
     delete USERS[userID];
     updatePlayerList();
 });
@@ -94,7 +94,7 @@ SOCKET.on('userLeave', (userID) => {
 // Update which user is the host
 SOCKET.on('userHost', (userID) => {
     isHost = (userID === ID);
-    host = isHost ? name : USERS[userID].name;
+    host = getName(userID);
     updateHost();
 });
 
@@ -117,7 +117,7 @@ SOCKET.on('startGame', (data) => {
 
     // Set round info
     round = {
-        number: 0,
+        page: 0,
         book: ID,
         type: data.start
     };
@@ -125,8 +125,8 @@ SOCKET.on('startGame', (data) => {
     // Load book page information
     for (let _id in data.books) {
         BOOKS[_id] = {
-            title: (_id === ID ? name : USERS[_id].name) + "'s book",
-            author: _id === ID ? name : USERS[_id].name,
+            title: getName(_id) + "'s book",
+            author: getName(_id),
             book: data.books[_id]
         }
     }
@@ -144,7 +144,7 @@ SOCKET.on('startGame', (data) => {
             resizeCanvas();
             break;
     }
-    byId('pageCurrent').textContent = (round.number + 1).toString();
+    byId('pageCurrent').textContent = "Page " + (round.page + 1).toString();
 });
 
 // Update book title
@@ -168,16 +168,16 @@ SOCKET.on('nextPage', () => {
     show(byId('gamePrevious'));
 
     // Increment page number
-    round.number += 1;
-    byId('pageCurrent').textContent = (round.number + 1).toString();
+    round.page += 1;
+    byId('pageCurrent').textContent = (round.page + 1).toString();
 
     // Figure out book and previous page
     for (let _id in BOOKS) {
-        if (BOOKS[_id].book[round.number] === ID) {
+        if (BOOKS[_id].book[round.page] === ID) {
             round.book = _id;
         }
     }
-    let _previousPage = BOOKS[round.book].book[round.number - 1];
+    let _previousPage = BOOKS[round.book].book[round.page - 1];
     byId('gamePreviousTitle').textContent = BOOKS[round.book].title;
 
     // Change drawing <=> writing mode
@@ -244,10 +244,72 @@ SOCKET.on('startPresenting', () => {
 });
 
 SOCKET.on('presentBook', (data) => {
-    console.log('presentBook', data);
-
     hide(byId('presentMenu'));
+    hide(byId('presentControlsFinish'));
     show(byId('presentWindow'));
+    byId('presentSection').classList.remove('presentLobby');
+
+    // Keep track of presentation
+    round.book = BOOKS[data.book];
+    round.page = -1;
+    round.presenter = data.presenter;
+
+    // Get book title and authors
+    let _title = round.book.title;
+    let _presenter = getName(round.presenter);
+    let _authors = [];
+    round.book.book.forEach((_page) => {
+        let _author = getName(_page.author);
+        if (_authors.indexOf(_author) === -1) {
+            _authors.push(_author);
+        }
+    });
+
+    // Show book information
+    byId('presentBookTitle').textContent = _title;
+    byId('presentBookAuthors').textContent = "Created by " + _authors.join(', ');
+    byId('presentBookPresenter').textContent = "Presented by " + _presenter;
+
+    // If you're the presenter, enable controls
+    if (ID === round.presenter) {
+        show(byId('presentControls'));
+    } else {
+        hide(byId('presentControls'));
+    }
+});
+
+SOCKET.on('presentForward', (data) => {
+    // Go to next page
+    byId('inputPresentBack').disabled = false;
+    round.page += 1;
+
+    // Last page
+    if (ID === round.presenter && round.page === parseInt(roomSettings.pageCount) - 1) {
+        byId('inputPresentForward').disabled = true;
+        show(byId('presentControlsFinish'));
+    }
+});
+
+SOCKET.on('presentBack', (data) => {
+    // Go to previous page
+    byId('inputPresentForward').disabled = false;
+    round.page -= 1;
+
+    // First page
+    if (ID === round.presenter && round.page === -1) {
+        byId('inputPresentBack').disabled = true;
+    }
+});
+
+SOCKET.on('presentFinish', (data) => {
+    // Return to present lobby
+    hide(byId('presentWindow'));
+    hide(byId('presentControls'));
+    hide(byId('presentControlsFinish'));
+    show(byId('presentMenu'));
+    byId('presentSection').classList.add('presentLobby');
+    byId('inputPresentForward').disabled = false;
+    byId('inputPresentBack').disabled = true;
 });
 
 
@@ -310,6 +372,15 @@ function htmlDecode(input) {
     }
 }
 
+// Get name from ID
+function getName(id) {
+    if (id === ID) {
+        return name;
+    } else {
+        return USERS[id].name;
+    }
+}
+
 
 /// --- UPDATE DOM --- ///
 // Update settings
@@ -348,7 +419,7 @@ function updateSettings() {
 function updateHost() {
     // Update the host name in the DOM
     document.querySelectorAll('.hostName').forEach((elem) => {
-        elem.textContent = host;
+        elem.textContent = "Host: " + host;
     })
 
     // Allow the client to edit settings if they're the host
@@ -375,12 +446,12 @@ function updatePlayerList() {
     // Add other players to player list
     for (let id in USERS) {
         let nameElem = document.createElement('li');
-        nameElem.textContent = USERS[id].name;
+        nameElem.textContent = getName(id);
         _playerList.appendChild(nameElem);
     }
 
     // Increment player count
-    byId('playerCount').textContent = (Object.keys(USERS).length + 1).toString();
+    byId('playerCount').textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
 
     // Show/hide start button/minimum player warning depending on player count
     if (Object.keys(USERS).length) {
@@ -415,10 +486,9 @@ function updateBookList() {
             _bookAuthor.textContent = "by\u00a0" + BOOKS[_id].author;
         } else {
             let _num, _page, _authorID, _author;
-            _num = (round.number + 1).toString();
-            _page = BOOKS[_id].book[round.number];
-            _authorID = _page.author ?? _page;
-            _author = (_authorID === ID) ? name : USERS[_authorID].name;
+            _num = (round.page + 1).toString();
+            _page = BOOKS[_id].book[round.page];
+            _author = getName(_page.author ?? _page);
             _bookTitle.textContent = BOOKS[_id].title;
             _bookAuthor.textContent = "Pg\u00a0" + _num + "\u00a0-\u00a0" + _author;
         }
@@ -458,10 +528,16 @@ function updatePresentList() {
         }
 
         // Add event listeners
-        const _present = function(args) {SOCKET.emit("presentBook", args);}
+        const _present = function (args) {
+            SOCKET.emit("presentBook", args);
+        }
         _inputHost.addEventListener('click', _present.bind(this, {book: _id, host: true, key: SESSION_KEY}), false);
         if (_id !== ID) {
-            _inputUser.addEventListener('click', _present.bind(this, {book: _id, host: false, key: SESSION_KEY}), false);
+            _inputUser.addEventListener('click', _present.bind(this, {
+                book: _id,
+                host: false,
+                key: SESSION_KEY
+            }), false);
         }
 
         // Add to DOM
@@ -652,6 +728,31 @@ function show(e) {
                 object.selectable = false;
                 object.evented = false;
             });
+        }
+    });
+
+    // Present: Next page
+    byId('inputPresentForward').addEventListener('click', () => {
+        if (ID === round.presenter) {
+            if (round.page < parseInt(roomSettings.pageCount) - 1) {
+                SOCKET.emit('presentForward', {key: SESSION_KEY});
+            }
+        }
+    });
+
+    // Present: Previous page
+    byId('inputPresentBack').addEventListener('click', () => {
+        if (ID === round.presenter) {
+            if (round.page > -1) {
+                SOCKET.emit('presentBack', {key: SESSION_KEY});
+            }
+        }
+    });
+
+    // Present: Finished
+    byId('inputPresentFinish').addEventListener('click', () => {
+        if (ID === round.presenter) {
+            SOCKET.emit('presentFinish', {key: SESSION_KEY});
         }
     });
 }
