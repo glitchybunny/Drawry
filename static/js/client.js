@@ -32,7 +32,7 @@ const byId = function (id) {
     return document.getElementById(id);
 };
 Cookies.defaults = {
-    expires: 600,
+    expires: 3600,
     sameSite: 'Strict'
 };
 
@@ -48,7 +48,7 @@ SOCKET.on('connect', () => {
 // Let client know they've joined the room successfully
 SOCKET.on('joined', (data) => {
     console.log("Joined room '" + data.room + "'");
-    document.body.style.cursor = '';
+    hide(byId('loading'));
 
     // update local game values
     room = data.room;
@@ -156,13 +156,13 @@ SOCKET.on('bookTitle', (data) => {
 // Get page info
 SOCKET.on('page', (data) => {
     // Update local book variables
-    BOOKS[data.id].book[data.page] = {value: data.value, author: data.author};
+    BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, type: data.type};
 });
 
 // Go to next page in books
 SOCKET.on('nextPage', () => {
     // Update DOM
-    document.body.style.cursor = '';
+    hide(byId('loading'));
     byId('inputPageSubmit').disabled = false;
     hide(byId('gameTitle'));
     show(byId('gamePrevious'));
@@ -222,8 +222,7 @@ SOCKET.on('nextPage', () => {
     updateBookList();
 
     // Set timer
-
-    // Done?
+    // TODO: timers
 });
 
 
@@ -231,7 +230,7 @@ SOCKET.on('nextPage', () => {
 // Start presenting mode
 SOCKET.on('startPresenting', () => {
     // Update DOM
-    document.body.style.cursor = '';
+    hide(byId('loading'));
     hide(byId('gameSection'));
     show(byId('presentSection'));
 
@@ -283,6 +282,32 @@ SOCKET.on('presentForward', (data) => {
     byId('inputPresentBack').disabled = false;
     round.page += 1;
 
+    // Add page to window
+    let _page = round.book.book[round.page];
+    let _div = document.createElement('div');
+    _div.classList.add('page');
+    switch (_page.type) {
+        case "Write":
+            let _p = document.createElement('p');
+            _p.innerText = _page.value;
+            _p.classList.add("presentWrite");
+            _div.appendChild(_p);
+            break;
+        case "Draw":
+            let _img = document.createElement('img');
+            _img.src = _page.value;
+            _img.classList.add("presentDraw");
+            _img.addEventListener('load', () => {
+                let _window = byId('presentWindow');
+                _window.scrollTop = _window.scrollHeight;
+            })
+            _div.appendChild(_img);
+            break;
+    }
+    let _window = byId('presentWindow');
+    _window.appendChild(_div);
+    _window.scrollTop = _window.scrollHeight;
+
     // Last page
     if (ID === round.presenter && round.page === parseInt(roomSettings.pageCount) - 1) {
         byId('inputPresentForward').disabled = true;
@@ -294,6 +319,10 @@ SOCKET.on('presentBack', (data) => {
     // Go to previous page
     byId('inputPresentForward').disabled = false;
     round.page -= 1;
+
+    // Remove last added page
+    let _pages = document.querySelectorAll('.page');
+    _pages[_pages.length - 1].remove();
 
     // First page
     if (ID === round.presenter && round.page === -1) {
@@ -591,7 +620,7 @@ function show(e) {
             _inputName.disabled = true;
             _inputRoom.disabled = true;
             e.target.disabled = true;
-            document.body.style.cursor = 'wait';
+            show(byId('loading'));
 
             window.history.pushState({room: room}, '', '?room=' + room);
 
@@ -701,8 +730,9 @@ function show(e) {
 
                 // Put client in waiting state
                 e.target.disabled = true;
-                document.body.style.cursor = 'wait';
                 _inputWrite.disabled = true;
+                byId('inputTitle').disabled = true;
+                show(byId('loading'));
             }
         }
 
@@ -719,7 +749,8 @@ function show(e) {
 
             // Put client in waiting state
             e.target.disabled = true;
-            document.body.style.cursor = 'wait';
+            byId('inputTitle').disabled = true;
+            show(byId('loading'));
 
             // Lock canvas from any further drawing/editing
             CANVAS.isDrawingMode = false;
