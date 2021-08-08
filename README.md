@@ -23,6 +23,6 @@ For reference, server.js is the node server, and /static/js/client.js is the mai
 **How to run on heroku:**
 1. Create new heroku instance and connect it to the repo.
 2. Under settings, add the `heroku/nodejs` buildpack.
-3. Add a new entry to the Config Vars in the settings. Set KEY to `NODE_ENV` and VALUE to `production node index.js`.
+3. Add a new entry to the Config Vars in the settings. Set KEY to `NODE_ENV` and VALUE to `production node server.js`.
 4. Under resources, you'll want to create a new web dyno. A free/hobby dyno should run this fine.
 5. Run the dyno with the instructions `npm start`.

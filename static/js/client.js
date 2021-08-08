@@ -144,7 +144,7 @@ SOCKET.on('startGame', (data) => {
             resizeCanvas();
             break;
     }
-    byId('pageCurrent').textContent = "Page " + (round.page + 1).toString();
+    byId('pageCurrent').textContent = (round.page + 1).toString();
 });
 
 // Update book title
@@ -300,7 +300,7 @@ SOCKET.on('presentForward', (data) => {
             _img.addEventListener('load', () => {
                 let _window = byId('presentWindow');
                 _window.scrollTop = _window.scrollHeight;
-            })
+            });
             _div.appendChild(_img);
             break;
     }
@@ -339,6 +339,11 @@ SOCKET.on('presentFinish', (data) => {
     byId('presentSection').classList.add('presentLobby');
     byId('inputPresentForward').disabled = false;
     byId('inputPresentBack').disabled = true;
+
+    // Clear pages from presentWindow
+    document.querySelectorAll('.page').forEach((e) => {
+        e.remove();
+    });
 });
 
 

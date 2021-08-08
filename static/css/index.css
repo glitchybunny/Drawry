@@ -217,10 +217,17 @@ hr {
     flex-flow: column nowrap;
 }
 
-#gameSettings > div, #mainGame {
+#gameSettings > div {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
+    align-items: center;
+}
+
+#mainGame {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-evenly;
     align-items: center;
 }
 
@@ -376,7 +383,7 @@ output {
 }
 
 #presentList input {
-    margin: 10px !important;
+    margin: 0 10px 10px !important;
 }
 
 #presentBookTitle {
