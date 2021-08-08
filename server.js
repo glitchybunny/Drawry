@@ -258,7 +258,7 @@ io.on('connection', (socket) => {
         }
 
         // Send page data to all players
-        io.to(_roomID).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id});
+        io.to(_roomID).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id, type: _expected});
 
         // Check if all players have submitted
         _room.submitted += 1;
