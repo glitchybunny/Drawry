@@ -21,7 +21,7 @@ const SOCKETS = [];
 const ROOMS = {};
 
 // Other constants
-const VERBOSE = true;
+const VERBOSE = false;
 const MAX_ROOM_SIZE = 10;
 const SETTINGS_DEFAULT = {
     firstPage: 'Write',
