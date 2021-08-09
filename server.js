@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
     // Listen for client joining room
     socket.on('joinRoom', (data) => {
         if (VERBOSE) {
-            console.log('joinRoom', data.id, {name: data.name, room: data.room});
+            console.log('joinRoom', data.id, {name: data.name, roomCode: data.roomCode});
         }
 
         // first of all, make sure no two clients connect with the same ID
@@ -74,16 +74,16 @@ io.on('connection', (socket) => {
         let _client = CLIENTS[socket.id];
         _client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, '') || 0;
         _client.name = xss(data.name.substr(0, 32));
-        _client.room = xss(data.room.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
+        _client.roomCode = xss(data.roomCode.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
 
-        if (_client.id && _client.room) {
+        if (_client.id && _client.roomCode) {
             // add client to the room
-            socket.join(_client.room);
+            socket.join(_client.roomCode);
 
             // if room doesn't exist, create it and make client the host
-            if (!ROOMS.hasOwnProperty(_client.room)) {
+            if (!ROOMS.hasOwnProperty(_client.roomCode)) {
                 // create room
-                ROOMS[_client.room] = {
+                ROOMS[_client.roomCode] = {
                     clients: [],
                     host: socket.id,
                     settings: SETTINGS_DEFAULT,
@@ -95,30 +95,30 @@ io.on('connection', (socket) => {
             }
 
             // check if room can be joined
-            let _room = ROOMS[_client.room];
+            let _room = ROOMS[_client.roomCode];
             if (_room.clients.length < MAX_ROOM_SIZE && _room.state === STATE.LOBBY) {
                 // if room isn't full and is in lobby, add client to the room
                 _room.clients.push(socket.id);
 
                 // inform the client they've joined the room
                 io.to(socket.id).emit("joined", {
-                    room: _client.room,
+                    roomCode: _client.roomCode,
                     users: Object.values(CLIENTS).filter((c) => {
-                        return c.room === _client.room && c.id !== _client.id
+                        return c.roomCode === _client.roomCode && c.id !== _client.id
                     }),
-                    host: CLIENTS[ROOMS[_client.room].host].id,
-                    settings: ROOMS[_client.room].settings
+                    host: CLIENTS[_room.host].id,
+                    settings: _room.settings
                 });
 
                 // inform users in the room about the new client
-                socket.to(_client.room).emit("userJoin", CLIENTS[socket.id]);
+                socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
 
             } else {
                 // room is full, boot client
                 io.to(socket.id).emit("disconnect", "server full");
             }
         } else {
-            // ID or roomID is invalid, boot client
+            // ID or roomCode is invalid, boot client
             io.to(socket.id).emit("disconnect");
         }
     });
@@ -129,8 +129,8 @@ io.on('connection', (socket) => {
             console.log('settings', CLIENTS[socket.id].id, data.settings);
         }
 
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
+        let _room = ROOMS[_roomCode];
 
         // Make sure user is the host and settings are within constraints
         if (socket.id === _room.host && verifySettings(data.settings)) {
@@ -138,7 +138,7 @@ io.on('connection', (socket) => {
             _room.settings = data.settings;
 
             // Propogate settings to other clients
-            socket.to(_roomID).emit("settings", _room.settings);
+            socket.to(_roomCode).emit("settings", _room.settings);
 
         } else {
             // Invalid request, kick from game
@@ -154,8 +154,8 @@ io.on('connection', (socket) => {
             console.log('startGame', CLIENTS[socket.id].id, data.settings);
         }
 
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
+        let _room = ROOMS[_roomCode];
 
         // Make sure user is the host, player count is reached, and settings are valid
         if (socket.id === _room.host && _room.clients.length >= 2 && verifySettings(data.settings) && _room.state === STATE.LOBBY) {
@@ -168,7 +168,7 @@ io.on('connection', (socket) => {
             generateBooks(_room);
 
             // Start game
-            io.to(_roomID).emit('startGame', {books: _room.books, start: _room.settings.firstPage});
+            io.to(_roomCode).emit('startGame', {books: _room.books, start: _room.settings.firstPage});
 
         } else {
             // Invalid request, kick from game
@@ -183,15 +183,15 @@ io.on('connection', (socket) => {
         }
 
         let _id = CLIENTS[socket.id].id;
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
+        let _room = ROOMS[_roomCode];
 
         // make sure to sanitise title string
         let _title = xss(data.title.substr(0, 40));
 
         // send title to other players
         if (_room.page === 0) {
-            socket.to(_roomID).emit("bookTitle", {id: _id, title: _title});
+            socket.to(_roomCode).emit("bookTitle", {id: _id, title: _title});
         }
     });
 
@@ -204,8 +204,8 @@ io.on('connection', (socket) => {
             });
         }
         let _id = CLIENTS[socket.id].id;
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
+        let _room = ROOMS[_roomCode];
         let _value = undefined;
 
         // Fetch page data
@@ -258,7 +258,7 @@ io.on('connection', (socket) => {
         }
 
         // Send page data to all players
-        io.to(_roomID).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id, type: _expected});
+        io.to(_roomCode).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id, type: _expected});
 
         // Check if all players have submitted
         _room.submitted += 1;
@@ -269,10 +269,10 @@ io.on('connection', (socket) => {
             if (_room.page === parseInt(_room.settings.pageCount)) {
                 // Finished creation part of game, move to presenting
                 _room.state = STATE.PRESENTING;
-                io.to(_roomID).emit('startPresenting')
+                io.to(_roomCode).emit('startPresenting')
             } else {
                 // Go to next page
-                io.to(_roomID).emit('nextPage');
+                io.to(_roomCode).emit('nextPage');
             }
         }
     });
@@ -285,20 +285,19 @@ io.on('connection', (socket) => {
             console.log('presentBook', CLIENTS[socket.id].id, {book: data.book, host: data.host});
         }
         let _id = CLIENTS[socket.id].id;
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
 
         // Make sure request is from the host
-        if (socket.id === _room.host) {
-            ROOMS[_roomID].page = -1;
+        if (socket.id === ROOMS[_roomCode].host) {
+            ROOMS[_roomCode].page = -1;
 
             // Tell all clients that a book is being presented
             if (data.host) {
-                ROOMS[_roomID].presenter = _id;
+                ROOMS[_roomCode].presenter = _id;
             } else {
-                ROOMS[_roomID].presenter = data.book;
+                ROOMS[_roomCode].presenter = data.book;
             }
-            io.to(_roomID).emit('presentBook', {book: data.book, presenter: ROOMS[_roomID].presenter});
+            io.to(_roomCode).emit('presentBook', {book: data.book, presenter: ROOMS[_roomCode].presenter});
         }
     });
 
@@ -308,14 +307,13 @@ io.on('connection', (socket) => {
             console.log('presentForward', CLIENTS[socket.id].id);
         }
         let _id = CLIENTS[socket.id].id;
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
 
         // Make sure request is from the presenter
-        if (_id === _room.presenter) {
-            if (ROOMS[_roomID].page < parseInt(_room.settings.pageCount) - 1) {
-                ROOMS[_roomID].page += 1;
-                io.to(_roomID).emit('presentForward');
+        if (_id === ROOMS[_roomCode].presenter) {
+            if (ROOMS[_roomCode].page < parseInt(ROOMS[_roomCode].settings.pageCount) - 1) {
+                ROOMS[_roomCode].page += 1;
+                io.to(_roomCode).emit('presentForward');
             }
         }
     });
@@ -326,14 +324,13 @@ io.on('connection', (socket) => {
             console.log('presentBack', CLIENTS[socket.id].id);
         }
         let _id = CLIENTS[socket.id].id;
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
 
         // Make sure request is from the presenter
-        if (_id === _room.presenter) {
-            if (ROOMS[_roomID].page > -1) {
-                ROOMS[_roomID].page -= 1;
-                io.to(_roomID).emit('presentBack');
+        if (_id === ROOMS[_roomCode].presenter) {
+            if (ROOMS[_roomCode].page > -1) {
+                ROOMS[_roomCode].page -= 1;
+                io.to(_roomCode).emit('presentBack');
             }
         }
     });
@@ -344,14 +341,13 @@ io.on('connection', (socket) => {
             console.log('presentFinish', CLIENTS[socket.id].id);
         }
         let _id = CLIENTS[socket.id].id;
-        let _roomID = CLIENTS[socket.id].room;
-        let _room = ROOMS[_roomID];
+        let _roomCode = CLIENTS[socket.id].roomCode;
 
         // Make sure request is from the presenter
-        if (_id === _room.presenter) {
-            ROOMS[_roomID].page = undefined;
-            ROOMS[_roomID].presenter = undefined;
-            io.to(_roomID).emit('presentFinish');
+        if (_id === ROOMS[_roomCode].presenter) {
+            ROOMS[_roomCode].page = undefined;
+            ROOMS[_roomCode].presenter = undefined;
+            io.to(_roomCode).emit('presentFinish');
         }
     })
 
@@ -363,18 +359,17 @@ io.on('connection', (socket) => {
             console.log('disconnect', CLIENTS[socket.id].id, {type: data});
         }
 
-        if (CLIENTS[socket.id].id && CLIENTS[socket.id].room) {
+        if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
             // remove client from the room if they've joined one
             let _id = CLIENTS[socket.id].id;
-            let _roomID = CLIENTS[socket.id].room;
-            let _room = ROOMS[_roomID];
+            let _roomCode = CLIENTS[socket.id].roomCode;
 
             // alert others that client has left the room
-            socket.to(_roomID).emit('userLeave', _id);
+            socket.to(_roomCode).emit('userLeave', _id);
 
-            if (_room) {
+            if (ROOMS[_roomCode]) {
                 // remove client from the room
-                let _clients = _room.clients;
+                let _clients = ROOMS[_roomCode].clients;
                 let _index = _clients.indexOf(socket.id);
                 if (_index !== -1) {
                     _clients.splice(_index, 1);
@@ -382,12 +377,12 @@ io.on('connection', (socket) => {
 
                 // delete the room if everyone has left
                 if (_clients.length === 0) {
-                    delete ROOMS[_roomID];
+                    delete ROOMS[_roomCode];
                 } else {
                     // if the host disconnected, assign a new host
                     if (socket.id === _room.host) {
-                        _room.host = _clients[0];
-                        socket.to(_roomID).emit("userHost", CLIENTS[_room.host].id);
+                        ROOMS[_roomCode].host = _clients[0];
+                        socket.to(_roomCode).emit("userHost", CLIENTS[_clients[0]].id);
                     }
                 }
             }

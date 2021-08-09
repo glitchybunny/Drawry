@@ -175,8 +175,8 @@
                 </label>
                 <br/>
                 <input aria-required="true" autocomplete="off" id="inputWrite" maxlength="80" minlength="1"
-                       onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!" required="required" size="35" spellcheck="true"
-                       type="text">
+                       onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!"
+                       required="required" spellcheck="true" type="text">
             </div>
             <div class="hidden" hidden id="gameDraw">
                 <img alt="" id="canvasBase" src="img/base.png">
@@ -198,10 +198,11 @@
                 <ul id="presentList"></ul>
             </div>
             <div class="isNotHost">
-                <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start presenting...</p>
+                <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start
+                    presenting...</p>
             </div>
         </div>
-        <div id="presentWindow" class="hidden" hidden>
+        <div class="hidden" hidden id="presentWindow">
             <h1 id="presentBookTitle"></h1>
             <p style="text-align:center; margin-bottom:40px;">
                 <span id="presentBookAuthors"></span>
@@ -209,12 +210,12 @@
                 <span id="presentBookPresenter"></span>
             </p>
         </div>
-        <div id="presentControls" class="hidden" hidden>
-            <input type="button" value="< Prev" id="inputPresentBack" disabled="disabled">
-            <input type="button" value="Next >" id="inputPresentForward">
+        <div class="hidden" hidden id="presentControls">
+            <input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
+            <input id="inputPresentForward" type="button" value="Next >">
         </div>
-        <div id="presentControlsFinish" class="hidden" hidden>
-            <input type="button" value="Finish presenting" id="inputPresentFinish">
+        <div class="hidden" hidden id="presentControlsFinish">
+            <input id="inputPresentFinish" type="button" value="Finish presenting">
         </div>
     </section>
 
@@ -228,8 +229,8 @@
             <p class="corner blur" id="roomCode"></p>
         </div>
         <hr>
-        <input type="button" value="Copy room code" id="inputCopyRoom">
-        <input type="button" value="Copy invite link" id="inputCopyURL">
+        <input id="inputCopyRoom" type="button" value="Copy room code">
+        <input id="inputCopyURL" type="button" value="Copy invite link">
         <p id="copyDisplay"></p>
     </aside>
     <aside class="hidden" hidden id="bookSection">
@@ -245,7 +246,7 @@
     <h1 id="cornerTitle" title="Open Picturephone"></h1>
 </main>
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
-<div id="loading" class="hidden" hidden></div>
+<div class="hidden" hidden id="loading"></div>
 <script src="/js/socket.io.js"></script>
 <script src="/js/cookies.min.js"></script>
 <script src="/js/fabric.min.js"></script>
