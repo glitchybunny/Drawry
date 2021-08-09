@@ -199,7 +199,7 @@ hr {
 }
 
 #setupSection {
-    min-width: 400px;
+    min-width: 420px;
 }
 
 #gameSection {
@@ -288,6 +288,16 @@ output {
     width: 60px
 }
 
+#inputCopyRoom, #inputCopyURL {
+    margin:5px auto;
+    font-size:18px;
+}
+
+#copyDisplay {
+    font-style: italic;
+    text-align: center;
+}
+
 
 /* Other Stuff */
 #playerList, #bookList, #presentList {
@@ -338,8 +348,7 @@ output {
     padding: 4px 8px;
     background-color: #123456;
     width: auto;
-    color: transparent;
-    text-shadow: rgba(255, 255, 255, 1) 0 0 10px;
+    color: white;
 }
 
 #roomCode:hover {
@@ -442,4 +451,9 @@ output {
 
 .hidden {
     display: none !important;
+}
+
+.blur {
+    color: transparent !important;
+    text-shadow: rgba(255, 255, 255, 1) 0 0 10px;
 }
