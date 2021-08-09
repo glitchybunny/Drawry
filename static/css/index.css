@@ -30,11 +30,11 @@ p, dfn {
     margin: 8px 0
 }
 
-a, li, output, p, dfn, h1, label, p {
+a, li, output, p, dfn, h1, label, p, #roomCode, td {
     color: #fff
 }
 
-a, label, li, output, p, dfn {
+a, label, li, output, p, dfn, td {
     font-size: 18px
 }
 
@@ -84,8 +84,16 @@ hr {
     border-bottom: 2px solid #234567
 }
 
+td {
+    text-align: center;
+}
+
+td:first-of-type {
+    text-align: left;
+}
+
 /* Width 100 */
-.presentDraw, #presentSection, h1, ul, hr {
+.presentDraw, #presentSection, h1, ul, hr, #presentTable, #mainGame {
     width: 100%;
 }
 
@@ -158,10 +166,6 @@ hr {
 
 #mainJoin {
     align-items: center;
-}
-
-#mainGame {
-    width: 100%
 }
 
 #copyright {
@@ -287,7 +291,7 @@ output {
     width: 60px
 }
 
-#inputCopyRoom, #inputCopyURL {
+#inputCopyRoom, #inputCopyURL, #presentTable input {
     margin: 5px auto;
     font-size: 18px;
 }
@@ -299,7 +303,7 @@ output {
 
 
 /* Other Stuff */
-#playerList, #bookList, #presentList {
+#playerList, #bookList {
     list-style: none;
     padding-inline: 0;
     padding-left: 0;
@@ -340,14 +344,13 @@ output {
 #previousDrawImg, #canvasBase {
     height: calc(100vh - 360px);
     min-height: 100px;
-    background-color: white;
+    background-color: #fff;
 }
 
 #roomCode {
     padding: 4px 8px;
     background-color: #123456;
     width: auto;
-    color: white;
 }
 
 #roomCode:hover {
@@ -416,7 +419,7 @@ output {
     min-width: 400px;
     height: calc(100vh - 210px);
     min-height: 210px;
-    background-color: white;
+    background-color: #fff;
     border: 2px solid #234567;
 }
 
