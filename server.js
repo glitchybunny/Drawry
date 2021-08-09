@@ -380,7 +380,7 @@ io.on('connection', (socket) => {
                     delete ROOMS[_roomCode];
                 } else {
                     // if the host disconnected, assign a new host
-                    if (socket.id === _room.host) {
+                    if (socket.id === ROOMS[_roomCode].host) {
                         ROOMS[_roomCode].host = _clients[0];
                         socket.to(_roomCode).emit("userHost", CLIENTS[_clients[0]].id);
                     }
