@@ -375,6 +375,16 @@ SOCKET.on('disconnect', (data) => {
 
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
 // Restrict inputs with a filter function
+// Get name from ID
+function getName(id) {
+    if (id === ID) {
+        return name;
+    } else {
+        return USERS[id].name;
+    }
+}
+
+// Input filter
 function setInputFilter(textbox, inputFilter) {
     ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach((event) => {
         textbox.addEventListener(event, function () {
@@ -406,14 +416,30 @@ function htmlDecode(input) {
     }
 }
 
-// Get name from ID
-function getName(id) {
-    if (id === ID) {
-        return name;
+// Copy text to clipboard
+function copyToClipboard(text) {
+    // Copy using the navigator API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text);
     } else {
-        return USERS[id].name;
+        // If not supported, create a textarea to copy from
+        let textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        return new Promise((res, req) => {
+            document.execCommand('copy') ? res() : req();
+            textArea.remove();
+        })
     }
 }
+
 
 
 /// --- UPDATE DOM --- ///
@@ -457,7 +483,6 @@ function updateHost() {
     })
 
     // Allow the client to edit settings if they're the host
-    byId('setupSection').style.minWidth = isHost ? "500px" : "400px";
     document.querySelectorAll('.isHost').forEach((elem) => {
         isHost ? show(elem) : hide(elem);
     });
@@ -589,12 +614,26 @@ function updatePresentList() {
 function hide(e) {
     e.classList.add("hidden");
     e.hidden = true;
+    return e;
 }
 
 // Show an element in the DOM
 function show(e) {
     e.classList.remove("hidden");
     e.hidden = false;
+    return e;
+}
+
+// Blur an element in the DOM
+function blur(e) {
+    e.classList.add("blur");
+    return e;
+}
+
+// Show an element in the DOM
+function unblur(e) {
+    e.classList.remove("blur");
+    return e;
 }
 
 
@@ -612,7 +651,7 @@ function show(e) {
         byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 8);
     }
 
-    // Join button
+    // Join: Join button
     byId('inputJoin').addEventListener('click', (e) => {
         // Receive and validate inputs
         let _inputName = byId('inputName');
@@ -714,6 +753,28 @@ function show(e) {
             SOCKET.emit('startGame', {settings: roomSettings, key: SESSION_KEY});
         }
     })
+
+    // Setup: Room code toggle
+    byId('roomCode').addEventListener('mousedown', (e) => {
+        unblur(e.target);
+    });
+    byId('roomCode').addEventListener('mouseup', (e) => {
+        blur(e.target);
+    });
+
+    // Setup: Invite copy room
+    byId('inputCopyRoom').addEventListener('click', () => {
+        // Add room code to clipboard
+        copyToClipboard(room);
+        byId('copyDisplay').innerText = "Room code copied!";
+    });
+
+    // Setup: Invite copy url
+    byId('inputCopyURL').addEventListener('click', () => {
+        // Add room code to clipboard
+        copyToClipboard(window.location.href);
+        byId('copyDisplay').innerText = "Invite link copied!";
+    });
 
     // Game: Let player change their title
     byId('inputTitle').addEventListener('change', (e) => {
