@@ -61,7 +61,6 @@ section, aside {
 h1 {
     font-weight: 700;
     margin: 10px auto;
-    width: 100%;
 }
 
 label {
@@ -70,7 +69,6 @@ label {
 }
 
 ul {
-    width: 100%;
     margin-top: 0;
     margin-bottom: 8px;
 }
@@ -82,11 +80,14 @@ li {
 
 hr {
     margin: 8px auto;
-    width: 100%;
     border: 0;
     border-bottom: 2px solid #234567
 }
 
+/* Width 100 */
+.presentDraw, #presentSection, h1, ul, hr {
+    width: 100%;
+}
 
 /* Classes */
 .center {
@@ -146,7 +147,6 @@ hr {
 }
 
 .presentDraw {
-    width: 100%;
     margin: 0 0 -5px;
 }
 
@@ -231,10 +231,9 @@ hr {
     align-items: center;
 }
 
-#presentSection {
+#presentSection, #gameArea {
     min-width: 400px;
-    width: 100%;
-    max-width: min(calc((100vh - 210px) * 1.33), 820px);
+    max-width: min(calc((100vh - 255px) * 1.33), 820px);
 }
 
 .presentLobby {
@@ -289,8 +288,8 @@ output {
 }
 
 #inputCopyRoom, #inputCopyURL {
-    margin:5px auto;
-    font-size:18px;
+    margin: 5px auto;
+    font-size: 18px;
 }
 
 #copyDisplay {
@@ -358,6 +357,14 @@ output {
 .bookAuthor {
     font-size: 12px;
     font-style: italic;
+}
+
+.bookAuthorDone:after {
+    content: "Done!";
+    font-style: normal;
+    padding: 2px 4px;
+    background-color: #123456;
+    margin-left: 8px;
 }
 
 .corner {
