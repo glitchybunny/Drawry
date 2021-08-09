@@ -561,52 +561,59 @@ function updateBookList() {
 
 // Update presenting buttons for host
 function updatePresentList() {
-    let _presentList, _id, _li, _title, _div, _inputHost, _inputUser;
-    _presentList = byId('presentList');
-    _presentList.innerHTML = '';
+    let _presentTable;
+    _presentTable = byId('presentTable');
+    _presentTable.innerHTML = '';
+
+    // Present event (for binding to buttons)
+    const _presentBook = function (args) {
+        SOCKET.emit("presentBook", args);
+    }
 
     // Update list of books
-    for (_id in BOOKS) {
-        // Create elements
-        _li = document.createElement('li');
-        _title = document.createElement('span');
-        _div = document.createElement('div');
-        _inputHost = document.createElement('input');
-        if (_id !== ID) {
-            _inputUser = document.createElement('input');
-        }
+    for (let _id in BOOKS) {
+        let _tr = document.createElement('tr');
+        _tr.id = _id;
 
-        // Fill in appropriate information
-        _div.id = _id;
-        _title.textContent = BOOKS[_id].title;
-        _inputHost.value = "Present";
-        _inputHost.type = "button";
-        if (_id !== ID) {
-            _inputUser.value = "Let " + USERS[_id].name.substr(0, 12) + (USERS[_id].name.length > 12 ? "…" : "") + " present";
-            _inputUser.type = "button";
-        }
+        // Create book title
+        let _titleTD = document.createElement('td');
+        _titleTD.textContent = BOOKS[_id].title;
 
-        // Add event listeners
-        const _present = function (args) {
-            SOCKET.emit("presentBook", args);
-        }
-        _inputHost.addEventListener('click', _present.bind(this, {book: _id, host: true, key: SESSION_KEY}), false);
-        if (_id !== ID) {
-            _inputUser.addEventListener('click', _present.bind(this, {
+        // Create button to let the host present
+        let _hostTD = document.createElement('td');
+        let _hostInput = document.createElement('input');
+        _hostInput.value = "Present";
+        _hostInput.type = "button";
+        _hostInput.addEventListener('click', _presentBook.bind(this, {
+            book: _id,
+            host: true,
+            key: SESSION_KEY
+        }));
+        _hostTD.appendChild(_hostInput);
+
+        // Create button to let the original author present
+        let _userTD = document.createElement('td');
+        if (ID !== _id) {
+            let _userInput = document.createElement('input');
+            let _name = getName(_id);
+            if (_name.length > 12) {
+                _name = _name.substr(0, 12) + "…";
+            }
+            _userInput.value = "Let " + _name + " present";
+            _userInput.type = "button";
+            _userInput.addEventListener('click', _presentBook.bind(this, {
                 book: _id,
                 host: false,
                 key: SESSION_KEY
-            }), false);
+            }));
+            _userTD.appendChild(_userInput);
         }
 
-        // Add to DOM
-        _li.appendChild(_title);
-        _li.appendChild(_div);
-        _div.appendChild(_inputHost);
-        if (_id !== ID) {
-            _div.appendChild(_inputUser);
-        }
-        _presentList.appendChild(_li);
+        // Append elements to DOM
+        _presentTable.appendChild(_tr);
+        _tr.appendChild(_titleTD);
+        _tr.appendChild(_userTD);
+        _tr.appendChild(_hostTD);
     }
 }
 
