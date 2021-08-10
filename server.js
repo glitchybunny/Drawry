@@ -334,6 +334,22 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Take over presentation as host
+    socket.on('presentOverride', () => {
+        if (VERBOSE) {
+            console.log('presentOverride', CLIENTS[socket.id].id);
+        }
+        let _id = CLIENTS[socket.id].id;
+        let _roomCode = CLIENTS[socket.id].roomCode;
+
+        // Make sure request is from the host
+        if (socket.id === ROOMS[_roomCode].host) {
+            console.log("YEAH");
+            ROOMS[_roomCode].presenter = _id;
+            io.to(_roomCode).emit('presentOverride');
+        }
+    })
+
     // Return to lobby for next book
     socket.on('presentFinish', () => {
         if (VERBOSE) {
@@ -493,7 +509,7 @@ function shuffle(array) {
 // setup rate limiter, max of 50 resource requests per minute
 const RateLimit = require('express-rate-limit');
 let limiter = new RateLimit({
-    windowMs: 60*1000,
+    windowMs: 60 * 1000,
     max: 50
 });
 
