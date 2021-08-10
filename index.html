@@ -217,6 +217,9 @@
         <div class="hidden" hidden id="presentControlsFinish">
             <input id="inputPresentFinish" type="button" value="Finish presenting">
         </div>
+        <div class="hidden" hidden id="presentControlsOverride">
+            <input id="inputPresentOverride" type="button" value="Hijack presentation">
+        </div>
     </section>
 
     <aside id="inviteSection">
@@ -246,7 +249,11 @@
     <h1 id="cornerTitle" title="Open Picturephone"></h1>
 </main>
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
-<div class="hidden" hidden id="loading"></div>
+<div class="hidden" hidden id="loading">
+    <section class="hidden" hidden>
+
+    </section>
+</div>
 <script src="/js/socket.io.js"></script>
 <script src="/js/cookies.min.js"></script>
 <script src="/js/fabric.min.js"></script>

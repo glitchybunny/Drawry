@@ -294,6 +294,7 @@ output {
 #inputCopyRoom, #inputCopyURL, #presentTable input {
     margin: 5px auto;
     font-size: 18px;
+    display: block;
 }
 
 #copyDisplay {
@@ -427,14 +428,14 @@ output {
     color: #000;
 }
 
-#presentControls, #presentControlsFinish {
+#presentControls, #presentControlsFinish, #presentControlsOverride {
     display: flex;
     flex-flow: row nowrap;
     width: auto;
     margin: 0 auto;
 }
 
-#presentControls input, #presentControlsFinish input {
+#presentControls input, #presentControlsFinish input, #inputPresentOverride {
     margin: 4px !important;
 }
 

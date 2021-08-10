@@ -152,6 +152,7 @@ SOCKET.on('bookTitle', (data) => {
 SOCKET.on('page', (data) => {
     // Update local book variables
     BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, type: data.type};
+    byId('b' + data.id).classList.add('bookAuthorDone');
 });
 
 // Go to next page in books
@@ -271,10 +272,15 @@ SOCKET.on('presentBook', (data) => {
         show(byId('presentControls'));
     } else {
         hide(byId('presentControls'));
+
+        // Enable override if client is not presenting but is the host
+        if (ID === ROOM.host) {
+            show(byId('presentControlsOverride'));
+        }
     }
 });
 
-SOCKET.on('presentForward', (data) => {
+SOCKET.on('presentForward', () => {
     // Go to next page
     byId('inputPresentBack').disabled = false;
     ROUND.page += 1;
@@ -306,13 +312,16 @@ SOCKET.on('presentForward', (data) => {
     _window.scrollTop = _window.scrollHeight;
 
     // Last page
-    if (ID === ROUND.presenter && ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
+    if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
         byId('inputPresentForward').disabled = true;
-        show(byId('presentControlsFinish'));
+
+        if (ID === ROUND.presenter) {
+            show(byId('presentControlsFinish'));
+        }
     }
 });
 
-SOCKET.on('presentBack', (data) => {
+SOCKET.on('presentBack', () => {
     // Go to previous page
     byId('inputPresentForward').disabled = false;
     ROUND.page -= 1;
@@ -322,16 +331,36 @@ SOCKET.on('presentBack', (data) => {
     _pages[_pages.length - 1].remove();
 
     // First page
-    if (ID === ROUND.presenter && ROUND.page === -1) {
+    if (ROUND.page === -1) {
         byId('inputPresentBack').disabled = true;
     }
 });
 
-SOCKET.on('presentFinish', (data) => {
+SOCKET.on('presentOverride', () => {
+    // Update presenter
+    ROUND.presenter = ROOM.host;
+
+    // Update UI buttons
+    if (ID === ROOM.host) {
+        show(byId('presentControls'));
+        if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
+            show(byId('presentControlsFinish'));
+        }
+        hide(byId('presentControlsOverride'));
+    } else {
+        hide(byId('presentControls'));
+    }
+
+    // Display new presenter of book
+    byId('presentBookPresenter').textContent = "Presented by " + getName(ROOM.host);
+});
+
+SOCKET.on('presentFinish', () => {
     // Return to present lobby
     hide(byId('presentWindow'));
     hide(byId('presentControls'));
     hide(byId('presentControlsFinish'));
+    hide(byId('presentControlsOverride'));
     show(byId('presentMenu'));
     byId('presentSection').classList.add('presentLobby');
     byId('inputPresentForward').disabled = false;
@@ -384,28 +413,6 @@ function getName(id) {
         console.error("ID is undefined");
     }
 }
-
-// Input filter
-function setInputFilter(textbox, inputFilter) {
-    ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach((event) => {
-        textbox.addEventListener(event, function () {
-            if (inputFilter(this.value)) {
-                this.oldValue = this.value;
-                this.oldSelectionStart = this.selectionStart;
-                this.oldSelectionEnd = this.selectionEnd;
-            } else if (this.hasOwnProperty("oldValue")) {
-                this.value = this.oldValue;
-                this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-            } else {
-                this.value = "";
-            }
-        });
-    });
-}
-
-setInputFilter(byId("inputRoom"), function (value) {
-    return /^[a-zA-Z0-9_-]*$/i.test(value);
-});
 
 // Decode strings to html
 function htmlDecode(input) {
@@ -538,6 +545,7 @@ function updateBookList() {
         // Assign the correct classes for styling
         _bookTitle.className = "bookTitle";
         _bookAuthor.className = "bookAuthor";
+        _bookAuthor.id = "b" + _id;
 
         // Display who's working on the current page of the book
         if (ROUND.type === "Presenting") {
@@ -550,6 +558,11 @@ function updateBookList() {
             _author = getName(_page.author ?? _page);
             _bookTitle.textContent = BOOKS[_id].title;
             _bookAuthor.textContent = "Pg\u00a0" + _num + "\u00a0-\u00a0" + _author;
+
+            // Indicate whether page has been completed or not
+            if (_page.value) {
+                _bookAuthor.classList.add('bookAuthorDone')
+            }
         }
 
         // Add to DOM
@@ -573,7 +586,7 @@ function updatePresentList() {
     // Update list of books
     for (let _id in BOOKS) {
         let _tr = document.createElement('tr');
-        _tr.id = _id;
+        _tr.id = "p" + _id;
 
         // Create book title
         let _titleTD = document.createElement('td');
@@ -644,7 +657,7 @@ function unblur(e) {
 }
 
 
-/// --- CONFIGURE INPUTS --- ///
+/// --- INPUTS --- ///
 {
     // Prefill name field with cookie
     if (Cookies.get('name')) {
@@ -657,6 +670,28 @@ function unblur(e) {
     if (_params.has("room")) {
         byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 8);
     }
+
+    // Join: Input filter
+    function setInputFilter(textbox, inputFilter) {
+        ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach((event) => {
+            textbox.addEventListener(event, function () {
+                if (inputFilter(this.value)) {
+                    this.oldValue = this.value;
+                    this.oldSelectionStart = this.selectionStart;
+                    this.oldSelectionEnd = this.selectionEnd;
+                } else if (this.hasOwnProperty("oldValue")) {
+                    this.value = this.oldValue;
+                    this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+                } else {
+                    this.value = "";
+                }
+            });
+        });
+    }
+
+    setInputFilter(byId("inputRoom"), function (value) {
+        return /^[a-zA-Z0-9_-]*$/i.test(value);
+    });
 
     // Join: Join button
     byId('inputJoin').addEventListener('click', (e) => {
@@ -853,6 +888,13 @@ function unblur(e) {
         }
     });
 
+    // Present: Hijack presentation
+    byId('inputPresentOverride').addEventListener('click', () => {
+        if (ID === ROOM.host) {
+            SOCKET.emit('presentOverride', {key: SESSION_KEY});
+        }
+    });
+
     // Present: Finished
     byId('inputPresentFinish').addEventListener('click', () => {
         if (ID === ROUND.presenter) {
@@ -860,6 +902,7 @@ function unblur(e) {
         }
     });
 }
+
 
 /// --- CANVAS --- ///
 // Canvas drawing
