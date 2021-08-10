@@ -10,7 +10,6 @@ const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
-const http = require('http');
 const xss = require("xss");
 const path = require('path');
 const sizeOf = require('image-size');
@@ -302,7 +301,7 @@ io.on('connection', (socket) => {
     });
 
     // Go to next page of presentation
-    socket.on('presentForward', (data) => {
+    socket.on('presentForward', () => {
         if (VERBOSE) {
             console.log('presentForward', CLIENTS[socket.id].id);
         }
@@ -319,7 +318,7 @@ io.on('connection', (socket) => {
     });
 
     // Go to previous page of presentation (hide most recently shown page)
-    socket.on('presentBack', (data) => {
+    socket.on('presentBack', () => {
         if (VERBOSE) {
             console.log('presentBack', CLIENTS[socket.id].id);
         }
@@ -336,7 +335,7 @@ io.on('connection', (socket) => {
     });
 
     // Return to lobby for next book
-    socket.on('presentFinish', (data) => {
+    socket.on('presentFinish', () => {
         if (VERBOSE) {
             console.log('presentFinish', CLIENTS[socket.id].id);
         }
@@ -391,15 +390,6 @@ io.on('connection', (socket) => {
         delete CLIENTS[socket.id];
     });
 });
-
-// Simple HTTP server
-app.get('/', function (req, res) {
-    res.sendFile(path.join(__dirname + '/index.html'));
-});
-app.use(express.static('static'));
-
-// Open server to manage server things
-server.listen(process.env.PORT || 80);
 
 
 ///// ----- SYNCHRONOUS SERVER FUNCTIONS ----- /////
@@ -497,3 +487,24 @@ function shuffle(array) {
     }
     return array;
 }
+
+
+///// ----- HTTP SERVER ----- /////
+// setup rate limiter, max of 50 resource requests per minute
+const RateLimit = require('express-rate-limit');
+let limiter = new RateLimit({
+    windowMs: 60*1000,
+    max: 50
+});
+
+// apply rate limiter to all resource requests
+app.use(limiter);
+
+// handle requests
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname + '/index.html'));
+});
+app.use(express.static('static'));
+
+// Open server to manage server things
+server.listen(process.env.PORT ?? 80);
