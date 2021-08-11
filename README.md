@@ -1,7 +1,3 @@
-### ***Notice: This project is still very early in development, and as such, there is no playable version yet.***
-
----
-
 # open-picturephone
 
 Take turns drawing pictures and writing captions to make fun stories with your friends.
@@ -21,8 +17,7 @@ For reference, server.js is the node server, and /static/js/client.js is the mai
 5. Connect to the server by going to `localhost` or `127.0.0.1` in your browser.
 
 **How to run on heroku:**
-1. Create new heroku instance and connect it to the repo.
-2. Under settings, add the `heroku/nodejs` buildpack.
-3. Add a new entry to the Config Vars in the settings. Set KEY to `NODE_ENV` and VALUE to `production node server.js`.
-4. Under resources, you'll want to create a new web dyno. A free/hobby dyno should run this fine.
-5. Run the dyno with the instructions `npm start`.
+1. Fork this repo
+2. Create new heroku instance and connect it to your forked repo.
+3. Heroku should automatically detect and choose a buildpack. If not, add the `heroku/nodejs` buildpack in the settings.
+4. Start the dyno and you should be good to go :)
