@@ -913,15 +913,18 @@ CANVAS.setBackgroundColor('#FFFFFF');
 CANVAS.freeDrawingBrush.width = 4;
 
 // Resize the drawing canvas
+window.addEventListener('resize', resizeCanvas);
+
 function resizeCanvas() {
     let _base = byId('canvasBase');
-    let _w = _base.scrollWidth, _h = _base.scrollHeight;
+    let _w = _base.scrollWidth, _h = _w * 3 / 4;
 
-    if (_w && _h) {
+    if (_w) {
         let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
         CANVAS.setDimensions({width: _w, height: _h});
         CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+
+        _base.style.width = _w.toString() + "px";
+        _base.style.height = _h.toString() + "px";
     }
 }
-
-window.addEventListener('resize', resizeCanvas);
