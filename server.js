@@ -344,7 +344,6 @@ io.on('connection', (socket) => {
 
         // Make sure request is from the host
         if (socket.id === ROOMS[_roomCode].host) {
-            console.log("YEAH");
             ROOMS[_roomCode].presenter = _id;
             io.to(_roomCode).emit('presentOverride');
         }
