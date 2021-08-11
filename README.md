@@ -6,6 +6,8 @@ Inspired by drawception, brokenpicturephone, and a plethora of other games in th
 
 :art:
 
+---
+
 ### Running your own server
 For reference, server.js is the node server, and /static/js/client.js is the main javascript module for the client.
 
