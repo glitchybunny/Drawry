@@ -140,6 +140,7 @@ SOCKET.on('startGame', (data) => {
             break;
     }
     byId('pageCurrent').textContent = (ROUND.page + 1).toString();
+    byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
 });
 
 // Update book title
@@ -153,19 +154,22 @@ SOCKET.on('page', (data) => {
     // Update local book variables
     BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, type: data.type};
     byId('b' + data.id).classList.add('bookAuthorDone');
+
+    // Update how many pages are left in the round
+    byId('waitDisplay').textContent = parseInt(byId('waitDisplay').textContent) - 1;
 });
 
 // Go to next page in books
 SOCKET.on('nextPage', () => {
     // Update DOM
-    hide(byId('loading'));
     byId('inputPageSubmit').disabled = false;
     hide(byId('gameTitle'));
     show(byId('gamePrevious'));
+    byId('dialogWait').close();
 
     // Increment page number
     ROUND.page += 1;
-    byId('pageCurrent').textContent = (ROUND.page + 1).toString();
+    byId('pageCurrent').textContent = ROUND.page + 1;
 
     // Figure out book and previous page
     for (let _id in BOOKS) {
@@ -217,6 +221,9 @@ SOCKET.on('nextPage', () => {
     // Update book list info
     updateBookList();
 
+    // Show how many pages are left
+    byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
+
     // Set timer
     // TODO: timers
 });
@@ -229,6 +236,7 @@ SOCKET.on('startPresenting', () => {
     hide(byId('loading'));
     hide(byId('gameSection'));
     show(byId('presentSection'));
+    byId('dialogWait').close();
 
     // Update round state
     ROUND.page = undefined;
@@ -671,6 +679,7 @@ function unblur(e) {
         byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 8);
     }
 
+    /// JOIN
     // Join: Input filter
     function setInputFilter(textbox, inputFilter) {
         ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach((event) => {
@@ -719,6 +728,7 @@ function unblur(e) {
         }
     });
 
+    /// SETUP
     // Setup: Send settings to the server
     function emitSettings() {
         (ID === ROOM.host) ? SOCKET.emit("settings", {settings: ROOM.settings, key: SESSION_KEY}) : SOCKET.disconnect();
@@ -818,6 +828,7 @@ function unblur(e) {
         byId('copyDisplay').innerText = "Invite link copied!";
     });
 
+    /// GAME
     // Game: Let player change their title
     byId('inputTitle').addEventListener('change', (e) => {
         let _title = e.target.value.substr(0, 40);
@@ -828,24 +839,25 @@ function unblur(e) {
 
     // Game: Submit page
     byId('inputPageSubmit').addEventListener('click', (e) => {
-        // Get write input if it's a writing round
+        // Check which round type we're in
         if (ROUND.type === "Write") {
+            /// Get write input if it's a writing round
             let _inputWrite = byId('inputWrite');
             if (_inputWrite.reportValidity()) {
                 // Send page to the server
                 let _value = _inputWrite.value.substr(0, 80);
                 SOCKET.emit('submitPage', {type: ROUND.type, value: _value, key: SESSION_KEY});
 
+                // Lock text input
+                _inputWrite.disabled = true;
+
                 // Put client in waiting state
                 e.target.disabled = true;
-                _inputWrite.disabled = true;
                 byId('inputTitle').disabled = true;
-                show(byId('loading'));
+                byId('dialogWait').showModal();
             }
-        }
-
-        // Get draw input if it's a drawing round
-        else if (ROUND.type === "Draw") {
+        } else if (ROUND.type === "Draw") {
+            /// Get draw input if it's a drawing round
             // Export canvas data to base64
             let _value = CANVAS.toDataURL({
                 format: 'png',
@@ -855,11 +867,6 @@ function unblur(e) {
             // Send page to the server
             SOCKET.emit('submitPage', {type: ROUND.type, value: _value, key: SESSION_KEY});
 
-            // Put client in waiting state
-            e.target.disabled = true;
-            byId('inputTitle').disabled = true;
-            show(byId('loading'));
-
             // Lock canvas from any further drawing/editing
             CANVAS.isDrawingMode = false;
             CANVAS.selection = false;
@@ -867,9 +874,22 @@ function unblur(e) {
                 object.selectable = false;
                 object.evented = false;
             });
+
+            // Put client in waiting state
+            e.target.disabled = true;
+            byId('inputTitle').disabled = true;
+            byId('dialogWait').showModal();
         }
     });
 
+    // Game: Waiting dialog
+    let _dialogWait = byId('dialogWait');
+    dialogPolyfill.registerDialog(_dialogWait);
+    _dialogWait.addEventListener('cancel', (e) => {
+        e.preventDefault();
+    })
+
+    /// PRESENT
     // Present: Next page
     byId('inputPresentForward').addEventListener('click', () => {
         if (ID === ROUND.presenter) {

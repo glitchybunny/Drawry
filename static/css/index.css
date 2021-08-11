@@ -30,11 +30,11 @@ p, dfn {
     margin: 8px 0
 }
 
-a, li, output, p, dfn, h1, label, p, #roomCode, td {
-    color: #fff
+a, li, output, p, dfn, h1, label, p, #roomCode, td, dialog {
+    color: #fff;
 }
 
-a, label, li, output, p, dfn, td {
+a, label, li, output, p, dfn, td, dialog {
     font-size: 18px
 }
 
@@ -92,6 +92,17 @@ td:first-of-type {
     text-align: left;
 }
 
+dialog {
+    border: 2px solid #001234;
+    background-color: #345678;
+    filter: drop-shadow(4px 4px 0 #012345);
+    font-size: 18px;
+}
+
+dialog::backdrop, dialog + .backdrop {
+    background-color: rgba(35, 69, 103, 0.2);
+}
+
 /* Width 100 */
 .presentDraw, #presentSection, h1, ul, hr, #presentTable, #mainGame {
     width: 100%;
@@ -100,6 +111,7 @@ td:first-of-type {
 /* Classes */
 .center {
     align-self: center;
+    text-align: center;
 }
 
 .centerV {
@@ -156,6 +168,10 @@ td:first-of-type {
 
 .presentDraw {
     margin: 0 0 -5px;
+}
+
+.spin {
+    animation: rotation 2s infinite linear;
 }
 
 /* Basic page layout IDs */
@@ -467,4 +483,15 @@ output {
 .blur {
     color: transparent !important;
     text-shadow: rgba(255, 255, 255, 1) 0 0 10px;
+}
+
+
+/* Keyframes */
+@keyframes rotation {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(359deg);
+    }
 }

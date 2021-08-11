@@ -2,6 +2,7 @@
 
 <html lang="en">
 <head>
+    <link href="css/dialog-polyfill.css" rel="stylesheet" type="text/css"/>
     <link href="css/index.css" media="screen" rel="stylesheet" type="text/css"/>
     <title>Open Picturephone</title>
 </head>
@@ -198,8 +199,7 @@
                 <table id="presentTable"></table>
             </div>
             <div class="isNotHost">
-                <p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start
-                    presenting...</p>
+                <p style="text-align:center; font-style:italic; width:100%;">Waiting for a presentation to start...</p>
             </div>
         </div>
         <div class="hidden" hidden id="presentWindow">
@@ -250,13 +250,22 @@
 </main>
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
 <div class="hidden" hidden id="loading">
-    <section class="hidden" hidden>
-
-    </section>
 </div>
+<dialog role="dialog" id="dialogWait">
+    <p class="center" style="display:block">
+        Waiting for others to finish their page...
+    </p>
+    <div style="padding: 8px">
+        <img src="img/loading.png" class="spin" style="display:block; margin: 0 auto;">
+    </div>
+    <p class="center" style="display:block">
+        <span id="waitDisplay">0</span> page(s) remaining
+    </p>
+</dialog>
 <script src="/js/socket.io.js"></script>
 <script src="/js/cookies.min.js"></script>
 <script src="/js/fabric.min.js"></script>
+<script src="/js/dialog-polyfill.min.js"></script>
 <script src="/js/client.js" type="module"></script>
 <script>
     function enterPress(e, id) {
