@@ -152,7 +152,6 @@
             <label for="inputTitle">
                 <b>Book Title</b>
             </label>
-            <br/>
             <input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
                    placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
                    type="text">
@@ -174,7 +173,6 @@
                 <label for="inputWrite" id="writePrompt">
                     What should the first page say?
                 </label>
-                <br/>
                 <input aria-required="true" autocomplete="off" id="inputWrite" maxlength="80" minlength="1"
                        onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!"
                        required="required" spellcheck="true" type="text">
@@ -184,7 +182,21 @@
                 <canvas height="600" id="c" width="800"></canvas>
             </div>
             <hr>
-            <input class="right" id="inputPageSubmit" type="button" value="Submit">
+            <div style="display:flex; flex-flow:row nowrap;">
+                <div class="hidden" hidden id="gameDrawTools">
+                    <input type="color" id="toolColor" disabled="disabled">
+                    <div>
+                        <input type="button" id="toolDraw" class="toolSelected" disabled="disabled">
+                        <input type="button" id="toolErase" disabled="disabled">
+                        <input type="button" id="toolFill" disabled="disabled">
+                    </div>
+                    <div>
+                        <input type="button" id="toolUndo" disabled="disabled">
+                        <input type="button" id="toolRedo" disabled="disabled">
+                    </div>
+                </div>
+                <input class="right" id="inputPageSubmit" type="button" value="Submit">
+            </div>
         </section>
     </div>
 
