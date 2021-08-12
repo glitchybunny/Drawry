@@ -107,10 +107,12 @@ dialog::backdrop, dialog + .backdrop {
     background-color: rgba(35, 69, 103, 0.2);
 }
 
+
 /* Width 100 */
 .presentDraw, #presentSection, h1, ul, hr, #presentTable, #mainGame {
     width: 100%;
 }
+
 
 /* Classes */
 .center {
@@ -177,6 +179,7 @@ dialog::backdrop, dialog + .backdrop {
 .spin {
     animation: rotation 2s infinite linear;
 }
+
 
 /* Basic page layout IDs */
 #mainJoin, #gameWrite {
@@ -273,10 +276,8 @@ input[type=text] {
 
 input[type=button] {
     font-size: 22px;
-    width: auto;
     padding: 1px 16px;
     margin: 10px auto;
-
 }
 
 input[type=range] {
@@ -472,6 +473,97 @@ output {
     background: rgba(35, 69, 103, 0.1);
     z-index: 100;
     cursor: wait;
+}
+
+
+/* Drawing tools */
+#gameDrawTools {
+    display: flex;
+    flex-flow: row nowrap;
+    flex-grow: 1;
+    margin-right: 12px;
+    padding-right: 8px;
+    justify-content: flex-start;
+    border-right: 2px solid #234567;
+}
+
+#gameDrawTools > * {
+    display: flex;
+    align-self: center;
+    align-content: center;
+    justify-content: center;
+    margin: 2px 6px;
+}
+
+[id^=tool] {
+    align-self: center;
+    width: 40px;
+    height: 40px;
+    background-color: #6789AB;
+    background-image: url(/img/tools.png);
+    background-size: 70px;
+    background-repeat: no-repeat;
+    background-position-x: left;
+    border: 2px solid #012345;
+    outline: none;
+    padding: 0;
+    margin: 2px -1px !important;
+    margin-block: 0;
+}
+
+[id^=tool]:hover {
+    border: 2px solid #89ABCD;
+    cursor: pointer;
+    z-index: 1;
+}
+
+[id^=tool]:disabled {
+    opacity: 40%;
+    border: 2px solid #012345;
+    cursor: default;
+}
+
+#toolColor {
+    width: 0;
+    height: 0;
+    padding: 0;
+    background: none;
+    border-width: 20px;
+    border-radius: 50%;
+    border-style: solid;
+    border-color: black;
+    outline: 2px solid #012345;
+    overflow: hidden;
+    margin: 2px 6px !important;
+}
+
+#toolColor:hover {
+    outline: 2px solid #89ABCD;
+    cursor: pointer;
+}
+
+#toolDraw {
+    background-position-y: 0;
+}
+
+#toolErase {
+    background-position-y: -34px;
+}
+
+#toolFill {
+    background-position-y: -68px;
+}
+
+#toolUndo {
+    background-position-y: -102px;
+}
+
+#toolRedo {
+    background-position-y: -136px;
+}
+
+.toolSelected {
+    background-position-x: right;
 }
 
 

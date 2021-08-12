@@ -135,6 +135,7 @@ SOCKET.on('startGame', (data) => {
             break;
         case("Draw"):
             show(byId('gameDraw'));
+            show(byId('gameDrawTools'));
             byId('pageType').textContent = "Drawing";
             resizeCanvas();
             break;
@@ -186,6 +187,7 @@ SOCKET.on('nextPage', () => {
         ROUND.type = "Draw";
         byId('pageType').textContent = "Drawing";
         show(byId('gameDraw'));
+        show(byId('gameDrawTools'));
         hide(byId('gameWrite'));
 
         // Show previous page
@@ -889,6 +891,12 @@ function unblur(e) {
         e.preventDefault();
     })
 
+    /// DRAW
+    // Draw: Colour picker
+    byId('toolColor').addEventListener('input', (event) => {
+        event.target.style.borderColor = event.target.value;
+    });
+
     /// PRESENT
     // Present: Next page
     byId('inputPresentForward').addEventListener('click', () => {
@@ -956,3 +964,4 @@ function resizeCanvas() {
         _base.style.height = _h + "px";
     }
 }
+
