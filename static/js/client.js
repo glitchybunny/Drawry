@@ -936,15 +936,23 @@ CANVAS.freeDrawingBrush.width = 4;
 window.addEventListener('resize', resizeCanvas);
 
 function resizeCanvas() {
+    // Get base image of canvas
     let _base = byId('canvasBase');
-    let _w = _base.scrollWidth, _h = _w * 3 / 4;
+    _base.style.height = "";
 
+    // Make dimensions and ensure ratio is correct (sometimes gets weird in chrome)
+    let _w = _base.scrollWidth, _h = _base.scrollHeight;
+    let _ratio = (_h/_w) * 3/4;
+    if (_ratio <= .99 || _ratio >= 1.01) {
+        // disproportionate, change height to compensate
+        _h = _w * 3/4;
+    }
+
+    // Resize canvas
     if (_w) {
         let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
         CANVAS.setDimensions({width: _w, height: _h});
         CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-
-        _base.style.width = _w.toString() + "px";
-        _base.style.height = _h.toString() + "px";
+        _base.style.height = _h + "px";
     }
 }

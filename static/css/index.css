@@ -40,6 +40,10 @@ a, label, li, output, p, dfn, td, dialog {
 
 dfn {
     text-decoration: underline dotted;
+    text-decoration-skip: none;
+    text-decoration-skip-ink: none;
+    text-decoration-thickness: 1px;
+    text-decoration-color: #fff;
     font-style: normal;
     cursor: help;
 }
@@ -225,11 +229,12 @@ dialog::backdrop, dialog + .backdrop {
 #gameSection {
     display: flex;
     flex-flow: column nowrap;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
     width: auto;
     max-width: 800px;
     height: 100vh;
-    align-items: center;
-    justify-content: center;
 }
 
 #gameSettings {
@@ -354,12 +359,13 @@ output {
     display: flex;
     justify-content: center;
     max-width: 100%;
-    max-height: calc(100vh - 360px);
     min-height: 100px;
+    flex-grow: 1;
 }
 
 #previousDrawImg, #canvasBase {
-    height: calc(100vh - 360px);
+    min-width: 0;
+    height: calc(100vh - 360px); /*min(calc(100vh - 360px), 615px);*/
     min-height: 100px;
     background-color: #fff;
 }
