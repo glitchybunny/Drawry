@@ -97,43 +97,39 @@ td:first-of-type {
 }
 
 dialog {
-    position: absolute;
-    left: 0; right: 0;
-    width: -moz-fit-content;
-    width: -webkit-fit-content;
-    width: fit-content;
-    height: -moz-fit-content;
-    height: -webkit-fit-content;
-    height: fit-content;
-    margin: auto;
-    border: 2px solid #001234;
-    padding: 1em;
-    background-color: #345678;
-    color: black;
-    display: block;
-    font-size: 18px;
-    filter: drop-shadow(4px 4px 0 #012345);
+	position: absolute;
+	left: 0; right: 0;
+	width: fit-content;
+	height: fit-content;
+	margin: auto;
+	border: 2px solid #001234;
+	padding: 1em;
+	background-color: #345678;
+	color: black;
+	display: block;
+	font-size: 18px;
+	filter: drop-shadow(4px 4px 0 #012345);
 }
 
 dialog:not([open]) {
-    display: none;
+	display: none;
 }
 
 dialog::backdrop, dialog + .backdrop {
-    position: fixed;
-    top: 0; right: 0; bottom: 0; left: 0;
-    background-color: rgba(35, 69, 103, 0.2);
+	position: fixed;
+	top: 0; right: 0; bottom: 0; left: 0;
+	background-color: rgba(35, 69, 103, 0.2);
 }
 
 ._dialog_overlay {
-    position: fixed;
-    top: 0; right: 0; bottom: 0; left: 0;
+	position: fixed;
+	top: 0; right: 0; bottom: 0; left: 0;
 }
 
 dialog.fixed {
-    position: fixed;
-    top: 50%;
-    transform: translate(0, -50%);
+	position: fixed;
+	top: 50%;
+	transform: translate(0, -50%);
 }
 
 
@@ -571,7 +567,7 @@ output {
 	cursor: pointer;
 }
 
-#toolDraw {
+#toolPaint {
 	background-position-y: 0;
 }
 
