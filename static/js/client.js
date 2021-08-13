@@ -847,7 +847,7 @@ function unblur(e) {
 			let _inputWrite = byId('inputWrite');
 			if (_inputWrite.reportValidity()) {
 				// Send page to the server
-				let _value = _inputWrite.value.substr(0, 80);
+				let _value = _inputWrite.value.substr(0, 140);
 				SOCKET.emit('submitPage', {type: ROUND.type, value: _value, key: SESSION_KEY});
 
 				// Lock text input
