@@ -93,19 +93,19 @@
 				</div>
 			</div>
 			<div>
-				<dfn aria-label="Whether there are colour palette restrictions on the drawings"
-					 title="Whether there are colour palette restrictions on the drawings">
-					Colour palette
+				<dfn aria-label="Whether there are color palette restrictions on the drawings"
+					 title="Whether there are color palette restrictions on the drawings">
+					Color palette
 				</dfn>
 				<div class="isHost hidden">
 					<label>
-						<select id="colourPalette">
+						<select id="colorPalette">
 							<option value="No palette">No palette</option>
 						</select>
 					</label>
 				</div>
 				<div class="isNotHost">
-					<output for="colourPalette" id="colourPaletteDisplay"></output>
+					<output for="colorPalette" id="colorPaletteDisplay"></output>
 				</div>
 			</div>
 			<hr>
@@ -184,16 +184,23 @@
 			<hr>
 			<div style="display:flex; flex-flow:row nowrap;">
 				<div class="hidden" hidden id="gameDrawTools">
-					<input type="color" id="toolColor" disabled="disabled">
+					<input id="toolColor" title="Colour picker" type="color">
 					<div>
-						<input type="button" id="toolDraw" class="toolSelected" disabled="disabled">
-						<input type="button" id="toolErase" disabled="disabled">
-						<input type="button" id="toolFill" disabled="disabled">
+						<input class="toolSelected" id="toolPaint" title="Draw tool (D)" type="button">
+						<input id="toolErase" title="Erase tool (E)" type="button">
+						<input disabled="disabled" id="toolFill" title="Fill tool (F)" type="button">
 					</div>
 					<div>
-						<input type="button" id="toolUndo" disabled="disabled">
-						<input type="button" id="toolRedo" disabled="disabled">
+						<input disabled="disabled" id="toolUndo" title="Undo (Z)" type="button">
+						<input disabled="disabled" id="toolRedo" title="Redo (Y)" type="button">
 					</div>
+					<!--
+					TODO:
+					- Finish implementing all of the above
+					- Nuke canvas button
+					- Color dropper
+					- Brush sizes/types
+					-->
 				</div>
 				<input class="right" id="inputPageSubmit" type="button" value="Submit">
 			</div>
@@ -264,12 +271,12 @@
 <a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
 <div class="hidden" hidden id="loading">
 </div>
-<dialog role="alertdialog" id="dialogWait">
+<dialog id="dialogWait" role="alertdialog">
 	<p class="center" style="display:block">
 		Waiting for others to finish their page...
 	</p>
 	<div style="padding: 8px">
-		<img src="img/loading.png" class="spin" alt="" style="display:block; margin: 0 auto;">
+		<img alt="" class="spin" src="img/loading.png" style="display:block; margin: 0 auto;">
 	</div>
 	<p class="center" style="display:block">
 		<span id="waitDisplay">0</span> page(s) remaining
