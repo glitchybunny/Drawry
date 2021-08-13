@@ -194,7 +194,7 @@ io.on('connection', (socket) => {
 		}
 	});
 
-	// Get writing page from player
+	// Get page from player
 	socket.on('submitPage', (data) => {
 		if (VERBOSE) {
 			console.log('submitPage', CLIENTS[socket.id].id, {
@@ -210,7 +210,7 @@ io.on('connection', (socket) => {
 		// Fetch page data
 		if (data.type === "Write") {
 			// Data is text
-			_value = xss(data.value.substr(0, 80));
+			_value = xss(data.value.substr(0, 140));
 
 		} else if (data.type === "Draw") {
 			// Data is encoded image
