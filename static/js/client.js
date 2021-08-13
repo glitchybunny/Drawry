@@ -12,11 +12,23 @@ const ID = Cookies.get('id') ? Cookies.get('id') : (array[0].valueOf() + 1).toSt
 const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 
+/// --- ENUMS --- ///
+const TOOL = {
+	PAINT: 0,
+	ERASE: 1,
+	FILL: 2
+};
+
 /// --- GAME CONSTANTS --- ///
 const USERS = {};
 const BOOKS = {};
 const ROOM = {};
 const ROUND = {};
+const DRAW = {
+	tool: TOOL.PAINT,
+	color: "#000000",
+	width: 6
+}
 
 /// --- VARIABLES --- ///
 var name = undefined;
@@ -209,6 +221,7 @@ SOCKET.on('nextPage', () => {
 		byId('writePrompt').textContent = "What happens next?";
 		show(byId('gameWrite'));
 		hide(byId('gameDraw'));
+		hide(byId('gameDrawTools'));
 
 		// Show previous page
 		byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
@@ -480,8 +493,8 @@ function updateSettings() {
 	byId('pageOrderDisplay').value = ROOM.settings.pageOrder;
 
 	// Color palette
-	document.querySelector('#colourPalette [value="' + ROOM.settings.palette + '"]').selected = true;
-	byId('colourPaletteDisplay').value = ROOM.settings.palette;
+	document.querySelector('#colorPalette [value="' + ROOM.settings.palette + '"]').selected = true;
+	byId('colorPaletteDisplay').value = ROOM.settings.palette;
 
 	// Write time limit
 	byId('timeWrite').value = ROOM.settings.timeWrite;
@@ -769,8 +782,8 @@ function unblur(e) {
 		});
 	});
 
-	// Setup: Colour palette
-	byId('colourPalette').addEventListener('input', (e) => {
+	// Setup: Color palette
+	byId('colorPalette').addEventListener('input', (e) => {
 		if (ROOM.settings) {
 			ROOM.settings.palette = e.target.value;
 			emitSettings();
@@ -892,10 +905,95 @@ function unblur(e) {
 	})
 
 	/// DRAW
-	// Draw: Colour picker
+	// Draw: Color picker
 	byId('toolColor').addEventListener('input', (event) => {
-		event.target.style.borderColor = event.target.value;
+		// Update draw color
+		DRAW.color = event.target.value;
+
+		// Update everything to use new color
+		event.target.style.borderColor = DRAW.color;
+		if (CANVAS.tool !== TOOL.ERASE) {
+			CANVAS.freeDrawingBrush.color = DRAW.color;
+		}
 	});
+
+	function changeTool(id) {
+		document.querySelectorAll('.toolSelected').forEach((e) => {
+			e.classList.remove('toolSelected');
+		})
+		id.classList.add('toolSelected');
+	}
+
+	// Draw: Paint tool
+	byId('toolPaint').addEventListener('click', (event) => {
+		// Change to paint tool
+		DRAW.tool = TOOL.PAINT;
+		changeTool(event.target);
+
+		// Draw with so many beautiful colors
+		CANVAS.freeDrawingBrush.color = DRAW.color;
+		CANVAS.freeDrawingBrush.width = DRAW.width;
+	});
+
+	// Draw: Erase tool
+	byId('toolErase').addEventListener('click', (event) => {
+		// Change to erase tool
+		DRAW.tool = TOOL.ERASE;
+		changeTool(event.target);
+
+		// Erasing is just drawing white :trollface:
+		CANVAS.freeDrawingBrush.color = "#FFFFFF";
+		CANVAS.freeDrawingBrush.width = DRAW.width * 4;
+	});
+
+	// Draw: Fill tool
+	byId('toolFill').addEventListener('click', (event) => {
+		// Change to fill tool
+		DRAW.tool = TOOL.FILL;
+		changeTool(event.target);
+
+		// Flood fill tool
+		// 1. Get raster image of the canvas
+		// 2. Run flood fill algorithm on it
+		// 3. Convert newly coloured pixels into an image
+		// 4. Place image back onto fabricjs canvas
+	});
+
+	// Draw: Undo tool
+	byId('toolUndo').addEventListener('click', () => {
+		// Undo event
+		console.log("undo");
+	});
+
+	// Draw: Redo tool
+	byId('toolRedo').addEventListener('click', () => {
+		// Redo event
+		console.log("redo");
+	});
+
+	// Draw: Use tools with keyboard
+	document.addEventListener('keydown', (event) => {
+		if (ROUND.type === "Draw") {
+			switch (event.code) {
+				case "KeyD":
+					byId('toolPaint').click();
+					break;
+				case "KeyE":
+					byId('toolErase').click();
+					break;
+				case "KeyF":
+					byId('toolFill').click();
+					break;
+				case "KeyZ":
+					byId('toolUndo').click();
+					break;
+				case "KeyY":
+					byId('toolRedo').click();
+					break;
+			}
+		}
+	});
+
 
 	/// PRESENT
 	// Present: Next page
@@ -938,7 +1036,8 @@ const CANVAS = new fabric.Canvas('c', {
 	isDrawingMode: true
 });
 CANVAS.setBackgroundColor('#FFFFFF');
-CANVAS.freeDrawingBrush.width = 4;
+CANVAS.freeDrawingBrush.width = DRAW.width;
+CANVAS.freeDrawingBrush.color = DRAW.color;
 
 // Resize the drawing canvas
 window.addEventListener('resize', resizeCanvas);
