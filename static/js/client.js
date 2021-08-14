@@ -27,7 +27,9 @@ const ROUND = {};
 const DRAW = {
 	tool: TOOL.PAINT,
 	color: "#000000",
-	width: 6
+	width: 6,
+	undo: [],
+	redo: []
 }
 
 /// --- VARIABLES --- ///
@@ -213,6 +215,8 @@ SOCKET.on('nextPage', () => {
 		CANVAS.setBackgroundColor('#FFFFFF');
 		CANVAS.isDrawingMode = true;
 		CANVAS.selection = true;
+		DRAW.undo = [];
+		byId('toolUndo').disabled = true;
 
 	} else if (ROUND.type === "Draw") {
 		// Change to writing mode
@@ -224,7 +228,7 @@ SOCKET.on('nextPage', () => {
 		hide(byId('gameDrawTools'));
 
 		// Show previous page
-		byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/placeholder.png"; /* decoded image here */
+		byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/base.png"; /* decoded image here */
 		show(byId('previousDraw'));
 		hide(byId('previousWrite'));
 
@@ -912,7 +916,7 @@ function unblur(e) {
 
 		// Update everything to use new color
 		event.target.style.borderColor = DRAW.color;
-		if (CANVAS.tool !== TOOL.ERASE) {
+		if (DRAW.tool !== TOOL.ERASE) {
 			CANVAS.freeDrawingBrush.color = DRAW.color;
 		}
 	});
@@ -960,20 +964,60 @@ function unblur(e) {
 	});
 
 	// Draw: Undo tool
-	byId('toolUndo').addEventListener('click', () => {
-		// Undo event
-		console.log("undo");
+	byId('toolUndo').addEventListener('click', (event) => {
+		// Undo last thingy
+		if (DRAW.undo.length) {
+			// Get last command and undo it
+			let _command = DRAW.undo.pop();
+			switch (_command.type) {
+				case 'path:created':
+					if (CANVAS.contains(_command.object)) {
+						CANVAS.remove(_command.object);
+						DRAW.redo.push(_command);
+						byId('toolRedo').disabled = false;
+					}
+					break;
+				case 'object:modified':
+					break;
+			}
+
+			// If there's nothing left to undo, disable button
+			if (DRAW.undo.length === 0) {
+				event.target.disabled = true;
+			}
+		} else {
+			event.target.disabled = true;
+		}
 	});
 
 	// Draw: Redo tool
-	byId('toolRedo').addEventListener('click', () => {
-		// Redo event
-		console.log("redo");
+	byId('toolRedo').addEventListener('click', (event) => {
+		// Redo last undo
+		if (DRAW.redo.length) {
+			// Get last command and redo it
+			let _command = DRAW.redo.pop();
+			switch (_command.type) {
+				case 'path:created':
+					CANVAS.add(_command.object);
+					DRAW.undo.push(_command);
+					byId('toolUndo').disabled = false;
+					break;
+				case 'object:modified':
+					break;
+			}
+
+			// If there's nothing left to undo, disable button
+			if (DRAW.redo.length === 0) {
+				event.target.disabled = true;
+			}
+		} else {
+			event.target.disabled = true;
+		}
 	});
 
 	// Draw: Use tools with keyboard
 	document.addEventListener('keydown', (event) => {
-		if (ROUND.type === "Draw") {
+		if (ROUND.type === "Draw" && document.activeElement !== byId('inputTitle')) {
 			switch (event.code) {
 				case "KeyD":
 					byId('toolPaint').click();
@@ -1064,3 +1108,32 @@ function resizeCanvas() {
 	}
 }
 
+// Undo/redo stack
+function record(type, object) {
+	// Get previous command (if any)
+	let _last;
+	if (DRAW.undo.length) {
+		_last = DRAW.undo[DRAW.undo.length-1];
+	}
+
+	// Ensure commands aren't doubled up
+	if (_last === undefined || type !== _last.type || object !== _last.object) {
+		// Add to undo stack
+		DRAW.undo.push({type: type, object: object});
+
+		// Enable undo button
+		byId('toolUndo').disabled = false;
+
+		// Clear redo stack
+		DRAW.redo = [];
+		byId('toolRedo').disabled = true;
+	}
+}
+
+CANVAS.on('path:created', (event) => {
+	record('path:created', event.path);
+});
+
+CANVAS.on('object:modified', (event) => {
+	record('object:modified', event);
+})
