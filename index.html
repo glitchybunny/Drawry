@@ -160,7 +160,7 @@
 			<p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
 			<p class="hidden" hidden id="previousWrite"></p>
 			<div class="hidden" hidden id="previousDraw">
-				<img alt="" id="previousDrawImg" src="img/placeholder.png"/>
+				<img alt="" id="previousDrawImg" src="img/base.png"/>
 			</div>
 		</section>
 		<section id="gameArea">
@@ -184,15 +184,17 @@
 			<hr>
 			<div style="display:flex; flex-flow:row nowrap;">
 				<div class="hidden" hidden id="gameDrawTools">
-					<input id="toolColor" title="Colour picker" type="color">
+					<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
 					<div>
-						<input class="toolSelected" id="toolPaint" title="Draw tool (D)" type="button">
-						<input id="toolErase" title="Erase tool (E)" type="button">
-						<input disabled="disabled" id="toolFill" title="Fill tool (F)" type="button">
+						<input autocomplete="false" class="toolSelected" id="toolPaint" title="Draw tool (D)"
+							   type="button">
+						<input autocomplete="false" id="toolErase" title="Erase tool (E)" type="button">
+						<input autocomplete="false" disabled="disabled" id="toolFill" title="Fill tool (F)"
+							   type="button">
 					</div>
 					<div>
-						<input disabled="disabled" id="toolUndo" title="Undo (Z)" type="button">
-						<input disabled="disabled" id="toolRedo" title="Redo (Y)" type="button">
+						<input autocomplete="false" disabled="disabled" id="toolUndo" title="Undo (Z)" type="button">
+						<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)" type="button">
 					</div>
 					<!--
 					TODO:
@@ -200,9 +202,10 @@
 					- Nuke canvas button
 					- Color dropper
 					- Brush sizes/types
+					- Stickers
 					-->
 				</div>
-				<input class="right" id="inputPageSubmit" type="button" value="Submit">
+				<input autocomplete="false" id="inputPageSubmit" type="button" value="Submit">
 			</div>
 		</section>
 	</div>
