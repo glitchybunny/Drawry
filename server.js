@@ -519,6 +519,9 @@ app.use(limiter);
 app.get('/', (req, res) => {
 	res.sendFile(path.join(__dirname + '/index.html'));
 });
+app.get('/help.html', (req, res) => {
+	res.sendFile(path.join(__dirname + '/help.html'));
+});
 app.use(express.static('static'));
 
 // Open server to manage server things
