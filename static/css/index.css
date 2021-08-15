@@ -230,12 +230,7 @@ dialog.fixed {
 	top: 0;
 	left: 0;
 	color: #abcdef;
-	width: 0;
 	overflow: visible;
-}
-
-#cornerTitle:after {
-	content: "Open\00a0Picturephone"
 }
 
 
