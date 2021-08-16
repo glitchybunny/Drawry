@@ -1,14 +1,301 @@
-/* Font stuff */
+/* FONT */
 @font-face {
 	font-family: "OpenSans";
 	src: local("/font/OpenSans-Regular.ttf"), url("/font/OpenSans-Regular.ttf") format("truetype");
 	font-display: swap;
 }
 
-/* Default html elements */
+
+/* HTML ELEMENTS */
 * {
 	font-family: "OpenSans", sans-serif;
 }
+
+body, html {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	color: #fff;
+	background: #567890;
+	font-size: 18px;
+}
+
+a {
+	color: #abcdef;
+}
+
+aside {
+	position: relative;
+	width: 18em;
+	height: 100%;
+	padding: .5em 1em;
+	background-color: #345678;
+	outline: .25em solid #012345;
+}
+
+dfn {
+	text-decoration: underline dotted;
+	text-decoration-skip: none;
+	text-decoration-skip-ink: none;
+	text-decoration-thickness: 1px;
+	text-decoration-color: #fff;
+	font-style: normal;
+	cursor: help;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	margin: 0;
+}
+
+h1 {
+	width: 100%;
+	font-size: 1.75em;
+}
+
+h2 {
+	font-size: 1.3em;
+}
+
+header {
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: space-between;
+	align-items: center;
+	white-space: nowrap;
+}
+
+hr {
+	width: 100%;
+	margin: .5em auto;
+	border: 0;
+	border-bottom: .12em solid #234567
+}
+
+input {
+	display: inline-block;
+	font-size: 1.2em;
+}
+
+input[type=text] {
+	margin-bottom: .8em;
+}
+
+input[type=button] {
+	margin: 0 auto;
+	padding: 0 1em;
+	cursor: pointer;
+}
+
+input[type=radio] {
+	margin: 0;
+	padding: .5em;
+	cursor: pointer;
+}
+
+input[type=range] {
+	display: block;
+	width: 9em;
+	font-size: 1em;
+	cursor: grab;
+}
+
+input[type=range]:active {
+	cursor: grabbing;
+}
+
+input:disabled {
+	cursor: auto;
+}
+
+main {
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	justify-content: center;
+	width: calc(100vw - 20em);
+	height: 100%;
+}
+
+output {
+	min-width: 1.2em;
+	padding: .5em;
+	text-align: right;
+}
+
+p {
+	margin: .5em 0;
+}
+
+select {
+	cursor: pointer;
+}
+
+ul {
+	margin: .5em;
+	padding: 0;
+	list-style-type: none;
+}
+
+
+/* CLASSES */
+.box {
+	padding: 1em 1.2em;
+	text-align: start;
+	background-color: #345678;
+	filter: drop-shadow(.25em .25em 0 #012345);
+}
+
+.boxlet {
+	margin: 1em 0 0;
+	padding: .5em;
+	border: .12em solid #234567;
+	text-align: start;
+}
+
+.center {
+	align-self: center;
+	text-align: center;
+}
+
+.copyright {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: .5em;
+}
+
+.flex {
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: stretch;
+}
+
+.right {
+	overflow: hidden;
+	float: right;
+	padding: 0 .2em;
+	outline: .2em solid #123456;
+	background-color: #123456;
+}
+
+.row {
+	flex-flow: row nowrap;
+	justify-content: space-between;
+	align-items: center;
+}
+
+
+/* IDS */
+#inputCopyRoom, #inputCopyURL {
+	padding: 0 .2em;
+	font-size: 1em;
+}
+
+#loading {
+	position: fixed;
+	padding: 0;
+	margin: 0;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(35, 69, 103, 0.1);
+	z-index: 100;
+	cursor: wait;
+}
+
+#settings label {
+	cursor: pointer;
+	margin: 0 .4em;
+}
+
+#settings > .row {
+	height: 2.5em;
+}
+
+#you {
+	font-weight: bold;
+}
+
+
+/* OVERRIDES */
+.hidden {
+	display: none !important;
+}
+
+.blurred {
+	color: transparent !important;
+	text-shadow: rgba(255, 255, 255, 1) 0 0 .5em;
+}
+
+.fade-out {
+	opacity: 1;
+	animation: fade-out 1.5s linear forwards;
+}
+
+
+/* ANIMATIONS */
+@keyframes fade-out {
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+
+/* DIALOGS POLYFILL */
+dialog {
+	position: absolute;
+	left: 0;
+	right: 0;
+	width: fit-content;
+	height: fit-content;
+	margin: auto;
+	border: .1em solid #001234;
+	padding: 1em;
+	background-color: #345678;
+	color: #fff;
+	display: block;
+	filter: drop-shadow(.2em .2em 0 #012345);
+}
+
+dialog:not([open]) {
+	display: none;
+}
+
+dialog::backdrop, dialog + .backdrop {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-color: rgba(35, 69, 103, 0.2);
+}
+
+._dialog_overlay {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+}
+
+dialog.fixed {
+	position: fixed;
+	top: 50%;
+	transform: translate(0, -50%);
+}
+
+
+/* Default html elements *//*
+
 
 body, html {
 	width: 100%;
@@ -36,16 +323,6 @@ a, li, output, p, dfn, h1, label, p, #roomCode, td, dialog {
 
 a, label, li, output, p, dfn, td, dialog {
 	font-size: 18px
-}
-
-dfn {
-	text-decoration: underline dotted;
-	text-decoration-skip: none;
-	text-decoration-skip-ink: none;
-	text-decoration-thickness: 1px;
-	text-decoration-color: #fff;
-	font-style: normal;
-	cursor: help;
 }
 
 body, section, aside {
@@ -96,50 +373,16 @@ td:first-of-type {
 	text-align: left;
 }
 
-dialog {
-	position: absolute;
-	left: 0; right: 0;
-	width: fit-content;
-	height: fit-content;
-	margin: auto;
-	border: 2px solid #001234;
-	padding: 1em;
-	background-color: #345678;
-	color: black;
-	display: block;
-	font-size: 18px;
-	filter: drop-shadow(4px 4px 0 #012345);
-}
-
-dialog:not([open]) {
-	display: none;
-}
-
-dialog::backdrop, dialog + .backdrop {
-	position: fixed;
-	top: 0; right: 0; bottom: 0; left: 0;
-	background-color: rgba(35, 69, 103, 0.2);
-}
-
-._dialog_overlay {
-	position: fixed;
-	top: 0; right: 0; bottom: 0; left: 0;
-}
-
-dialog.fixed {
-	position: fixed;
-	top: 50%;
-	transform: translate(0, -50%);
-}
 
 
-/* Width 100 */
+
+*//* Width 100 *//*
 .presentDraw, #presentSection, h1, ul, hr, #presentTable, #mainGame {
 	width: 100%;
 }
 
 
-/* Classes */
+*//* Classes *//*
 .center {
 	align-self: center;
 	text-align: center;
@@ -206,7 +449,7 @@ dialog.fixed {
 }
 
 
-/* Basic page layout IDs */
+*//* Basic page layout IDs *//*
 #mainJoin, #gameWrite {
 	display: flex;
 	flex-flow: column nowrap;
@@ -234,7 +477,7 @@ dialog.fixed {
 }
 
 
-/* Sections */
+*//* Sections *//*
 #joinSection {
 	max-width: 300px;
 }
@@ -289,7 +532,7 @@ dialog.fixed {
 }
 
 
-/* Inputs and outputs */
+*//* Inputs and outputs *//*
 input[type=text] {
 	font-size: 24px;
 }
@@ -298,15 +541,6 @@ input[type=button] {
 	font-size: 22px;
 	padding: 1px 16px;
 	margin: 10px auto;
-}
-
-input[type=range] {
-	margin: 10px auto;
-	cursor: grab;
-}
-
-input[type=range]:active {
-	cursor: grabbing;
 }
 
 input[type=button], input[type=radio], select {
@@ -345,7 +579,7 @@ output {
 }
 
 
-/* Other Stuff */
+*//* Other Stuff *//*
 #playerList, #bookList {
 	list-style: none;
 	padding-inline: 0;
@@ -386,7 +620,7 @@ output {
 
 #previousDrawImg, #canvasBase {
 	min-width: 0;
-	height: calc(100vh - 360px); /*min(calc(100vh - 360px), 615px);*/
+	height: calc(100vh - 360px); *//*min(calc(100vh - 360px), 615px);*//*
 	min-height: 300px;
 	background-color: #fff;
 }
@@ -453,7 +687,6 @@ output {
 	margin: 40px auto 0;
 	text-align: center;
 	font-size: 28pt;
-	/* should book titles have a fancy font when presenting? */
 }
 
 #presentWindow {
@@ -482,21 +715,8 @@ output {
 	margin: 4px !important;
 }
 
-#loading {
-	position: fixed;
-	padding: 0;
-	margin: 0;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background: rgba(35, 69, 103, 0.1);
-	z-index: 100;
-	cursor: wait;
-}
 
-
-/* Drawing tools */
+*//* Drawing tools *//*
 #gameDrawTools {
 	display: flex;
 	flex-flow: row nowrap;
@@ -587,7 +807,7 @@ output {
 }
 
 
-/* Class overrides */
+*//* Class overrides *//*
 .isHost, .isNotHost, .center {
 	display: flex;
 	vertical-align: center;
@@ -599,12 +819,11 @@ output {
 }
 
 .blur {
-	color: transparent !important;
-	text-shadow: rgba(255, 255, 255, 1) 0 0 10px;
+
 }
 
 
-/* Keyframes */
+*//* Keyframes *//*
 @keyframes rotation {
 	from {
 		transform: rotate(0deg);

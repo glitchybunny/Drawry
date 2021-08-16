@@ -5,303 +5,310 @@
 	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css"/>
 	<title>Open Picturephone</title>
 </head>
-<body>
 
-<main id="mainJoin">
-	<h1 style="text-align:center;">Open Picturephone</h1>
-	<section id="joinSection">
-		<label>
-			Name:<br/>
+<body>
+	<div class="flex center" id="join" style="max-width: 20em; margin:auto;">
+		<h1>Open Picturephone</h1>
+		<section class="flex box" style="margin:1em">
+			<label for="inputName">Name:</label>
 			<input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
 				   onkeydown="return enterPress(event, 'inputJoin')" required="required" type="text">
-		</label>
-		<label>
-			Room Code:<br/>
-			<input aria-required="true" autocomplete="on" id="inputRoom" maxlength="8" minlength="1"
+			<label for="inputRoom">Room Code:</label>
+			<input aria-required="true" autocomplete="on" id="inputRoom" maxlength="12" minlength="4"
 				   onkeydown="return enterPress(event, 'inputJoin')" required="required" type="text">
-		</label>
-		<input id="inputJoin" type="button" value="Join">
-	</section>
-	<a href="/help.html" style="font-size:22px; color:#abcdef">How to play</a>
-</main>
-<main class="hidden" hidden id="mainGame">
-	<h1 id="cornerTitle" title="Open Picturephone">Open Picturephone</h1>
-
-	<aside id="playerSection">
-		<div class="title">
-			<h1>Players</h1>
-			<h1 id="playerCount" style="text-align:right;">1</h1>
-		</div>
-		<hr>
-		<ul id="playerList"></ul>
-	</aside>
-
-	<section id="setupSection">
-		<div class="title">
-			<h1>Game Setup</h1>
-			<p class="corner hostName"></p>
-		</div>
-		<hr>
-		<div id="gameSettings">
-			<div>
-				<dfn aria-label="Whether the first page is written or drawn"
-					 title="Whether the first page is written or drawn">
-					First page
-				</dfn>
-				<div class="isHost hidden">
-					<label>
-						<input aria-label="The first page is a text input" name="firstPage" type="radio" value="Write">
-						Write
-					</label>
-					<label>
-						<input aria-label="The first page is a drawable canvas input" name="firstPage" type="radio"
-							   value="Draw">
-						Draw
-					</label>
-				</div>
-				<div class="isNotHost">
-					<output for="firstPage" id="firstPageDisplay"></output>
-				</div>
-			</div>
-			<div>
-				<dfn aria-label="Number of pages in each book" id="isHostLabel" title="Number of pages in each book">
-					Pages per book
-				</dfn>
-				<div class="center">
-					<div class="isHost hidden">
-						<input aria-labelledby="isHostLabel" id="pageCount" max="20" min="2" name="pageCount"
-							   type="range">
-					</div>
-					<output for="pageCount" id="pageCountDisplay"></output>
-				</div>
-			</div>
-			<div>
-				<dfn aria-label="How pages are assigned to players" title="How pages are assigned to players">
-					Page assignment
-				</dfn>
-				<div class="isHost hidden">
-					<label>
-						<input aria-label="Pages are assigned in a cyclic order" name="pageOrder" type="radio"
-							   value="Normal">
-						Normal
-					</label>
-					<label>
-						<input aria-label="Pages are assigned in a semi-random order" name="pageOrder" type="radio"
-							   value="Random">
-						Random
-					</label>
-				</div>
-				<div class="isNotHost">
-					<output for="pageOrder" id="pageOrderDisplay"></output>
-				</div>
-			</div>
-			<div>
-				<dfn aria-label="Whether there are color palette restrictions on the drawings"
-					 title="Whether there are color palette restrictions on the drawings">
-					Color palette
-				</dfn>
-				<div class="isHost hidden">
-					<label>
-						<select id="colorPalette">
-							<option value="No palette">No palette</option>
-						</select>
-					</label>
-				</div>
-				<div class="isNotHost">
-					<output for="colorPalette" id="colorPaletteDisplay"></output>
-				</div>
-			</div>
-			<hr>
-			<div>
-				<dfn aria-label="Time limit per writing page (in minutes)" id="timeWriteLabel"
-					 title="Time limit per writing page (in minutes)">
-					Write time limit
-				</dfn>
-				<div class="center">
-					<div class="isHost hidden">
-						<input aria-labelledby="timeWriteLabel" id="timeWrite" max="15" min="0" name="timeWrite"
-							   type="range">
-					</div>
-					<output for="timeWrite" id="timeWriteDisplay"></output>
-				</div>
-			</div>
-			<div>
-				<dfn aria-label="Time limit per drawing page (in minutes)" id="timeDrawLabel"
-					 title="Time limit per drawing page (in minutes)">
-					Draw time limit
-				</dfn>
-				<div class="center">
-					<div class="isHost hidden">
-						<input aria-labelledby="timeDrawLabel" id="timeDraw" max="15" min="0" name="timeDraw"
-							   type="range">
-					</div>
-					<output for="timeDraw" id="timeDrawDisplay"></output>
-				</div>
-			</div>
-		</div>
-		<hr>
-		<div class="isHost hidden" hidden>
-			<p id="inputStartWarning" style="text-align:center; font-style:italic; width:100%;">Two or more players
-				required to start...</p>
-			<input class="hidden" hidden id="inputStart" type="button" value="Start game">
-		</div>
-		<div class="isNotHost">
-			<p style="text-align:center; font-style:italic; width:100%;">Waiting for the host to start the game...</p>
-		</div>
-	</section>
-
-	<div class="hidden" hidden id="gameSection">
-		<section id="gameTitle">
-			<label for="inputTitle">
-				<b>Book Title</b>
-			</label>
-			<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
-				   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
-				   type="text">
+			<input id="inputJoin" type="button" value="Join">
 		</section>
-		<section class="hidden" hidden id="gamePrevious">
-			<p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
-			<p class="hidden" hidden id="previousWrite"></p>
-			<div class="hidden" hidden id="previousDraw">
-				<img alt="" id="previousDrawImg" src="img/base.png"/>
-			</div>
-		</section>
-		<section id="gameArea">
-			<div class="title">
-				<h1 id="pageType"></h1>
-				<p class="corner">Page <span id="pageCurrent">-</span>/<span id="pageMax">-</span></p>
-			</div>
-			<hr>
-			<div class="hidden" hidden id="gameWrite">
-				<label for="inputWrite" id="writePrompt">
-					What should the first page say?
+		<a href="/help.html" style="font-size: 1.2em;">How to play</a>
+
+		<footer class="copyright">
+			<a href="https://github.com/darkrilin/open-picturephone">&copy; darkrilin 2021</a>
+		</footer>
+	</div>
+
+	<div class="flex hidden" hidden id="game" style="flex-wrap:wrap;">
+		<aside class="flex sidebar">
+			<header style="padding:.5em 0">
+				<h1 class="center">Open Picturephone</h1>
+			</header>
+			<section class="boxlet" id="sectionPlayers">
+				<header>
+					<h2>Players</h2>
+					<h2 id="countPlayers" style="text-align:right;">1</h2>
+				</header>
+				<ul id="listPlayers"></ul>
+			</section>
+			<section class="boxlet" id="sectionInvite">
+				<h2>Invite Others!</h2>
+				<p>Room code:<span class="blurred right" id="roomCode" style="cursor: pointer;"></span></p>
+				<div>
+					<input id="inputCopyURL" type="button" value="Copy invite link">
+					<output class="hidden fade-out" hidden id="displayCopyURL" style="float:right">Invite link copied!
+					</output>
+				</div>
+			</section>
+			<section class="boxlet hidden" hidden id="sectionBooks">
+				<h2>Books</h2>
+				<ul id="listBooks"></ul>
+			</section>
+			<footer class="copyright">
+				<a href="https://github.com/darkrilin/open-picturephone">&copy; darkrilin 2021</a>
+			</footer>
+		</aside>
+
+		<main>
+			<section class="flex box" id="setup" style="width:23em;">
+				<header>
+					<h2>Game Setup</h2>
+					<p class="right hostName"></p>
+				</header>
+				<hr>
+				<div id="settings">
+					<div class="flex row">
+						<dfn aria-label="Whether the first page is written or drawn"
+							 title="Whether the first page is written or drawn">
+							First page
+						</dfn>
+						<div class="host hidden">
+							<label>
+								<input aria-label="The first page is a text input" name="firstPage" type="radio"
+									   value="Write">
+								Write
+							</label>
+							<label>
+								<input aria-label="The first page is a drawable canvas input" name="firstPage"
+									   type="radio"
+									   value="Draw">
+								Draw
+							</label>
+						</div>
+						<div class="notHost">
+							<output for="firstPage" id="firstPageDisplay"></output>
+						</div>
+					</div>
+					<div class="flex row">
+						<dfn aria-label="Number of pages in each book" id="isHostLabel"
+							 title="Number of pages in each book">
+							Pages per book
+						</dfn>
+						<div class="flex row">
+							<div class="host hidden">
+								<input aria-labelledby="isHostLabel" id="pageCount" max="20" min="2" name="pageCount"
+									   type="range">
+							</div>
+							<output for="pageCount" id="pageCountDisplay"></output>
+						</div>
+					</div>
+					<div class="flex row">
+						<dfn aria-label="How pages are assigned to players" title="How pages are assigned to players">
+							Page assignment
+						</dfn>
+						<div class="host hidden">
+							<label>
+								<input aria-label="Pages are assigned in a cyclic order" name="pageOrder" type="radio"
+									   value="Normal">
+								Normal
+							</label>
+							<label>
+								<input aria-label="Pages are assigned in a semi-random order" name="pageOrder"
+									   type="radio"
+									   value="Random">
+								Random
+							</label>
+						</div>
+						<div class="notHost">
+							<output for="pageOrder" id="pageOrderDisplay"></output>
+						</div>
+					</div>
+					<div class="flex row">
+						<dfn aria-label="Whether there are color palette restrictions on the drawings"
+							 title="Whether there are color palette restrictions on the drawings">
+							Color palette
+						</dfn>
+						<div class="host hidden">
+							<select id="colorPalette">
+								<option value="No palette">No palette</option>
+							</select>
+						</div>
+						<div class="notHost">
+							<output for="colorPalette" id="colorPaletteDisplay"></output>
+						</div>
+					</div>
+					<hr>
+					<div class="flex row">
+						<dfn aria-label="Time limit per writing page (in minutes)" id="timeWriteLabel"
+							 title="Time limit per writing page (in minutes)">
+							Write time limit
+						</dfn>
+						<div class="flex row">
+							<div class="host hidden">
+								<input aria-labelledby="timeWriteLabel" id="timeWrite" max="15" min="0" name="timeWrite"
+									   type="range">
+							</div>
+							<output for="timeWrite" id="timeWriteDisplay" style="min-width:3.2em;"></output>
+						</div>
+					</div>
+					<div class="flex row">
+						<dfn aria-label="Time limit per drawing page (in minutes)" id="timeDrawLabel"
+							 title="Time limit per drawing page (in minutes)">
+							Draw time limit
+						</dfn>
+						<div class="flex row">
+							<div class="host hidden">
+								<input aria-labelledby="timeDrawLabel" id="timeDraw" max="15" min="0" name="timeDraw"
+									   type="range">
+							</div>
+							<output for="timeDraw" id="timeDrawDisplay" style="min-width:3.2em;"></output>
+						</div>
+					</div>
+				</div>
+				<hr>
+				<div class="center host hidden" hidden>
+					<p id="inputStartWarning" style="font-style:italic;">
+						Two or more players required to start...
+					</p>
+					<input class="hidden" hidden id="inputStart" type="button" value="Start game" style="margin-top:.5em">
+				</div>
+				<div class="center notHost">
+					<p style="font-style:italic;">
+						Waiting for the host to start the game...
+					</p>
+				</div>
+			</section>
+		</main>
+	</div>
+
+	<!-- BEGIN DEPRECATED HTML -->
+	<main class="hidden" hidden>
+		<div class="hidden" hidden id="gameSection">
+			<section id="gameTitle">
+				<label for="inputTitle">
+					<b>Book Title</b>
 				</label>
-				<input aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
-					   onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!"
-					   required="required" spellcheck="true" type="text">
-			</div>
-			<div class="hidden" hidden id="gameDraw">
-				<img alt="" id="canvasBase" src="img/base.png">
-				<canvas height="600" id="c" width="800"></canvas>
+				<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
+					   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
+					   type="text">
+			</section>
+			<section class="hidden" hidden id="gamePrevious">
+				<p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
+				<p class="hidden" hidden id="previousWrite"></p>
+				<div class="hidden" hidden id="previousDraw">
+					<img alt="" id="previousDrawImg" src="img/base.png"/>
+				</div>
+			</section>
+			<section id="gameArea">
+				<div class="title">
+					<h1 id="pageType"></h1>
+					<p class="corner">Page <span id="pageCurrent">-</span>/<span id="pageMax">-</span></p>
+				</div>
+				<hr>
+				<div class="hidden" hidden id="gameWrite">
+					<label for="inputWrite" id="writePrompt">
+						What should the first page say?
+					</label>
+					<input aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
+						   onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!"
+						   required="required" spellcheck="true" type="text">
+				</div>
+				<div class="hidden" hidden id="gameDraw">
+					<img alt="" id="canvasBase" src="img/base.png">
+					<canvas height="600" id="c" width="800"></canvas>
+				</div>
+				<hr>
+				<div style="display:flex; flex-flow:row nowrap;">
+					<div class="hidden" hidden id="gameDrawTools">
+						<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
+						<div>
+							<input autocomplete="false" class="toolSelected" id="toolPaint" title="Draw tool (D)"
+								   type="button">
+							<input autocomplete="false" id="toolErase" title="Erase tool (E)" type="button">
+							<input autocomplete="false" disabled="disabled" id="toolFill" title="Fill tool (F)"
+								   type="button">
+						</div>
+						<div>
+							<input autocomplete="false" disabled="disabled" id="toolUndo" title="Undo (Z)"
+								   type="button">
+							<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)"
+								   type="button">
+						</div>
+						<!--
+						TODO:
+						- Finish implementing all of the above
+						- Nuke canvas button
+						- Color dropper
+						- Brush sizes/types
+						- Stickers
+						-->
+					</div>
+					<input autocomplete="false" id="inputPageSubmit" type="button" value="Submit">
+				</div>
+			</section>
+		</div>
+
+		<section class="presentLobby hidden" hidden id="presentSection">
+			<div class="title">
+				<h1>Presenting</h1>
+				<p class="corner hostName"></p>
 			</div>
 			<hr>
-			<div style="display:flex; flex-flow:row nowrap;">
-				<div class="hidden" hidden id="gameDrawTools">
-					<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
-					<div>
-						<input autocomplete="false" class="toolSelected" id="toolPaint" title="Draw tool (D)"
-							   type="button">
-						<input autocomplete="false" id="toolErase" title="Erase tool (E)" type="button">
-						<input autocomplete="false" disabled="disabled" id="toolFill" title="Fill tool (F)"
-							   type="button">
-					</div>
-					<div>
-						<input autocomplete="false" disabled="disabled" id="toolUndo" title="Undo (Z)" type="button">
-						<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)" type="button">
-					</div>
-					<!--
-					TODO:
-					- Finish implementing all of the above
-					- Nuke canvas button
-					- Color dropper
-					- Brush sizes/types
-					- Stickers
-					-->
+			<div id="presentMenu">
+				<div class="isHost hidden" hidden style="flex-flow:column nowrap">
+					<table id="presentTable"></table>
 				</div>
-				<input autocomplete="false" id="inputPageSubmit" type="button" value="Submit">
+				<div class="isNotHost">
+					<p style="text-align:center; font-style:italic; width:100%;">Waiting for a presentation to
+						start...</p>
+				</div>
+			</div>
+			<div class="hidden" hidden id="presentWindow">
+				<h1 id="presentBookTitle"></h1>
+				<p style="text-align:center; margin-bottom:40px;">
+					<span id="presentBookAuthors"></span>
+					<br>
+					<span id="presentBookPresenter"></span>
+				</p>
+			</div>
+			<div class="hidden" hidden id="presentControls">
+				<input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
+				<input id="inputPresentForward" type="button" value="Next >">
+			</div>
+			<div class="hidden" hidden id="presentControlsFinish">
+				<input id="inputPresentFinish" type="button" value="Finish presenting">
+			</div>
+			<div class="hidden" hidden id="presentControlsOverride">
+				<input id="inputPresentOverride" type="button" value="Hijack presentation">
 			</div>
 		</section>
-	</div>
+	</main>
+	<!-- END DEPRECATED HTML -->
 
-	<section class="presentLobby hidden" hidden id="presentSection">
-		<div class="title">
-			<h1>Presenting</h1>
-			<p class="corner hostName"></p>
+	<div class="hidden" hidden id="loading"></div>
+	<dialog id="dialogWait" role="alertdialog">
+		<p class="center" style="display:block">
+			Waiting for others to finish their page...
+		</p>
+		<div style="padding: 8px">
+			<img alt="" class="spin" src="img/loading.png" style="display:block; margin: 0 auto;">
 		</div>
-		<hr>
-		<div id="presentMenu">
-			<div class="isHost hidden" hidden style="flex-flow:column nowrap">
-				<table id="presentTable"></table>
-			</div>
-			<div class="isNotHost">
-				<p style="text-align:center; font-style:italic; width:100%;">Waiting for a presentation to start...</p>
-			</div>
-		</div>
-		<div class="hidden" hidden id="presentWindow">
-			<h1 id="presentBookTitle"></h1>
-			<p style="text-align:center; margin-bottom:40px;">
-				<span id="presentBookAuthors"></span>
-				<br>
-				<span id="presentBookPresenter"></span>
-			</p>
-		</div>
-		<div class="hidden" hidden id="presentControls">
-			<input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
-			<input id="inputPresentForward" type="button" value="Next >">
-		</div>
-		<div class="hidden" hidden id="presentControlsFinish">
-			<input id="inputPresentFinish" type="button" value="Finish presenting">
-		</div>
-		<div class="hidden" hidden id="presentControlsOverride">
-			<input id="inputPresentOverride" type="button" value="Hijack presentation">
-		</div>
-	</section>
+		<p class="center" style="display:block">
+			<span id="waitDisplay">0</span> page(s) remaining
+		</p>
+	</dialog>
 
-	<aside id="inviteSection">
-		<div class="title">
-			<h1>Invite others!</h1>
-		</div>
-		<hr>
-		<div class="title">
-			<p>Room code: </p>
-			<p class="corner blur" id="roomCode"></p>
-		</div>
-		<hr>
-		<input id="inputCopyRoom" type="button" value="Copy room code">
-		<input id="inputCopyURL" type="button" value="Copy invite link">
-		<p id="copyDisplay"></p>
-	</aside>
-	<aside class="hidden" hidden id="bookSection">
-		<div class="title">
-			<h1>Books</h1>
-		</div>
-		<hr>
-		<ul id="bookList">
-			<li style="font-style:italic"></li>
-		</ul>
-	</aside>
-</main>
-
-<a href="https://github.com/darkrilin/open-picturephone" id="copyright">&copy; darkrilin 2021</a>
-<div class="hidden" hidden id="loading">
-</div>
-<dialog id="dialogWait" role="alertdialog">
-	<p class="center" style="display:block">
-		Waiting for others to finish their page...
-	</p>
-	<div style="padding: 8px">
-		<img alt="" class="spin" src="img/loading.png" style="display:block; margin: 0 auto;">
-	</div>
-	<p class="center" style="display:block">
-		<span id="waitDisplay">0</span> page(s) remaining
-	</p>
-</dialog>
-
-<script src="/js/socket.io.js"></script>
-<script src="/js/cookies.min.js"></script>
-<script src="/js/fabric.min.js"></script>
-<script src="/js/dialog-polyfill.min.js"></script>
-<script src="/js/client.js" type="module"></script>
-<script>
-	function enterPress(e, id) {
-		e = e || window.event;
-		if (e.keyCode === 13) {
-			document.getElementById(id).click();
-			return false;
+	<script src="/js/socket.io.js"></script>
+	<script src="/js/cookies.min.js"></script>
+	<script src="/js/fabric.min.js"></script>
+	<script src="/js/dialog-polyfill.min.js"></script>
+	<script src="/js/client.js" type="module"></script>
+	<script>
+		function enterPress(e, id) {
+			e = e || window.event;
+			if (e.keyCode === 13) {
+				document.getElementById(id).click();
+				return false;
+			}
+			return true;
 		}
-		return true;
-	}
-</script>
+	</script>
 
 </body>
 </html>
