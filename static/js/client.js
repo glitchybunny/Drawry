@@ -72,8 +72,8 @@ SOCKET.on('joined', (data) => {
 	})
 
 	// switch to game screen
-	hide(byId('mainJoin'));
-	show(byId('mainGame'));
+	hide(byId('join'));
+	show(byId('game'));
 
 	// update DOM
 	byId('roomCode').textContent = ROOM.code;
@@ -473,6 +473,7 @@ function copyToClipboard(text) {
 			textArea.remove();
 		})
 	}
+	return false;
 }
 
 
@@ -517,23 +518,24 @@ function updateHost() {
 	})
 
 	// Allow the client to edit settings if they're the host
-	document.querySelectorAll('.isHost').forEach((elem) => {
+	document.querySelectorAll('.host').forEach((elem) => {
 		(ID === ROOM.host) ? show(elem) : hide(elem);
 	});
-	document.querySelectorAll('.isNotHost').forEach((elem) => {
+	document.querySelectorAll('.notHost').forEach((elem) => {
 		(ID === ROOM.host) ? hide(elem) : show(elem);
 	});
 }
 
 // Update player list on the page
 function updatePlayerList() {
-	let _playerList = byId('playerList');
+	let _playerList = byId('listPlayers');
 	_playerList.innerHTML = '';
 
 	// Add self to player list
 	let nameElem = document.createElement('li');
 	nameElem.textContent = name;
-	nameElem.title = "You!";
+	nameElem.id = "you";
+	nameElem.title = "you!";
 	_playerList.appendChild(nameElem);
 
 	// Add other players to player list
@@ -544,7 +546,7 @@ function updatePlayerList() {
 	}
 
 	// Increment player count
-	byId('playerCount').textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
+	byId('countPlayers').textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
 	if (Object.keys(USERS).length) {
@@ -673,13 +675,13 @@ function show(e) {
 
 // Blur an element in the DOM
 function blur(e) {
-	e.classList.add("blur");
+	e.classList.add("blurred");
 	return e;
 }
 
 // Show an element in the DOM
 function unblur(e) {
-	e.classList.remove("blur");
+	e.classList.remove("blurred");
 	return e;
 }
 
@@ -695,7 +697,7 @@ function unblur(e) {
 	let _url = window.location.href;
 	let _params = new URLSearchParams(_url.slice(_url.indexOf('?') + 1));
 	if (_params.has("room")) {
-		byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 8);
+		byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 12);
 	}
 
 	/// JOIN
@@ -729,7 +731,7 @@ function unblur(e) {
 
 		if (_inputName.reportValidity() && _inputRoom.reportValidity()) {
 			name = _inputName.value.substr(0, 32);
-			ROOM.code = _inputRoom.value.substr(0, 8);
+			ROOM.code = _inputRoom.value.substr(0, 12);
 
 			_inputName.disabled = true;
 			_inputRoom.disabled = true;
@@ -833,18 +835,20 @@ function unblur(e) {
 		blur(e.target);
 	});
 
-	// Setup: Invite copy room
-	byId('inputCopyRoom').addEventListener('click', () => {
-		// Add room code to clipboard
-		copyToClipboard(ROOM.code);
-		byId('copyDisplay').innerText = "Room code copied!";
-	});
-
 	// Setup: Invite copy url
-	byId('inputCopyURL').addEventListener('click', () => {
+	byId('inputCopyURL').addEventListener('click', (e) => {
+		// Disable button and show confirmation
+		e.target.disabled = true;
+		show(byId('displayCopyURL'));
+
 		// Add room code to clipboard
 		copyToClipboard(window.location.href);
-		byId('copyDisplay').innerText = "Invite link copied!";
+
+		// Disappear after 2 seconds and re-enable button
+		setTimeout(() => {
+			hide(byId('displayCopyURL'));
+			e.target.disabled = false;
+		}, 2200);
 	});
 
 	/// GAME
@@ -1113,7 +1117,7 @@ function record(type, object) {
 	// Get previous command (if any)
 	let _last;
 	if (DRAW.undo.length) {
-		_last = DRAW.undo[DRAW.undo.length-1];
+		_last = DRAW.undo[DRAW.undo.length - 1];
 	}
 
 	// Ensure commands aren't doubled up

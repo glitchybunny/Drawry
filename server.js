@@ -20,10 +20,10 @@ const SOCKETS = [];
 const ROOMS = {};
 
 // Other constants
-const VERBOSE = false;
+const VERBOSE = true;
 const MAX_ROOM_SIZE = 10;
 const SETTINGS_DEFAULT = {
-	firstPage: 'Write',
+	firstPage: 'Draw',
 	pageCount: '8',
 	pageOrder: 'Normal',
 	palette: 'No palette',
@@ -73,7 +73,7 @@ io.on('connection', (socket) => {
 		let _client = CLIENTS[socket.id];
 		_client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, '') || 0;
 		_client.name = xss(data.name.substr(0, 32));
-		_client.roomCode = xss(data.roomCode.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
+		_client.roomCode = xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
 
 		if (_client.id && _client.roomCode) {
 			// add client to the room
@@ -509,7 +509,7 @@ function shuffle(array) {
 const RateLimit = require('express-rate-limit');
 let limiter = new RateLimit({
 	windowMs: 60 * 1000,
-	max: 50
+	max: 1000
 });
 
 // apply rate limiter to all resource requests
