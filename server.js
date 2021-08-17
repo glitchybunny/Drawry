@@ -22,14 +22,6 @@ const ROOMS = {};
 // Other constants
 const VERBOSE = true;
 const MAX_ROOM_SIZE = 10;
-const SETTINGS_DEFAULT = {
-	firstPage: 'Draw',
-	pageCount: '8',
-	pageOrder: 'Normal',
-	palette: 'No palette',
-	timeWrite: '0',
-	timeDraw: '0'
-};
 const SETTINGS_CONSTRAINTS = {
 	firstPage: ['string', ['Write', 'Draw']],
 	pageCount: ['number', [2, 20]],
@@ -37,6 +29,14 @@ const SETTINGS_CONSTRAINTS = {
 	palette: ['string', ['No palette']],
 	timeWrite: ['number', [0, 15]],
 	timeDraw: ['number', [0, 15]]
+};
+const SETTINGS_DEFAULT = {
+	firstPage: 'Write',
+	pageCount: '8',
+	pageOrder: 'Normal',
+	palette: 'No palette',
+	timeWrite: '0',
+	timeDraw: '0'
 };
 const STATE = {
 	LOBBY: 0,
@@ -188,9 +188,14 @@ io.on('connection', (socket) => {
 		// make sure to sanitise title string
 		let _title = xss(data.title.substr(0, 40));
 
+		// ensure title is of adequate length, otherwise make it the player name + "'s book"
+		if (_title.length === 0) {
+			_title = CLIENTS[socket.id].name + "'s book";
+		}
+
 		// send title to other players
 		if (_room.page === 0) {
-			socket.to(_roomCode).emit("bookTitle", {id: _id, title: _title});
+			io.to(_roomCode).emit("bookTitle", {id: _id, title: _title});
 		}
 	});
 
@@ -271,7 +276,7 @@ io.on('connection', (socket) => {
 				io.to(_roomCode).emit('startPresenting')
 			} else {
 				// Go to next page
-				io.to(_roomCode).emit('nextPage');
+				io.to(_roomCode).emit('pageForward');
 			}
 		}
 	});
