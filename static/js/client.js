@@ -16,7 +16,8 @@ const SOCKET = io.connect(document.documentURI);
 const TOOL = {
 	PAINT: 0,
 	ERASE: 1,
-	FILL: 2
+	FILL: 2,
+	STICKER: 3
 };
 
 /// --- GAME CONSTANTS --- ///
@@ -41,7 +42,7 @@ if (!('getContext' in document.createElement('canvas'))) {
 	console.error(message);
 	alert(message);
 }
-const byId = function (id) {
+const byId = function(id) {
 	return document.getElementById(id);
 };
 Cookies.defaults = {
@@ -58,10 +59,10 @@ SOCKET.on('connect', () => {
 	console.log("ID is " + ID);
 });
 
-// Let client know they've joined the room successfully
+// Let client know they've joined the room
 SOCKET.on('joined', (data) => {
 	console.log("Joined room '" + data.roomCode + "'");
-	hide(byId('loading'));
+	hide('loading');
 
 	// update local game values
 	ROOM.code = data.roomCode;
@@ -72,8 +73,8 @@ SOCKET.on('joined', (data) => {
 	})
 
 	// switch to game screen
-	hide(byId('join'));
-	show(byId('game'));
+	byId('join').remove();
+	show('game');
 
 	// update DOM
 	byId('roomCode').textContent = ROOM.code;
@@ -135,27 +136,37 @@ SOCKET.on('startGame', (data) => {
 	ROUND.type = data.start;
 
 	// Update DOM
-	hide(byId('setupSection'));
-	hide(byId('inviteSection'));
-	show(byId('gameSection'));
-	show(byId('bookSection'));
+	hide('setup');
+	hide('invite');
+	show('gameplay');
+
+	// Update books
+	show('books');
 	updateBookList();
 
-	// Load start page
+	// Update round status
+	show('status');
+	byId('statusTitle').textContent = byId('inputTitle').value = BOOKS[ID].title;
+
+	// Show first round input
 	switch (data.start) {
 		case("Write"):
-			show(byId('gameWrite'));
-			byId('pageType').textContent = "Writing";
+			if (+ROOM.settings.timeWrite) {
+				show('statusTimer');
+			}
+			show('write');
 			break;
 		case("Draw"):
-			show(byId('gameDraw'));
-			show(byId('gameDrawTools'));
-			byId('pageType').textContent = "Drawing";
+			if (+ROOM.settings.timeDraw) {
+				show('statusTimer');
+			}
+			show('draw');
 			resizeCanvas();
 			break;
 	}
-	byId('pageCurrent').textContent = (ROUND.page + 1).toString();
-	byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
+
+	// Todo: Fix waiting screen
+	//byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
 });
 
 // Update book title
@@ -168,18 +179,18 @@ SOCKET.on('bookTitle', (data) => {
 SOCKET.on('page', (data) => {
 	// Update local book variables
 	BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, type: data.type};
-	byId('b' + data.id).classList.add('bookAuthorDone');
+	byId('b' + data.id).classList.add('done');
 
 	// Update how many pages are left in the round
-	byId('waitDisplay').textContent = parseInt(byId('waitDisplay').textContent) - 1;
+	byId('waitDisplay').textContent = (parseInt(byId('waitDisplay').textContent) - 1).toString();
 });
 
 // Go to next page in books
-SOCKET.on('nextPage', () => {
+SOCKET.on('pageForward', () => {
 	// Update DOM
-	byId('inputPageSubmit').disabled = false;
-	hide(byId('gameTitle'));
-	show(byId('gamePrevious'));
+	hide('title');
+	show('previous');
+	byId('inputSubmit').disabled = false;
 	byId('dialogWait').close();
 
 	// Increment page number
@@ -200,14 +211,14 @@ SOCKET.on('nextPage', () => {
 		// Change to drawing mode
 		ROUND.type = "Draw";
 		byId('pageType').textContent = "Drawing";
-		show(byId('gameDraw'));
-		show(byId('gameDrawTools'));
-		hide(byId('gameWrite'));
+		show('gameDraw');
+		show('gameDrawTools');
+		hide('gameWrite');
 
 		// Show previous page
 		byId('previousWrite').textContent = htmlDecode(_previousPage.value);
-		show(byId('previousWrite'));
-		hide(byId('previousDraw'));
+		show('previousWrite');
+		hide('previousDraw');
 
 		// Reset and clear inputs
 		resizeCanvas();
@@ -223,14 +234,14 @@ SOCKET.on('nextPage', () => {
 		ROUND.type = "Write";
 		byId('pageType').textContent = "Writing";
 		byId('writePrompt').textContent = "What happens next?";
-		show(byId('gameWrite'));
-		hide(byId('gameDraw'));
-		hide(byId('gameDrawTools'));
+		show('gameWrite');
+		hide('gameDraw');
+		hide('gameDrawTools');
 
 		// Show previous page
 		byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/base.png"; /* decoded image here */
-		show(byId('previousDraw'));
-		hide(byId('previousWrite'));
+		show('previousDraw');
+		hide('previousWrite');
 
 		// Reset and clear inputs
 		byId('inputWrite').disabled = false;
@@ -252,9 +263,9 @@ SOCKET.on('nextPage', () => {
 // Start presenting mode
 SOCKET.on('startPresenting', () => {
 	// Update DOM
-	hide(byId('loading'));
-	hide(byId('gameSection'));
-	show(byId('presentSection'));
+	hide('loading');
+	hide('gameSection');
+	show('presentSection');
 	byId('dialogWait').close();
 
 	// Update round state
@@ -268,9 +279,9 @@ SOCKET.on('startPresenting', () => {
 });
 
 SOCKET.on('presentBook', (data) => {
-	hide(byId('presentMenu'));
-	hide(byId('presentControlsFinish'));
-	show(byId('presentWindow'));
+	hide('presentMenu');
+	hide('presentControlsFinish');
+	show('presentWindow');
 	byId('presentSection').classList.remove('presentLobby');
 
 	// Keep track of presentation
@@ -296,13 +307,13 @@ SOCKET.on('presentBook', (data) => {
 
 	// If you're the presenter, enable controls
 	if (ID === ROUND.presenter) {
-		show(byId('presentControls'));
+		show('presentControls');
 	} else {
-		hide(byId('presentControls'));
+		hide('presentControls');
 
 		// Enable override if client is not presenting but is the host
 		if (ID === ROOM.host) {
-			show(byId('presentControlsOverride'));
+			show('presentControlsOverride');
 		}
 	}
 });
@@ -319,7 +330,7 @@ SOCKET.on('presentForward', () => {
 	switch (_page.type) {
 		case "Write":
 			let _p = document.createElement('p');
-			_p.innerText = _page.value;
+			_p.textContent = _page.value;
 			_p.classList.add("presentWrite");
 			_div.appendChild(_p);
 			break;
@@ -343,7 +354,7 @@ SOCKET.on('presentForward', () => {
 		byId('inputPresentForward').disabled = true;
 
 		if (ID === ROUND.presenter) {
-			show(byId('presentControlsFinish'));
+			show('presentControlsFinish');
 		}
 	}
 });
@@ -369,13 +380,13 @@ SOCKET.on('presentOverride', () => {
 
 	// Update UI buttons
 	if (ID === ROOM.host) {
-		show(byId('presentControls'));
+		show('presentControls');
 		if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
-			show(byId('presentControlsFinish'));
+			show('presentControlsFinish');
 		}
-		hide(byId('presentControlsOverride'));
+		hide('presentControlsOverride');
 	} else {
-		hide(byId('presentControls'));
+		hide('presentControls');
 	}
 
 	// Display new presenter of book
@@ -384,11 +395,11 @@ SOCKET.on('presentOverride', () => {
 
 SOCKET.on('presentFinish', () => {
 	// Return to present lobby
-	hide(byId('presentWindow'));
-	hide(byId('presentControls'));
-	hide(byId('presentControlsFinish'));
-	hide(byId('presentControlsOverride'));
-	show(byId('presentMenu'));
+	hide('presentWindow');
+	hide('presentControls');
+	hide('presentControlsFinish');
+	hide('presentControlsOverride');
+	show('presentMenu');
 	byId('presentSection').classList.add('presentLobby');
 	byId('inputPresentForward').disabled = false;
 	byId('inputPresentBack').disabled = true;
@@ -487,9 +498,7 @@ function updateSettings() {
 	byId('firstPageDisplay').value = ROOM.settings.firstPage;
 
 	// Pages per book
-	byId('pageCount').value = ROOM.settings.pageCount;
-	byId('pageCountDisplay').value = ROOM.settings.pageCount;
-	byId('pageMax').textContent = ROOM.settings.pageCount;
+	byId('pageCount').value = byId('pageCountDisplay').textContent = byId('statusPageMax').textContent = ROOM.settings.pageCount;
 
 	// Page assignment
 	document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
@@ -528,7 +537,7 @@ function updateHost() {
 
 // Update player list on the page
 function updatePlayerList() {
-	let _playerList = byId('listPlayers');
+	let _playerList = byId('playersList');
 	_playerList.innerHTML = '';
 
 	// Add self to player list
@@ -546,22 +555,22 @@ function updatePlayerList() {
 	}
 
 	// Increment player count
-	byId('countPlayers').textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
+	byId('playersCount').textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
 	if (Object.keys(USERS).length) {
-		show(byId('inputStart'));
-		hide(byId('inputStartWarning'));
+		show('inputStart');
+		hide('inputStartWarning');
 	} else {
-		hide(byId('inputStart'));
-		show(byId('inputStartWarning'));
+		hide('inputStart');
+		show('inputStartWarning');
 	}
 }
 
 // Update book list on the page
 function updateBookList() {
 	let _bookList, _id, _book, _bookTitle, _bookAuthor;
-	_bookList = byId('bookList');
+	_bookList = byId('booksList');
 	_bookList.innerHTML = '';
 
 	// Update the list of books
@@ -572,8 +581,7 @@ function updateBookList() {
 		_bookAuthor = document.createElement('span');
 
 		// Assign the correct classes for styling
-		_bookTitle.className = "bookTitle";
-		_bookAuthor.className = "bookAuthor";
+		_bookAuthor.className = "author";
 		_bookAuthor.id = "b" + _id;
 
 		// Display who's working on the current page of the book
@@ -590,7 +598,7 @@ function updateBookList() {
 
 			// Indicate whether page has been completed or not
 			if (_page.value) {
-				_bookAuthor.classList.add('bookAuthorDone')
+				_bookAuthor.classList.add('done')
 			}
 		}
 
@@ -661,6 +669,9 @@ function updatePresentList() {
 
 // Hide an element in the DOM
 function hide(e) {
+	if (typeof(e) === "string") {
+		e = byId(e);
+	}
 	e.classList.add("hidden");
 	e.hidden = true;
 	return e;
@@ -668,6 +679,9 @@ function hide(e) {
 
 // Show an element in the DOM
 function show(e) {
+	if (typeof(e) === "string") {
+		e = byId(e);
+	}
 	e.classList.remove("hidden");
 	e.hidden = false;
 	return e;
@@ -699,6 +713,7 @@ function unblur(e) {
 	if (_params.has("room")) {
 		byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 12);
 	}
+
 
 	/// JOIN
 	// Join: Input filter
@@ -736,7 +751,7 @@ function unblur(e) {
 			_inputName.disabled = true;
 			_inputRoom.disabled = true;
 			e.target.disabled = true;
-			show(byId('loading'));
+			show('loading');
 
 			window.history.pushState({roomCode: ROOM.code}, '', '?room=' + ROOM.code);
 
@@ -748,6 +763,7 @@ function unblur(e) {
 			});
 		}
 	});
+
 
 	/// SETUP
 	// Setup: Send settings to the server
@@ -835,33 +851,41 @@ function unblur(e) {
 		blur(e.target);
 	});
 
-	// Setup: Invite copy url
-	byId('inputCopyURL').addEventListener('click', (e) => {
+	// Setup: Invite button
+	byId('inviteButton').addEventListener('click', (e) => {
 		// Disable button and show confirmation
 		e.target.disabled = true;
-		show(byId('displayCopyURL'));
+		show('inviteButtonStatus');
 
 		// Add room code to clipboard
 		copyToClipboard(window.location.href);
 
 		// Disappear after 2 seconds and re-enable button
 		setTimeout(() => {
-			hide(byId('displayCopyURL'));
+			hide('inviteButtonStatus');
 			e.target.disabled = false;
 		}, 2200);
 	});
 
+
 	/// GAME
 	// Game: Let player change their title
+	byId('inputTitle').addEventListener('input', (e) => {
+		byId('statusTitle').textContent = e.target.value.substr(0, 40);
+	});
 	byId('inputTitle').addEventListener('change', (e) => {
 		let _title = e.target.value.substr(0, 40);
 		SOCKET.emit('updateBookTitle', {title: _title, key: SESSION_KEY});
-		BOOKS[ID].title = _title;
-		updateBookList();
-	})
+	});
+
+	// Game: Write textarea resizing
+	byId('inputWrite').addEventListener("input", (e) => {
+		e.target.style.height = "auto";
+		e.target.style.height = (e.target.scrollHeight) + "px";
+	});
 
 	// Game: Submit page
-	byId('inputPageSubmit').addEventListener('click', (e) => {
+	byId('inputSubmit').addEventListener('click', (e) => {
 		// Check which round type we're in
 		if (ROUND.type === "Write") {
 			/// Get write input if it's a writing round
@@ -911,6 +935,7 @@ function unblur(e) {
 	_dialogWait.addEventListener('cancel', (e) => {
 		e.preventDefault();
 	})
+
 
 	/// DRAW
 	// Draw: Color picker
