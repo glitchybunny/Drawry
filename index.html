@@ -12,10 +12,10 @@
 		<section class="flex box" style="margin:1em">
 			<label for="inputName">Name:</label>
 			<input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
-				   onkeydown="return enterPress(event, 'inputJoin')" required="required" type="text">
+				   onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
 			<label for="inputRoom">Room Code:</label>
 			<input aria-required="true" autocomplete="on" id="inputRoom" maxlength="12" minlength="4"
-				   onkeydown="return enterPress(event, 'inputJoin')" required="required" type="text">
+				   onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
 			<input id="inputJoin" type="button" value="Join">
 		</section>
 		<a href="/help.html" style="font-size: 1.2em;">How to play</a>
@@ -26,29 +26,30 @@
 	</div>
 
 	<div class="flex hidden" hidden id="game" style="flex-wrap:wrap;">
-		<aside class="flex sidebar">
+		<aside class="flex">
 			<header style="padding:.5em 0">
 				<h1 class="center">Open Picturephone</h1>
 			</header>
-			<section class="boxlet" id="sectionPlayers">
+			<section class="boxlet" id="players">
 				<header>
 					<h2>Players</h2>
-					<h2 id="countPlayers" style="text-align:right;">1</h2>
+					<h2 id="playersCount" style="text-align:right;">1</h2>
 				</header>
-				<ul id="listPlayers"></ul>
+				<ul id="playersList"></ul>
 			</section>
-			<section class="boxlet" id="sectionInvite">
+			<section class="boxlet" id="invite">
 				<h2>Invite Others!</h2>
 				<p>Room code:<span class="blurred right" id="roomCode" style="cursor: pointer;"></span></p>
 				<div>
-					<input id="inputCopyURL" type="button" value="Copy invite link">
-					<output class="hidden fade-out" hidden id="displayCopyURL" style="float:right">Invite link copied!
+					<input id="inviteButton" type="button" value="Copy invite link">
+					<output class="hidden fade-out" hidden id="inviteButtonStatus" style="float:right">Invite link
+						copied!
 					</output>
 				</div>
 			</section>
-			<section class="boxlet hidden" hidden id="sectionBooks">
+			<section class="boxlet hidden" hidden id="books">
 				<h2>Books</h2>
-				<ul id="listBooks"></ul>
+				<ul id="booksList"></ul>
 			</section>
 			<footer class="copyright">
 				<a href="https://github.com/darkrilin/open-picturephone">&copy; darkrilin 2021</a>
@@ -56,7 +57,7 @@
 		</aside>
 
 		<main>
-			<section class="flex box" id="setup" style="width:23em;">
+			<section class="flex box" id="setup" style="width:23em; margin:auto;">
 				<header>
 					<h2>Game Setup</h2>
 					<p class="right hostName"></p>
@@ -166,7 +167,8 @@
 					<p id="inputStartWarning" style="font-style:italic;">
 						Two or more players required to start...
 					</p>
-					<input class="hidden" hidden id="inputStart" type="button" value="Start game" style="margin-top:.5em">
+					<input class="hidden" hidden id="inputStart" style="margin-top:.5em" type="button"
+						   value="Start game">
 				</div>
 				<div class="center notHost">
 					<p style="font-style:italic;">
@@ -174,46 +176,52 @@
 					</p>
 				</div>
 			</section>
+			<section class="flex center hidden" hidden id="status">
+				<h2>
+					<span id="statusTitle"></span> - Page&nbsp;<span id="statusPage">1</span>/<span
+						id="statusPageMax"></span>
+				</h2>
+				<h1 class="hidden" hidden id="statusTimer">⏳ 4:20</h1>
+			</section>
+			<div class="flex hidden" hidden id="gameplay" style="margin:auto;">
+				<section class="flex box" id="title">
+					<label for="inputTitle">
+						<b>Title</b>
+					</label>
+					<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
+						   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
+						   type="text">
+				</section>
+				<section class="flex box hidden" hidden id="previous">
+					<p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
+					<p class="hidden" hidden id="previousWrite"></p>
+					<div class="hidden" hidden id="previousDraw">
+						<img alt="" id="previousDrawImg" src="img/base.png"/>
+					</div>
+				</section>
+				<section class="flex box hidden" hidden id="write" style="min-width:20em;">
+					<label for="inputWrite">
+						<b>Story</b>
+					</label>
+					<textarea aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
+							  onkeydown="return enterBlock(event)" placeholder="What happens next?" required="required"
+							  spellcheck="true" style="height:4em; overflow-y:hidden;"></textarea>
+				</section>
+				<section class="flex box hidden" hidden id="draw">
+					<img alt="" id="canvasBase" src="img/base.png">
+					<canvas height="600" id="c" width="800"></canvas>
+				</section>
+				<section class="flex box">
+					<input autocomplete="false" id="inputSubmit" type="button" value="Submit">
+				</section>
+			</div>
 		</main>
 	</div>
 
 	<!-- BEGIN DEPRECATED HTML -->
 	<main class="hidden" hidden>
 		<div class="hidden" hidden id="gameSection">
-			<section id="gameTitle">
-				<label for="inputTitle">
-					<b>Book Title</b>
-				</label>
-				<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
-					   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
-					   type="text">
-			</section>
-			<section class="hidden" hidden id="gamePrevious">
-				<p style="font-weight:bold;"><span id="gamePreviousTitle"></span> - previous page:</p>
-				<p class="hidden" hidden id="previousWrite"></p>
-				<div class="hidden" hidden id="previousDraw">
-					<img alt="" id="previousDrawImg" src="img/base.png"/>
-				</div>
-			</section>
 			<section id="gameArea">
-				<div class="title">
-					<h1 id="pageType"></h1>
-					<p class="corner">Page <span id="pageCurrent">-</span>/<span id="pageMax">-</span></p>
-				</div>
-				<hr>
-				<div class="hidden" hidden id="gameWrite">
-					<label for="inputWrite" id="writePrompt">
-						What should the first page say?
-					</label>
-					<input aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
-						   onkeydown="return enterPress(event, 'inputPageSubmit')" placeholder="Keep it simple!"
-						   required="required" spellcheck="true" type="text">
-				</div>
-				<div class="hidden" hidden id="gameDraw">
-					<img alt="" id="canvasBase" src="img/base.png">
-					<canvas height="600" id="c" width="800"></canvas>
-				</div>
-				<hr>
 				<div style="display:flex; flex-flow:row nowrap;">
 					<div class="hidden" hidden id="gameDrawTools">
 						<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
@@ -230,16 +238,7 @@
 							<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)"
 								   type="button">
 						</div>
-						<!--
-						TODO:
-						- Finish implementing all of the above
-						- Nuke canvas button
-						- Color dropper
-						- Brush sizes/types
-						- Stickers
-						-->
 					</div>
-					<input autocomplete="false" id="inputPageSubmit" type="button" value="Submit">
 				</div>
 			</section>
 		</div>
@@ -286,7 +285,7 @@
 		<p class="center" style="display:block">
 			Waiting for others to finish their page...
 		</p>
-		<div style="padding: 8px">
+		<div style="padding: .5em">
 			<img alt="" class="spin" src="img/loading.png" style="display:block; margin: 0 auto;">
 		</div>
 		<p class="center" style="display:block">
@@ -300,15 +299,20 @@
 	<script src="/js/dialog-polyfill.min.js"></script>
 	<script src="/js/client.js" type="module"></script>
 	<script>
-		function enterPress(e, id) {
-			e = e || window.event;
+		function enterSubmit(e, id) {
 			if (e.keyCode === 13) {
 				document.getElementById(id).click();
 				return false;
 			}
 			return true;
 		}
-	</script>
 
+		function enterBlock(e) {
+			if (e.keyCode === 13) {
+				e.preventDefault();
+				return false;
+			}
+		}
+	</script>
 </body>
 </html>

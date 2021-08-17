@@ -20,6 +20,7 @@ body, html {
 	color: #fff;
 	background: #567890;
 	font-size: 18px;
+	overflow-wrap: anywhere;
 }
 
 a {
@@ -70,16 +71,12 @@ hr {
 	width: 100%;
 	margin: .5em auto;
 	border: 0;
-	border-bottom: .12em solid #234567
+	border-bottom: .12em solid #234567;
 }
 
-input {
+input, textarea {
 	display: inline-block;
 	font-size: 1.2em;
-}
-
-input[type=text] {
-	margin-bottom: .8em;
 }
 
 input[type=button] {
@@ -109,12 +106,17 @@ input:disabled {
 	cursor: auto;
 }
 
+li {
+	margin: .25em 0;
+}
+
 main {
 	display: flex;
 	flex-flow: column nowrap;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-start;
 	width: calc(100vw - 20em);
+	max-width: calc(100vw - 20em);
 	height: 100%;
 }
 
@@ -140,6 +142,20 @@ ul {
 
 
 /* CLASSES */
+.author {
+	display: block;
+	font-size: .7em;
+	font-style: italic;
+}
+
+.author.done:after {
+	content: "Done!";
+	margin-left: .5em;
+	padding: .12em .25em;
+	background-color: #123456;
+	font-style: normal;
+}
+
 .box {
 	padding: 1em 1.2em;
 	text-align: start;
@@ -169,7 +185,6 @@ ul {
 .flex {
 	display: flex;
 	flex-flow: column nowrap;
-	align-items: stretch;
 }
 
 .right {
@@ -186,11 +201,32 @@ ul {
 	align-items: center;
 }
 
+.spin {
+	animation: spin 2s infinite linear;
+}
+
 
 /* IDS */
+#game {
+	width: 100%;
+}
+
+#gameplay .box:not(:last-child) {
+	border-bottom: .12em solid #234567;
+}
+
 #inputCopyRoom, #inputCopyURL {
 	padding: 0 .2em;
 	font-size: 1em;
+}
+
+#inputWrite {
+	resize: vertical;
+	max-height: 12em;
+}
+
+#join input[type=text] {
+	margin-bottom: .8em;
 }
 
 #loading {
@@ -201,7 +237,7 @@ ul {
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background: rgba(35, 69, 103, 0.1);
+	background: rgba(35, 69, 103, .1);
 	z-index: 100;
 	cursor: wait;
 }
@@ -249,6 +285,15 @@ ul {
 	}
 }
 
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(359deg);
+	}
+}
+
 
 /* DIALOGS POLYFILL */
 dialog {
@@ -276,7 +321,7 @@ dialog::backdrop, dialog + .backdrop {
 	right: 0;
 	bottom: 0;
 	left: 0;
-	background-color: rgba(35, 69, 103, 0.2);
+	background-color: rgba(35, 69, 103, .2);
 }
 
 ._dialog_overlay {
@@ -294,9 +339,7 @@ dialog.fixed {
 }
 
 
-/* Default html elements *//*
-
-
+/* EVERYTHING BELOW IS DEPRECATED *//*
 body, html {
 	width: 100%;
 	height: 100%;
@@ -307,29 +350,23 @@ body, html {
 	max-width: 100vw;
 	max-height: 100vh;
 }
-
 body {
 	justify-content: center;
 	align-items: center;
 }
-
 p, dfn {
 	margin: 8px 0
 }
-
 a, li, output, p, dfn, h1, label, p, #roomCode, td, dialog {
 	color: #fff;
 }
-
 a, label, li, output, p, dfn, td, dialog {
 	font-size: 18px
 }
-
 body, section, aside {
 	display: flex;
 	flex-flow: column nowrap;
 }
-
 section, aside {
 	padding: 10px 20px;
 	margin: 10px;
@@ -338,56 +375,39 @@ section, aside {
 	width: auto;
 	height: min-content;
 }
-
 h1 {
 	font-weight: 700;
 	margin: 10px auto;
 }
-
 label {
 	padding: 10px 4px;
 	margin: 0;
 }
-
 ul {
 	margin-top: 0;
 	margin-bottom: 8px;
 }
-
 li {
 	margin: 8px 0;
 	word-wrap: break-word
 }
-
 hr {
 	margin: 8px auto;
 	border: 0;
 	border-bottom: 2px solid #234567
 }
-
 td {
 	text-align: center;
 }
-
 td:first-of-type {
 	text-align: left;
 }
-
-
-
-
-*//* Width 100 *//*
-.presentDraw, #presentSection, h1, ul, hr, #presentTable, #mainGame {
-	width: 100%;
-}
-
 
 *//* Classes *//*
 .center {
 	align-self: center;
 	text-align: center;
 }
-
 .centerV {
 	display: flex;
 	flex-flow: row nowrap;
@@ -396,29 +416,9 @@ td:first-of-type {
 	vertical-align: center;
 	justify-content: center;
 }
-
-.right {
-	margin: 10px 8px 10px auto !important;
-}
-
-.title {
-	display: flex;
-	flex-flow: row nowrap;
-	justify-content: space-between;
-	align-items: center;
-	white-space: nowrap;
-}
-
-.title > h1 {
-	filter: drop-shadow(1px 1px 0 #123456);
-	width: auto;
-	margin: 10px 0;
-}
-
 .canvas-container {
 	position: absolute !important;
 }
-
 .page {
 	min-height: 20px;
 	margin: 0 auto;
@@ -426,72 +426,21 @@ td:first-of-type {
 	border-bottom: 1px solid #ddd;
 	border-top: 1px solid #ddd;
 }
-
 .page:first-of-type {
 	border-top: 2px solid #ddd;
 }
-
 .page:last-of-type {
 	border-bottom: 2px solid #ddd;
 }
-
 .presentWrite {
 	margin: 14px;
 	font-size: 20px;
 }
-
 .presentDraw {
 	margin: 0 0 -5px;
 }
 
-.spin {
-	animation: rotation 2s infinite linear;
-}
-
-
-*//* Basic page layout IDs *//*
-#mainJoin, #gameWrite {
-	display: flex;
-	flex-flow: column nowrap;
-}
-
-#mainJoin {
-	align-items: center;
-}
-
-#copyright {
-	position: absolute;
-	margin: 10px 20px;
-	bottom: 0;
-	right: 0;
-	color: #abcdef
-}
-
-#cornerTitle {
-	position: absolute;
-	margin: 10px 20px;
-	top: 0;
-	left: 0;
-	color: #abcdef;
-	overflow: visible;
-}
-
-
 *//* Sections *//*
-#joinSection {
-	max-width: 300px;
-}
-
-#playerSection, #bookSection, #inviteSection {
-	min-width: 220px;
-	width: 220px;
-	min-height: 100px;
-}
-
-#setupSection {
-	min-width: 420px;
-}
-
 #gameSection {
 	display: flex;
 	flex-flow: column nowrap;
@@ -502,114 +451,40 @@ td:first-of-type {
 	max-width: 800px;
 	height: 100vh;
 }
-
-#gameSettings {
-	display: flex;
-	flex-flow: column nowrap;
-}
-
-#gameSettings > div {
-	display: flex;
-	flex-flow: row nowrap;
-	justify-content: space-between;
-	align-items: center;
-}
-
 #mainGame {
 	display: flex;
 	flex-flow: row nowrap;
 	justify-content: space-evenly;
 	align-items: center;
 }
-
 #presentSection, #gameArea {
 	min-width: 400px;
 	max-width: min(calc((100vh - 255px) * 1.33), 820px);
 }
-
 .presentLobby {
 	max-width: 500px !important;
 }
 
-
 *//* Inputs and outputs *//*
-input[type=text] {
-	font-size: 24px;
-}
-
-input[type=button] {
-	font-size: 22px;
-	padding: 1px 16px;
-	margin: 10px auto;
-}
-
-input[type=button], input[type=radio], select {
-	cursor: pointer;
-}
-
-#inputName, #inputRoom {
-	width: auto;
-	max-width: 280px;
-}
-
-#inputWrite, #inputTitle {
-	margin-bottom: 10px;
-}
-
-output {
-	display: inline-block;
-	min-width: 24px;
-	text-align: right;
-	margin: 10px 0 10px 10px
-}
-
-#timeDrawDisplay, #timeWriteDisplay {
-	width: 60px
-}
-
-#inputCopyRoom, #inputCopyURL, #presentTable input {
+#presentTable input {
 	margin: 5px auto;
 	font-size: 18px;
 	display: block;
 }
 
-#copyDisplay {
-	font-style: italic;
-	text-align: center;
-}
-
-
 *//* Other Stuff *//*
-#playerList, #bookList {
-	list-style: none;
-	padding-inline: 0;
-	padding-left: 0;
-}
-
-#playerList > li:first-child {
-	font-weight: bold;
-}
-
-#bookList > li {
-	display: flex;
-	flex-flow: column nowrap;
-}
-
 #previousWrite {
 	font-size: 21px;
 	overflow-wrap: anywhere;
 	font-style: italic;
 	min-width: 300px;
 }
-
 #previousWrite:before {
 	content: '\201C';
 }
-
 #previousWrite:after {
 	content: '\201D';
 }
-
 #previousDraw, #gameDraw {
 	display: flex;
 	justify-content: center;
@@ -617,59 +492,22 @@ output {
 	min-height: 300px;
 	flex-grow: 1;
 }
-
 #previousDrawImg, #canvasBase {
 	min-width: 0;
 	height: calc(100vh - 360px); *//*min(calc(100vh - 360px), 615px);*//*
 	min-height: 300px;
 	background-color: #fff;
 }
-
-#roomCode {
-	padding: 4px 8px;
-	background-color: #123456;
-	width: auto;
-}
-
-#roomCode:hover {
-	cursor: pointer;
-}
-
-.bookAuthor {
-	font-size: 12px;
-	font-style: italic;
-}
-
-.bookAuthorDone:after {
-	content: "Done!";
-	font-style: normal;
-	padding: 2px 4px;
-	background-color: #123456;
-	margin-left: 8px;
-}
-
-.corner {
-	text-align: right;
-	padding: 4px 8px;
-	background-color: #123456;
-	width: auto;
-	max-width: 250px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
 #presentMenu {
 	width: auto;
 	max-width: 500px;
 }
-
 #presentList div {
 	display: flex;
 	flex-flow: row nowrap;
 	justify-content: center;
 	align-items: center;
 }
-
 #presentList span {
 	display: inline-block;
 	width: 100%;
@@ -678,17 +516,14 @@ output {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
-
 #presentList input {
 	margin: 0 10px 10px !important;
 }
-
 #presentBookTitle {
 	margin: 40px auto 0;
 	text-align: center;
 	font-size: 28pt;
 }
-
 #presentWindow {
 	overflow-x: hidden;
 	overflow-y: scroll;
@@ -699,22 +534,18 @@ output {
 	background-color: #fff;
 	border: 2px solid #234567;
 }
-
 #presentWindow * {
 	color: #000;
 }
-
 #presentControls, #presentControlsFinish, #presentControlsOverride {
 	display: flex;
 	flex-flow: row nowrap;
 	width: auto;
 	margin: 0 auto;
 }
-
 #presentControls input, #presentControlsFinish input, #inputPresentOverride {
 	margin: 4px !important;
 }
-
 
 *//* Drawing tools *//*
 #gameDrawTools {
@@ -726,7 +557,6 @@ output {
 	justify-content: flex-start;
 	border-right: 2px solid #234567;
 }
-
 #gameDrawTools > * {
 	display: flex;
 	align-self: center;
@@ -734,7 +564,6 @@ output {
 	justify-content: center;
 	margin: 2px 6px;
 }
-
 [id^=tool] {
 	align-self: center;
 	width: 40px;
@@ -750,19 +579,16 @@ output {
 	margin: 2px -1px !important;
 	margin-block: 0;
 }
-
 [id^=tool]:hover {
 	border: 2px solid #89ABCD;
 	cursor: pointer;
 	z-index: 1;
 }
-
 [id^=tool]:disabled {
 	opacity: 40%;
 	border: 2px solid #012345;
 	cursor: default;
 }
-
 #toolColor {
 	width: 0;
 	height: 0;
@@ -776,59 +602,26 @@ output {
 	overflow: hidden;
 	margin: 2px 6px !important;
 }
-
 #toolColor:hover {
 	outline: 2px solid #89ABCD;
 	cursor: pointer;
 }
-
 #toolPaint {
 	background-position-y: 0;
 }
-
 #toolErase {
 	background-position-y: -34px;
 }
-
 #toolFill {
 	background-position-y: -68px;
 }
-
 #toolUndo {
 	background-position-y: -102px;
 }
-
 #toolRedo {
 	background-position-y: -136px;
 }
-
 .toolSelected {
 	background-position-x: right;
 }
-
-
-*//* Class overrides *//*
-.isHost, .isNotHost, .center {
-	display: flex;
-	vertical-align: center;
-	align-items: center;
-}
-
-.hidden {
-	display: none !important;
-}
-
-.blur {
-
-}
-
-
-*//* Keyframes *//*
-@keyframes rotation {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(359deg);
-	}
-}
+ */
