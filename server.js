@@ -31,7 +31,7 @@ const SETTINGS_CONSTRAINTS = {
 	timeDraw: ['number', [0, 15]]
 };
 const SETTINGS_DEFAULT = {
-	firstPage: 'Write',
+	firstPage: 'Draw',
 	pageCount: '8',
 	pageOrder: 'Normal',
 	palette: 'No palette',
@@ -176,9 +176,9 @@ io.on('connection', (socket) => {
 	});
 
 	// Update a player's book title
-	socket.on('updateBookTitle', (data) => {
+	socket.on('updateTitle', (data) => {
 		if (VERBOSE) {
-			console.log('updateBookTitle', CLIENTS[socket.id].id, {title: data.title});
+			console.log('updateTitle', CLIENTS[socket.id].id, {title: data.title});
 		}
 
 		let _id = CLIENTS[socket.id].id;
@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
 
 		// send title to other players
 		if (_room.page === 0) {
-			io.to(_roomCode).emit("bookTitle", {id: _id, title: _title});
+			io.to(_roomCode).emit("title", {id: _id, title: _title});
 		}
 	});
 
@@ -203,7 +203,7 @@ io.on('connection', (socket) => {
 	socket.on('submitPage', (data) => {
 		if (VERBOSE) {
 			console.log('submitPage', CLIENTS[socket.id].id, {
-				type: data.type,
+				mode: data.mode,
 				value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : "")
 			});
 		}
@@ -213,11 +213,11 @@ io.on('connection', (socket) => {
 		let _value = undefined;
 
 		// Fetch page data
-		if (data.type === "Write") {
+		if (data.mode === "Write") {
 			// Data is text
 			_value = xss(data.value.substr(0, 140));
 
-		} else if (data.type === "Draw") {
+		} else if (data.mode === "Draw") {
 			// Data is encoded image
 			// make sure the image is expected format
 			if (data.value.indexOf('data:image/png;base64,') === 0) {
@@ -253,12 +253,12 @@ io.on('connection', (socket) => {
 			}
 		}
 
-		// Verify data.type is valid
+		// Verify data.mode is valid
 		let _expected = ((_room.settings.firstPage === "Write") ^ (_room.page % 2)) ? "Write" : "Draw";
-		if (_expected !== data.type) {
+		if (_expected !== data.mode) {
 			// Client trying to send tampered data, overwrite
 			_value = undefined;
-			console.log("ERROR unexpected data.type", {received: data.type, expected: _expected})
+			console.log("ERROR unexpected data.mode", {received: data.mode, expected: _expected})
 		}
 
 		// Send page data to all players
