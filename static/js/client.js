@@ -42,7 +42,7 @@ if (!('getContext' in document.createElement('canvas'))) {
 	console.error(message);
 	alert(message);
 }
-const byId = function(id) {
+const byId = function (id) {
 	return document.getElementById(id);
 };
 Cookies.defaults = {
@@ -78,7 +78,7 @@ SOCKET.on('joined', (data) => {
 
 	// update DOM
 	byId('roomCode').textContent = ROOM.code;
-	updatePlayerList();
+	updatePlayers();
 	updateHost();
 	updateSettings();
 
@@ -93,7 +93,7 @@ SOCKET.on('userJoin', (data) => {
 	// Add user data
 	console.log(data.name, "joined");
 	USERS[data.id] = {name: htmlDecode(data.name)};
-	updatePlayerList();
+	updatePlayers();
 });
 
 // Remove user from room
@@ -101,7 +101,7 @@ SOCKET.on('userLeave', (userID) => {
 	// Clear user data
 	console.log(getName(userID), "disconnected");
 	delete USERS[userID];
-	updatePlayerList();
+	updatePlayers();
 });
 
 // Update which user is the host
@@ -133,7 +133,7 @@ SOCKET.on('startGame', (data) => {
 	// Set round info
 	ROUND.page = 0;
 	ROUND.book = BOOKS[ID];
-	ROUND.type = data.start;
+	ROUND.mode = data.start;
 
 	// Update DOM
 	hide('setup');
@@ -141,44 +141,30 @@ SOCKET.on('startGame', (data) => {
 	show('gameplay');
 
 	// Update books
-	show('books');
-	updateBookList();
+
 
 	// Update round status
 	show('status');
 	byId('statusTitle').textContent = byId('inputTitle').value = BOOKS[ID].title;
 
 	// Show first round input
-	switch (data.start) {
-		case("Write"):
-			if (+ROOM.settings.timeWrite) {
-				show('statusTimer');
-			}
-			show('write');
-			break;
-		case("Draw"):
-			if (+ROOM.settings.timeDraw) {
-				show('statusTimer');
-			}
-			show('draw');
-			resizeCanvas();
-			break;
-	}
+	updateInput();
+	updateBooks();
 
 	// Todo: Fix waiting screen
-	//byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
+	byId('waitDisplay').textContent = (Object.keys(USERS).length + 1).toString();
 });
 
 // Update book title
-SOCKET.on('bookTitle', (data) => {
+SOCKET.on('title', (data) => {
 	BOOKS[data.id].title = htmlDecode(data.title);
-	updateBookList();
+	updateBooks();
 });
 
 // Get page info
 SOCKET.on('page', (data) => {
 	// Update local book variables
-	BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, type: data.type};
+	BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, mode: data.mode};
 	byId('b' + data.id).classList.add('done');
 
 	// Update how many pages are left in the round
@@ -187,69 +173,25 @@ SOCKET.on('page', (data) => {
 
 // Go to next page in books
 SOCKET.on('pageForward', () => {
-	// Update DOM
-	hide('title');
-	show('previous');
-	byId('inputSubmit').disabled = false;
-	byId('dialogWait').close();
+	byId('wait').close();
 
-	// Increment page number
+	// Determine round information
 	ROUND.page += 1;
-	byId('pageCurrent').textContent = ROUND.page + 1;
-
-	// Figure out book and previous page
-	for (let _id in BOOKS) {
-		if (BOOKS[_id].book[ROUND.page] === ID) {
-			ROUND.book = BOOKS[_id];
+	ROUND.mode = (ROUND.mode === "Write" ? "Draw" : "Write");
+	for (let i in BOOKS) {
+		if (BOOKS[i].book[ROUND.page] === ID) {
+			ROUND.book = BOOKS[i];
 		}
 	}
-	let _previousPage = ROUND.book.book[ROUND.page - 1];
-	byId('gamePreviousTitle').textContent = ROUND.book.title;
 
-	// Change drawing <=> writing mode
-	if (ROUND.type === "Write") {
-		// Change to drawing mode
-		ROUND.type = "Draw";
-		byId('pageType').textContent = "Drawing";
-		show('gameDraw');
-		show('gameDrawTools');
-		hide('gameWrite');
+	// Update status
+	byId('statusTitle').textContent = ROUND.book.title;
+	byId('statusPage').textContent = ROUND.page + 1;
 
-		// Show previous page
-		byId('previousWrite').textContent = htmlDecode(_previousPage.value);
-		show('previousWrite');
-		hide('previousDraw');
-
-		// Reset and clear inputs
-		resizeCanvas();
-		CANVAS.clear();
-		CANVAS.setBackgroundColor('#FFFFFF');
-		CANVAS.isDrawingMode = true;
-		CANVAS.selection = true;
-		DRAW.undo = [];
-		byId('toolUndo').disabled = true;
-
-	} else if (ROUND.type === "Draw") {
-		// Change to writing mode
-		ROUND.type = "Write";
-		byId('pageType').textContent = "Writing";
-		byId('writePrompt').textContent = "What happens next?";
-		show('gameWrite');
-		hide('gameDraw');
-		hide('gameDrawTools');
-
-		// Show previous page
-		byId('previousDrawImg').src = _previousPage.value ? _previousPage.value : "img/base.png"; /* decoded image here */
-		show('previousDraw');
-		hide('previousWrite');
-
-		// Reset and clear inputs
-		byId('inputWrite').disabled = false;
-		byId('inputWrite').value = "";
-	}
-
-	// Update book list info
-	updateBookList();
+	// Update previous page, input mode, book list
+	updatePrevious();
+	updateInput();
+	updateBooks();
 
 	// Show how many pages are left
 	byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
@@ -266,15 +208,15 @@ SOCKET.on('startPresenting', () => {
 	hide('loading');
 	hide('gameSection');
 	show('presentSection');
-	byId('dialogWait').close();
+	byId('wait').close();
 
 	// Update round state
 	ROUND.page = undefined;
 	ROUND.book = undefined;
-	ROUND.type = "Presenting";
+	ROUND.mode = "Presenting";
 
 	// Add books to DOM for presenting
-	updateBookList();
+	updateBooks();
 	updatePresentList();
 });
 
@@ -327,13 +269,14 @@ SOCKET.on('presentForward', () => {
 	let _page = ROUND.book.book[ROUND.page];
 	let _div = document.createElement('div');
 	_div.classList.add('page');
-	switch (_page.type) {
+	switch (_page.mode) {
 		case "Write":
 			let _p = document.createElement('p');
 			_p.textContent = _page.value;
 			_p.classList.add("presentWrite");
 			_div.appendChild(_p);
 			break;
+
 		case "Draw":
 			let _img = document.createElement('img');
 			_img.src = _page.value;
@@ -425,13 +368,13 @@ SOCKET.on('disconnect', (data) => {
 			window.location.reload(true);
 			break;
 		case("transport close"):
-			//alert("Lost connection to server.");
+			alert("Lost connection to server.");
 			break;
 		case("server full"):
 			alert("Server full! Can't connect.");
 			break;
 		default:
-			alert("Disconnected due to an unknown error.\nPlease reconnect.");
+			alert("Disconnected due to an unknown error.");
 			window.location.reload(true);
 	}
 });
@@ -489,7 +432,7 @@ function copyToClipboard(text) {
 
 
 /// --- UPDATE DOM --- ///
-// Update settings
+// Lobby: Update settings
 function updateSettings() {
 	// First page
 	document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
@@ -519,7 +462,7 @@ function updateSettings() {
 	byId('timeDrawDisplay').value = parseInt(ROOM.settings.timeDraw) ? ROOM.settings.timeDraw + " min" : 'None';
 }
 
-// Update host information on the page
+// Sidebar: Update host information on the page
 function updateHost() {
 	// Update the host name in the DOM
 	document.querySelectorAll('.hostName').forEach((elem) => {
@@ -535,8 +478,8 @@ function updateHost() {
 	});
 }
 
-// Update player list on the page
-function updatePlayerList() {
+// Sidebar: Update player list on the page
+function updatePlayers() {
 	let _playerList = byId('playersList');
 	_playerList.innerHTML = '';
 
@@ -567,8 +510,10 @@ function updatePlayerList() {
 	}
 }
 
-// Update book list on the page
-function updateBookList() {
+// Sidebar: Update book list on the page
+function updateBooks() {
+	show('books');
+
 	let _bookList, _id, _book, _bookTitle, _bookAuthor;
 	_bookList = byId('booksList');
 	_bookList.innerHTML = '';
@@ -585,7 +530,7 @@ function updateBookList() {
 		_bookAuthor.id = "b" + _id;
 
 		// Display who's working on the current page of the book
-		if (ROUND.type === "Presenting") {
+		if (ROUND.mode === "Presenting") {
 			_bookTitle.textContent = BOOKS[_id].title;
 			_bookAuthor.textContent = "by\u00a0" + BOOKS[_id].author;
 		} else {
@@ -609,7 +554,80 @@ function updateBookList() {
 	}
 }
 
-// Update presenting buttons for host
+// Game: Update previous page display
+function updatePrevious() {
+	hide('title');
+	show('previous');
+
+	let _previousDraw = byId('previousDraw');
+	let _previousWrite = byId('previousWrite');
+	let _previousPage = ROUND.book.book[ROUND.page - 1].value;
+
+	switch (ROUND.mode) {
+		case "Write":
+			// Current mode is write, so the previous page is draw
+			let _previousDrawImg = byId('previousDrawImg')
+			_previousDrawImg.src = "";
+			_previousDrawImg.src = _previousPage ? _previousPage : "img/placeholder.png";
+			hide(_previousWrite);
+			show(_previousDraw);
+			break;
+
+		case "Draw":
+			// Current mode is draw, so the previous page is write
+			_previousWrite.textContent = htmlDecode(_previousPage);
+			hide(_previousDraw);
+			show(_previousWrite);
+			break;
+	}
+}
+
+// Game: Update input mode
+function updateInput() {
+	// Change input mode
+	switch (ROUND.mode) {
+		case "Write":
+			// Change to writing mode
+			hide('draw');
+			show('write');
+
+			// Enable/disable timer
+			if (+ROOM.settings.timeWrite) {
+				show('statusTimer');
+			}
+
+			// Reset writing inputs
+			byId('inputWrite').disabled = false;
+			byId('inputWrite').value = "";
+			break;
+
+		case "Draw":
+			// Change to drawing mode
+			hide('write');
+			show('draw');
+
+			// Enable/disable timer
+			if (+ROOM.settings.timeDraw) {
+				show('statusTimer');
+			}
+
+			// Reset drawing inputs
+			CANVAS.clear();
+			CANVAS.setBackgroundColor('#FFFFFF');
+			CANVAS.isDrawingMode = true;
+			CANVAS.selection = true;
+			DRAW.undo = [];
+			byId('toolUndo').disabled = true;
+			byId('toolRedo').disabled = true;
+			resizeCanvas();
+			break;
+	}
+
+	// Enable submit button
+	byId('inputSubmit').disabled = false;
+}
+
+// Update presenting page
 function updatePresentList() {
 	let _presentTable;
 	_presentTable = byId('presentTable');
@@ -669,7 +687,7 @@ function updatePresentList() {
 
 // Hide an element in the DOM
 function hide(e) {
-	if (typeof(e) === "string") {
+	if (typeof (e) === "string") {
 		e = byId(e);
 	}
 	e.classList.add("hidden");
@@ -679,23 +697,11 @@ function hide(e) {
 
 // Show an element in the DOM
 function show(e) {
-	if (typeof(e) === "string") {
+	if (typeof (e) === "string") {
 		e = byId(e);
 	}
 	e.classList.remove("hidden");
 	e.hidden = false;
-	return e;
-}
-
-// Blur an element in the DOM
-function blur(e) {
-	e.classList.add("blurred");
-	return e;
-}
-
-// Show an element in the DOM
-function unblur(e) {
-	e.classList.remove("blurred");
 	return e;
 }
 
@@ -845,10 +851,10 @@ function unblur(e) {
 
 	// Setup: Room code toggle
 	byId('roomCode').addEventListener('mousedown', (e) => {
-		unblur(e.target);
+		e.target.classList.add('blurred');
 	});
 	byId('roomCode').addEventListener('mouseup', (e) => {
-		blur(e.target);
+		e.target.classList.remove('blurred');
 	});
 
 	// Setup: Invite button
@@ -875,7 +881,7 @@ function unblur(e) {
 	});
 	byId('inputTitle').addEventListener('change', (e) => {
 		let _title = e.target.value.substr(0, 40);
-		SOCKET.emit('updateBookTitle', {title: _title, key: SESSION_KEY});
+		SOCKET.emit('updateTitle', {title: _title, key: SESSION_KEY});
 	});
 
 	// Game: Write textarea resizing
@@ -886,53 +892,56 @@ function unblur(e) {
 
 	// Game: Submit page
 	byId('inputSubmit').addEventListener('click', (e) => {
-		// Check which round type we're in
-		if (ROUND.type === "Write") {
-			/// Get write input if it's a writing round
-			let _inputWrite = byId('inputWrite');
-			if (_inputWrite.reportValidity()) {
-				// Send page to the server
-				let _value = _inputWrite.value.substr(0, 140);
-				SOCKET.emit('submitPage', {type: ROUND.type, value: _value, key: SESSION_KEY});
+		let _valid = false;
+		switch (ROUND.mode) {
+			case "Write":
+				// Writing round
+				let _inputWrite = byId('inputWrite');
+				if (_inputWrite.reportValidity()) {
+					_valid = true;
 
-				// Lock text input
-				_inputWrite.disabled = true;
+					// Send page to the server
+					let _value = _inputWrite.value.substr(0, 140);
+					SOCKET.emit('submitPage', {mode: ROUND.mode, value: _value, key: SESSION_KEY});
 
-				// Put client in waiting state
-				e.target.disabled = true;
-				byId('inputTitle').disabled = true;
-				byId('dialogWait').showModal();
-			}
-		} else if (ROUND.type === "Draw") {
-			/// Get draw input if it's a drawing round
-			// Export canvas data to base64
-			let _value = CANVAS.toDataURL({
-				format: 'png',
-				multiplier: (800 / CANVAS.getWidth())
-			});
+					// Disable text input
+					_inputWrite.disabled = true;
+				}
+				break;
 
-			// Send page to the server
-			SOCKET.emit('submitPage', {type: ROUND.type, value: _value, key: SESSION_KEY});
+			case "Draw":
+				// Drawing round
+				_valid = true;
 
-			// Lock canvas from any further drawing/editing
-			CANVAS.isDrawingMode = false;
-			CANVAS.selection = false;
-			CANVAS.forEachObject(function (object) {
-				object.selectable = false;
-				object.evented = false;
-			});
+				// Export canvas to base64 and send to server
+				let _value = CANVAS.toDataURL({
+					format: 'png',
+					multiplier: (800 / CANVAS.getWidth())
+				});
+				SOCKET.emit('submitPage', {mode: ROUND.mode, value: _value, key: SESSION_KEY});
 
+				// Lock canvas from any further drawing/editing
+				CANVAS.isDrawingMode = false;
+				CANVAS.selection = false;
+				CANVAS.forEachObject(function (object) {
+					object.selectable = false;
+					object.evented = false;
+				});
+				break;
+		}
+
+		if (_valid) {
 			// Put client in waiting state
 			e.target.disabled = true;
 			byId('inputTitle').disabled = true;
-			byId('dialogWait').showModal();
+			byId('wait').showModal();
 		}
 	});
 
 	// Game: Waiting dialog
-	let _dialogWait = byId('dialogWait');
-	dialogPolyfill.registerDialog(_dialogWait);
-	_dialogWait.addEventListener('cancel', (e) => {
+	let _wait = byId('wait');
+	dialogPolyfill.registerDialog(_wait);
+	_wait.addEventListener('cancel', (e) => {
 		e.preventDefault();
 	})
 
@@ -1006,6 +1015,7 @@ function unblur(e) {
 						byId('toolRedo').disabled = false;
 					}
 					break;
+
 				case 'object:modified':
 					break;
 			}
@@ -1031,6 +1041,7 @@ function unblur(e) {
 					DRAW.undo.push(_command);
 					byId('toolUndo').disabled = false;
 					break;
+
 				case 'object:modified':
 					break;
 			}
@@ -1046,7 +1057,7 @@ function unblur(e) {
 
 	// Draw: Use tools with keyboard
 	document.addEventListener('keydown', (event) => {
-		if (ROUND.type === "Draw" && document.activeElement !== byId('inputTitle')) {
+		if (ROUND.mode === "Draw" && document.activeElement !== byId('inputTitle')) {
 			switch (event.code) {
 				case "KeyD":
 					byId('toolPaint').click();
@@ -1134,6 +1145,7 @@ function resizeCanvas() {
 		CANVAS.setDimensions({width: _w, height: _h});
 		CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
 		_base.style.height = _h + "px";
+		byId('previousWrite').style.maxWidth = _w + "px";//"calc(" + _w + "px + 10em)";
 	}
 }
 
@@ -1165,4 +1177,4 @@ CANVAS.on('path:created', (event) => {
 
 CANVAS.on('object:modified', (event) => {
 	record('object:modified', event);
-})
+});
