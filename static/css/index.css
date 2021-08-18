@@ -122,7 +122,7 @@ main {
 	width: calc(100vw - 20em);
 	max-width: calc(100vw - 20em);
 	height: 100%;
-	overflow-x: hidden;
+	overflow-x: auto;
 	overflow-y: scroll;
 }
 
@@ -218,8 +218,10 @@ ul {
 
 
 /* IDS */
-#canvasBase {
+#canvasBase, #previousDraw {
 	height: calc(100vh - 18em);
+	min-width: 20em;
+	min-height: 15em;
 }
 
 #draw, #write {
@@ -268,23 +270,8 @@ ul {
 	padding-bottom: .5em;
 }
 
-#previousDraw, #canvasBase {
-	min-width: 20em;
-	min-height: 15em;
-}
-
-#previousDraw {
-	display: flex;
-	justify-content: center;
-	max-height: calc(100vh - 18em);
-}
-
-#previousDrawImg {
-	height: 100%;
-}
-
 #previousWrite {
-	max-width: calc(100% - 24em);
+	max-width: calc(100% - 22em);
 	margin: 0;
 	font-size: 1.2em;
 }
