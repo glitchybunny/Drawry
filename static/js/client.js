@@ -566,9 +566,7 @@ function updatePrevious() {
 	switch (ROUND.mode) {
 		case "Write":
 			// Current mode is write, so the previous page is draw
-			let _previousDrawImg = byId('previousDrawImg')
-			_previousDrawImg.src = "";
-			_previousDrawImg.src = _previousPage ? _previousPage : "img/placeholder.png";
+			_previousDraw.src = _previousPage ? _previousPage : "img/placeholder.png";
 			hide(_previousWrite);
 			show(_previousDraw);
 			break;
