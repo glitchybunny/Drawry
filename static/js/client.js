@@ -140,19 +140,14 @@ SOCKET.on('startGame', (data) => {
 	hide('invite');
 	show('gameplay');
 
-	// Update books
-
-
 	// Update round status
 	show('status');
 	byId('statusTitle').textContent = byId('inputTitle').value = BOOKS[ID].title;
+	byId('waitDisplay').textContent = (Object.keys(USERS).length + 1).toString();
 
 	// Show first round input
 	updateInput();
 	updateBooks();
-
-	// Todo: Fix waiting screen
-	byId('waitDisplay').textContent = (Object.keys(USERS).length + 1).toString();
 });
 
 // Update book title
@@ -205,9 +200,9 @@ SOCKET.on('pageForward', () => {
 // Start presenting mode
 SOCKET.on('startPresenting', () => {
 	// Update DOM
-	hide('loading');
-	hide('gameSection');
-	show('presentSection');
+	hide('gameplay');
+	hide('status');
+	show('present');
 	byId('wait').close();
 
 	// Update round state
@@ -222,9 +217,10 @@ SOCKET.on('startPresenting', () => {
 
 SOCKET.on('presentBook', (data) => {
 	hide('presentMenu');
+	hide('presentControls');
 	hide('presentControlsFinish');
+	hide('presentControlsOverride');
 	show('presentWindow');
-	byId('presentSection').classList.remove('presentLobby');
 
 	// Keep track of presentation
 	ROUND.book = BOOKS[data.book];
@@ -243,20 +239,16 @@ SOCKET.on('presentBook', (data) => {
 	});
 
 	// Show book information
-	byId('presentBookTitle').textContent = _title;
-	byId('presentBookAuthors').textContent = "Created by " + _authors.join(', ');
-	byId('presentBookPresenter').textContent = "Presented by " + _presenter;
+	byId('presentTitle').textContent = _title;
+	byId('authors').textContent = "Created by " + _authors.join(', ');
+	byId('presenter').textContent = "Presented by " + _presenter;
 
 	// If you're the presenter, enable controls
 	if (ID === ROUND.presenter) {
 		show('presentControls');
-	} else {
-		hide('presentControls');
-
-		// Enable override if client is not presenting but is the host
-		if (ID === ROOM.host) {
-			show('presentControlsOverride');
-		}
+	} else if (ID === ROOM.host) {
+		// Otherwise, enable override if client is the host
+		show('presentControlsOverride');
 	}
 });
 
@@ -269,6 +261,8 @@ SOCKET.on('presentForward', () => {
 	let _page = ROUND.book.book[ROUND.page];
 	let _div = document.createElement('div');
 	_div.classList.add('page');
+
+	// Add data to page
 	switch (_page.mode) {
 		case "Write":
 			let _p = document.createElement('p');
@@ -276,7 +270,6 @@ SOCKET.on('presentForward', () => {
 			_p.classList.add("presentWrite");
 			_div.appendChild(_p);
 			break;
-
 		case "Draw":
 			let _img = document.createElement('img');
 			_img.src = _page.value;
@@ -288,6 +281,7 @@ SOCKET.on('presentForward', () => {
 			_div.appendChild(_img);
 			break;
 	}
+
 	let _window = byId('presentWindow');
 	_window.appendChild(_div);
 	_window.scrollTop = _window.scrollHeight;
