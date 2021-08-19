@@ -32,7 +32,7 @@ const SETTINGS_CONSTRAINTS = {
 };
 const SETTINGS_DEFAULT = {
 	firstPage: 'Draw',
-	pageCount: '8',
+	pageCount: '2',
 	pageOrder: 'Normal',
 	palette: 'No palette',
 	timeWrite: '0',
@@ -49,10 +49,8 @@ const STATE = {
 ///// ----- ASYNC SERVER FUNCTIONS ----- /////
 // Listen for incoming connections from clients
 io.on('connection', (socket) => {
-
 	CLIENTS[socket.id] = {};
 	SOCKETS[socket.id] = socket;
-
 
 	/// --- LOBBY --- ///
 	// Listen for client joining room
@@ -262,7 +260,7 @@ io.on('connection', (socket) => {
 		}
 
 		// Send page data to all players
-		io.to(_roomCode).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id, type: _expected});
+		io.to(_roomCode).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id, mode: _expected});
 
 		// Check if all players have submitted
 		_room.submitted += 1;
@@ -273,7 +271,7 @@ io.on('connection', (socket) => {
 			if (_room.page === parseInt(_room.settings.pageCount)) {
 				// Finished creation part of game, move to presenting
 				_room.state = STATE.PRESENTING;
-				io.to(_roomCode).emit('startPresenting')
+				io.to(_roomCode).emit('startPresenting');
 			} else {
 				// Go to next page
 				io.to(_roomCode).emit('pageForward');

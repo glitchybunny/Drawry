@@ -8,7 +8,7 @@
 <body>
 	<div class="flex center" id="join" style="max-width:20em; margin:auto;">
 		<h1>Open Picturephone</h1>
-		<section class="flex box" style="margin:1em">
+		<section class="flex box" style="margin:1em;">
 			<label for="inputName">Name:</label>
 			<input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
 				   onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
@@ -42,8 +42,7 @@
 				<p>Room code:<span class="blurred right" id="roomCode" style="cursor:pointer;"></span></p>
 				<div>
 					<input id="inviteButton" type="button" value="Copy invite link">
-					<output class="hidden fade-out" hidden id="inviteButtonStatus" style="float:right">Invite link
-						copied!
+					<output class="hidden fade-out" hidden id="inviteButtonStatus" style="float:right">Link copied!
 					</output>
 				</div>
 			</section>
@@ -185,32 +184,24 @@
 			</section>
 			<div class="flex hidden" hidden id="gameplay">
 				<section class="flex box" id="title">
-					<label for="inputTitle">
-						<b>Title</b>
-					</label>
+					<label for="inputTitle" style="font-weight:bold;">Title</label>
 					<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
 						   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
 						   type="text">
 				</section>
 				<section class="flex box hidden" hidden id="previous">
-					<label style="font-weight:bold;">
-						Previous page
-					</label>
+					<label style="font-weight:bold;">Previous page</label>
 					<p class="hidden" hidden id="previousWrite"></p>
-					<img alt="" id="previousDraw" src="img/base.png" class="hidden" hidden/>
+					<img alt="" class="hidden" hidden id="previousDraw" src="img/base.png"/>
 				</section>
 				<section class="flex box hidden" hidden id="write">
-					<label for="inputWrite">
-						<b>Story</b>
-					</label>
+					<label for="inputWrite" style="font-weight:bold;">Story</label>
 					<textarea aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
 							  onkeydown="return enterBlock(event)" placeholder="What happens next?" required="required"
 							  spellcheck="true" style="height:4em; overflow-y:hidden;"></textarea>
 				</section>
 				<section class="flex box hidden" hidden id="draw">
-					<label style="font-weight:bold;">
-						Drawing
-					</label>
+					<label style="font-weight:bold;">Drawing</label>
 					<div style="position:relative;">
 						<img alt="" id="canvasBase" src="img/base.png">
 						<canvas height="600" id="c" width="800"></canvas>
@@ -222,6 +213,41 @@
 			</div>
 
 			<!-- PRESENTING -->
+			<section class="flex box hidden" hidden id="present" style="margin:auto;">
+				<header>
+					<h2>Presenting</h2>
+					<p class="right hostName"></p>
+				</header>
+				<hr>
+				<div id="presentMenu">
+					<div class="host hidden" hidden style="flex-flow:column nowrap">
+						<table id="presentTable"></table>
+					</div>
+					<div class="notHost">
+						<p class="center" style="font-style:italic;margin:.5em;font-size:1.2em;">
+							Waiting for a presentation to start...
+						</p>
+					</div>
+				</div>
+				<div class="hidden" hidden id="presentWindow">
+					<h1 class="center" id="presentTitle"></h1>
+					<p style="text-align:center; margin-bottom:40px;">
+						<span id="authors"></span>
+						<br>
+						<span id="presenter"></span>
+					</p>
+				</div>
+				<div class="hidden" hidden id="presentControls">
+					<input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
+					<input id="inputPresentForward" type="button" value="Next >">
+				</div>
+				<div class="hidden" hidden id="presentControlsFinish">
+					<input id="inputPresentFinish" type="button" value="Finish presenting">
+				</div>
+				<div class="hidden" hidden id="presentControlsOverride">
+					<input id="inputPresentOverride" type="button" value="Hijack presentation">
+				</div>
+			</section>
 
 			<!-- WAITING -->
 			<dialog id="wait" role="alertdialog">
@@ -240,63 +266,22 @@
 
 	<!-- BEGIN DEPRECATED HTML -->
 	<div class="hidden" hidden>
-		<div class="hidden" hidden id="gameSection">
-			<section id="gameArea">
-				<div style="display:flex; flex-flow:row nowrap;">
-					<div class="hidden" hidden id="gameDrawTools">
-						<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
-						<div>
-							<input autocomplete="false" class="toolSelected" id="toolPaint" title="Draw tool (D)"
-								   type="button">
-							<input autocomplete="false" id="toolErase" title="Erase tool (E)" type="button">
-							<input autocomplete="false" disabled="disabled" id="toolFill" title="Fill tool (F)"
-								   type="button">
-						</div>
-						<div>
-							<input autocomplete="false" disabled="disabled" id="toolUndo" title="Undo (Z)"
-								   type="button">
-							<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)"
-								   type="button">
-						</div>
-					</div>
-				</div>
-			</section>
+		<div class="hidden" hidden id="gameDrawTools">
+			<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
+			<div>
+				<input autocomplete="false" class="toolSelected" id="toolPaint" title="Draw tool (D)"
+					   type="button">
+				<input autocomplete="false" id="toolErase" title="Erase tool (E)" type="button">
+				<input autocomplete="false" disabled="disabled" id="toolFill" title="Fill tool (F)"
+					   type="button">
+			</div>
+			<div>
+				<input autocomplete="false" disabled="disabled" id="toolUndo" title="Undo (Z)"
+					   type="button">
+				<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)"
+					   type="button">
+			</div>
 		</div>
-
-		<section class="presentLobby hidden" hidden id="presentSection">
-			<div class="title">
-				<h1>Presenting</h1>
-				<p class="corner hostName"></p>
-			</div>
-			<hr>
-			<div id="presentMenu">
-				<div class="isHost hidden" hidden style="flex-flow:column nowrap">
-					<table id="presentTable"></table>
-				</div>
-				<div class="isNotHost">
-					<p style="text-align:center; font-style:italic; width:100%;">Waiting for a presentation to
-						start...</p>
-				</div>
-			</div>
-			<div class="hidden" hidden id="presentWindow">
-				<h1 id="presentBookTitle"></h1>
-				<p style="text-align:center; margin-bottom:40px;">
-					<span id="presentBookAuthors"></span>
-					<br>
-					<span id="presentBookPresenter"></span>
-				</p>
-			</div>
-			<div class="hidden" hidden id="presentControls">
-				<input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
-				<input id="inputPresentForward" type="button" value="Next >">
-			</div>
-			<div class="hidden" hidden id="presentControlsFinish">
-				<input id="inputPresentFinish" type="button" value="Finish presenting">
-			</div>
-			<div class="hidden" hidden id="presentControlsOverride">
-				<input id="inputPresentOverride" type="button" value="Hijack presentation">
-			</div>
-		</section>
 	</div>
 	<!-- END DEPRECATED HTML -->
 
