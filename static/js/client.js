@@ -8,8 +8,11 @@
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
 window.crypto.getRandomValues(array);
-const ID = Cookies.get('id') ? Cookies.get('id') : (array[0].valueOf() + 1).toString();
-const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
+const ID = Cookies.get("id")
+	? Cookies.get("id")
+	: (array[0].valueOf() + 1).toString();
+const SESSION_KEY =
+	array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 
 /// --- ENUMS --- ///
@@ -17,7 +20,7 @@ const TOOL = {
 	PAINT: 0,
 	ERASE: 1,
 	FILL: 2,
-	STICKER: 3
+	STICKER: 3,
 };
 
 /// --- GAME CONSTANTS --- ///
@@ -30,15 +33,16 @@ const DRAW = {
 	color: "#000000",
 	width: 6,
 	undo: [],
-	redo: []
-}
+	redo: [],
+};
 
 /// --- VARIABLES --- ///
 var name = undefined;
 
 // Ensure browser compatibility
-if (!('getContext' in document.createElement('canvas'))) {
-	let message = 'Sorry, it looks like your browser does not support canvas! This game depends on canvas to be playable.';
+if (!("getContext" in document.createElement("canvas"))) {
+	let message =
+		"Sorry, it looks like your browser does not support canvas! This game depends on canvas to be playable.";
 	console.error(message);
 	alert(message);
 }
@@ -47,57 +51,56 @@ const byId = function (id) {
 };
 Cookies.defaults = {
 	expires: 3600,
-	sameSite: 'Strict'
+	sameSite: "Strict",
 };
-
 
 ///// ----- ASYNC FUNCTIONS ----- /////
 /// --- LOBBY --- ///
 // Establish connection
-SOCKET.on('connect', () => {
+SOCKET.on("connect", () => {
 	console.log("Established connection to the server");
 	console.log("ID is " + ID);
 });
 
 // Let client know they've joined the room
-SOCKET.on('joined', (data) => {
+SOCKET.on("joined", (data) => {
 	console.log("Joined room '" + data.roomCode + "'");
-	hide('loading');
+	hide("loading");
 
 	// update local game values
 	ROOM.code = data.roomCode;
 	ROOM.settings = data.settings;
 	ROOM.host = data.host;
 	data.users.forEach((o) => {
-		USERS[o.id] = {name: htmlDecode(o.name)}
-	})
+		USERS[o.id] = { name: htmlDecode(o.name) };
+	});
 
 	// switch to game screen
-	byId('join').remove();
-	show('game');
+	byId("join").remove();
+	show("game");
 
 	// update DOM
-	byId('roomCode').textContent = ROOM.code;
+	byId("roomCode").textContent = ROOM.code;
 	updatePlayers();
 	updateHost();
 	updateSettings();
 
 	// set cookies so game remembers the session (in case user accidentally closes tab and needs to rejoin)
-	Cookies.set('name', name);
-	Cookies.set('room', ROOM.code);
-	Cookies.set('id', ID);
-})
+	Cookies.set("name", name);
+	Cookies.set("room", ROOM.code);
+	Cookies.set("id", ID);
+});
 
 // Add another user to the room
-SOCKET.on('userJoin', (data) => {
+SOCKET.on("userJoin", (data) => {
 	// Add user data
 	console.log(data.name, "joined");
-	USERS[data.id] = {name: htmlDecode(data.name)};
+	USERS[data.id] = { name: htmlDecode(data.name) };
 	updatePlayers();
 });
 
 // Remove user from room
-SOCKET.on('userLeave', (userID) => {
+SOCKET.on("userLeave", (userID) => {
 	// Clear user data
 	console.log(getName(userID), "disconnected");
 	delete USERS[userID];
@@ -105,29 +108,28 @@ SOCKET.on('userLeave', (userID) => {
 });
 
 // Update which user is the host
-SOCKET.on('userHost', (userID) => {
+SOCKET.on("userHost", (userID) => {
 	ROOM.host = userID;
 	updateHost();
 });
 
 // Update settings
-SOCKET.on('settings', (data) => {
+SOCKET.on("settings", (data) => {
 	// Update the settings on the client to reflect the new settings
 	ROOM.settings = data;
 	updateSettings();
-})
-
+});
 
 /// --- GAME --- ///
 // Start the game
-SOCKET.on('startGame', (data) => {
+SOCKET.on("startGame", (data) => {
 	// Load book page information
 	for (let _id in data.books) {
 		BOOKS[_id] = {
 			title: getName(_id) + "'s book",
 			author: getName(_id),
-			book: data.books[_id]
-		}
+			book: data.books[_id],
+		};
 	}
 
 	// Set round info
@@ -136,14 +138,14 @@ SOCKET.on('startGame', (data) => {
 	ROUND.mode = data.start;
 
 	// Update DOM
-	hide('setup');
-	hide('invite');
-	show('gameplay');
+	hide("setup");
+	hide("invite");
+	show("gameplay");
 
 	// Update round status
-	show('status');
-	byId('statusTitle').textContent = byId('inputTitle').value = BOOKS[ID].title;
-	byId('waitDisplay').textContent = (Object.keys(USERS).length + 1).toString();
+	show("status");
+	byId("statusTitle").textContent = byId("inputTitle").value = BOOKS[ID].title;
+	byId("waitDisplay").textContent = (Object.keys(USERS).length + 1).toString();
 
 	// Show first round input
 	updateInput();
@@ -151,28 +153,34 @@ SOCKET.on('startGame', (data) => {
 });
 
 // Update book title
-SOCKET.on('title', (data) => {
+SOCKET.on("title", (data) => {
 	BOOKS[data.id].title = htmlDecode(data.title);
 	updateBooks();
 });
 
 // Get page info
-SOCKET.on('page', (data) => {
+SOCKET.on("page", (data) => {
 	// Update local book variables
-	BOOKS[data.id].book[data.page] = {value: data.value, author: data.author, mode: data.mode};
-	byId('b' + data.id).classList.add('done');
+	BOOKS[data.id].book[data.page] = {
+		value: data.value,
+		author: data.author,
+		mode: data.mode,
+	};
+	byId("b" + data.id).classList.add("done");
 
 	// Update how many pages are left in the round
-	byId('waitDisplay').textContent = (parseInt(byId('waitDisplay').textContent) - 1).toString();
+	byId("waitDisplay").textContent = (
+		parseInt(byId("waitDisplay").textContent) - 1
+	).toString();
 });
 
 // Go to next page in books
-SOCKET.on('pageForward', () => {
-	byId('wait').close();
+SOCKET.on("pageForward", () => {
+	byId("wait").close();
 
 	// Determine round information
 	ROUND.page += 1;
-	ROUND.mode = (ROUND.mode === "Write" ? "Draw" : "Write");
+	ROUND.mode = ROUND.mode === "Write" ? "Draw" : "Write";
 	for (let i in BOOKS) {
 		if (BOOKS[i].book[ROUND.page] === ID) {
 			ROUND.book = BOOKS[i];
@@ -180,8 +188,8 @@ SOCKET.on('pageForward', () => {
 	}
 
 	// Update status
-	byId('statusTitle').textContent = ROUND.book.title;
-	byId('statusPage').textContent = ROUND.page + 1;
+	byId("statusTitle").textContent = ROUND.book.title;
+	byId("statusPage").textContent = ROUND.page + 1;
 
 	// Update previous page, input mode, book list
 	updatePrevious();
@@ -189,21 +197,20 @@ SOCKET.on('pageForward', () => {
 	updateBooks();
 
 	// Show how many pages are left
-	byId('waitDisplay').textContent = Object.keys(USERS).length + 1;
+	byId("waitDisplay").textContent = Object.keys(USERS).length + 1;
 
 	// Set timer
 	// TODO: timers
 });
 
-
 /// --- PRESENTING --- ///
 // Start presenting mode
-SOCKET.on('startPresenting', () => {
+SOCKET.on("startPresenting", () => {
 	// Update DOM
-	hide('gameplay');
-	hide('status');
-	show('present');
-	byId('wait').close();
+	hide("gameplay");
+	hide("status");
+	show("present");
+	byId("wait").close();
 
 	// Update round state
 	ROUND.page = undefined;
@@ -215,12 +222,12 @@ SOCKET.on('startPresenting', () => {
 	updatePresentList();
 });
 
-SOCKET.on('presentBook', (data) => {
-	hide('presentMenu');
-	hide('presentControls');
-	hide('presentControlsFinish');
-	hide('presentControlsOverride');
-	show('presentWindow');
+SOCKET.on("presentBook", (data) => {
+	hide("presentMenu");
+	hide("presentControls");
+	hide("presentControlsFinish");
+	hide("presentControlsOverride");
+	show("presentWindow");
 
 	// Keep track of presentation
 	ROUND.book = BOOKS[data.book];
@@ -239,132 +246,132 @@ SOCKET.on('presentBook', (data) => {
 	});
 
 	// Show book information
-	byId('presentTitle').textContent = _title;
-	byId('authors').textContent = "Created by " + _authors.join(', ');
-	byId('presenter').textContent = "Presented by " + _presenter;
+	byId("presentTitle").textContent = _title;
+	byId("authors").textContent = "Created by " + _authors.join(", ");
+	byId("presenter").textContent = "Presented by " + _presenter;
 
 	// If you're the presenter, enable controls
 	if (ID === ROUND.presenter) {
-		show('presentControls');
+		show("presentControls");
 	} else if (ID === ROOM.host) {
 		// Otherwise, enable override if client is the host
-		show('presentControlsOverride');
+		show("presentControlsOverride");
 	}
 });
 
-SOCKET.on('presentForward', () => {
+SOCKET.on("presentForward", () => {
 	// Go to next page
-	byId('inputPresentBack').disabled = false;
+	byId("inputPresentBack").disabled = false;
 	ROUND.page += 1;
 
 	// Add page to window
 	let _page = ROUND.book.book[ROUND.page];
-	let _div = document.createElement('div');
-	_div.classList.add('page');
+	let _div = document.createElement("div");
+	_div.classList.add("page");
 
 	// Add data to page
 	switch (_page.mode) {
 		case "Write":
-			let _p = document.createElement('p');
+			let _p = document.createElement("p");
 			_p.textContent = _page.value;
 			_p.classList.add("presentWrite");
 			_div.appendChild(_p);
 			break;
 		case "Draw":
-			let _img = document.createElement('img');
+			let _img = document.createElement("img");
 			_img.src = _page.value;
 			_img.classList.add("presentDraw");
-			_img.addEventListener('load', () => {
-				let _window = byId('presentWindow');
+			_img.addEventListener("load", () => {
+				let _window = byId("presentWindow");
 				_window.scrollTop = _window.scrollHeight;
 			});
 			_div.appendChild(_img);
 			break;
 	}
 
-	let _window = byId('presentWindow');
+	let _window = byId("presentWindow");
 	_window.appendChild(_div);
 	_window.scrollTop = _window.scrollHeight;
 
 	// Last page
 	if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
-		byId('inputPresentForward').disabled = true;
+		byId("inputPresentForward").disabled = true;
 
 		if (ID === ROUND.presenter) {
-			show('presentControlsFinish');
+			show("presentControlsFinish");
 		}
 	}
 });
 
-SOCKET.on('presentBack', () => {
+SOCKET.on("presentBack", () => {
 	// Go to previous page
-	byId('inputPresentForward').disabled = false;
+	byId("inputPresentForward").disabled = false;
 	ROUND.page -= 1;
 
 	// Remove last added page
-	let _pages = document.querySelectorAll('.page');
+	let _pages = document.querySelectorAll(".page");
 	_pages[_pages.length - 1].remove();
 
 	// First page
 	if (ROUND.page === -1) {
-		byId('inputPresentBack').disabled = true;
+		byId("inputPresentBack").disabled = true;
 	}
 });
 
-SOCKET.on('presentOverride', () => {
+SOCKET.on("presentOverride", () => {
 	// Update presenter
 	ROUND.presenter = ROOM.host;
 
 	// Update UI buttons
 	if (ID === ROOM.host) {
-		show('presentControls');
+		show("presentControls");
 		if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
-			show('presentControlsFinish');
+			show("presentControlsFinish");
 		}
-		hide('presentControlsOverride');
+		hide("presentControlsOverride");
 	} else {
-		hide('presentControls');
+		hide("presentControls");
 	}
 
 	// Display new presenter of book
-	byId('presentBookPresenter').textContent = "Presented by " + getName(ROOM.host);
+	byId("presentBookPresenter").textContent =
+		"Presented by " + getName(ROOM.host);
 });
 
-SOCKET.on('presentFinish', () => {
+SOCKET.on("presentFinish", () => {
 	// Return to present lobby
-	hide('presentWindow');
-	hide('presentControls');
-	hide('presentControlsFinish');
-	hide('presentControlsOverride');
-	show('presentMenu');
-	byId('presentSection').classList.add('presentLobby');
-	byId('inputPresentForward').disabled = false;
-	byId('inputPresentBack').disabled = true;
+	hide("presentWindow");
+	hide("presentControls");
+	hide("presentControlsFinish");
+	hide("presentControlsOverride");
+	show("presentMenu");
+	byId("presentSection").classList.add("presentLobby");
+	byId("inputPresentForward").disabled = false;
+	byId("inputPresentBack").disabled = true;
 
 	// Clear pages from presentWindow
-	document.querySelectorAll('.page').forEach((e) => {
+	document.querySelectorAll(".page").forEach((e) => {
 		e.remove();
 	});
 });
 
-
 /// --- END --- ///
 // Disconnect from the server
-SOCKET.on('disconnect', (data) => {
+SOCKET.on("disconnect", (data) => {
 	// Determine which disconnect has occurred and display relevant error
 	switch (data) {
-		case("io server disconnect"):
+		case "io server disconnect":
 			alert("Kicked from server!");
 			window.location.reload(true);
 			break;
-		case("ping timeout"):
+		case "ping timeout":
 			alert("Timed out from server.");
 			window.location.reload(true);
 			break;
-		case("transport close"):
+		case "transport close":
 			alert("Lost connection to server.");
 			break;
-		case("server full"):
+		case "server full":
 			alert("Server full! Can't connect.");
 			break;
 		default:
@@ -372,7 +379,6 @@ SOCKET.on('disconnect', (data) => {
 			window.location.reload(true);
 	}
 });
-
 
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
 // Restrict inputs with a filter function
@@ -417,68 +423,76 @@ function copyToClipboard(text) {
 		textArea.select();
 
 		return new Promise((res, req) => {
-			document.execCommand('copy') ? res() : req();
+			document.execCommand("copy") ? res() : req();
 			textArea.remove();
-		})
+		});
 	}
 	return false;
 }
-
 
 /// --- UPDATE DOM --- ///
 // Lobby: Update settings
 function updateSettings() {
 	// First page
-	document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
-		elem.checked = (elem.value === ROOM.settings.firstPage);
+	document.querySelectorAll("input[name=firstPage]").forEach((elem) => {
+		elem.checked = elem.value === ROOM.settings.firstPage;
 	});
-	byId('firstPageDisplay').value = ROOM.settings.firstPage;
+	byId("firstPageDisplay").value = ROOM.settings.firstPage;
 
 	// Pages per book
-	byId('pageCount').value = byId('pageCountDisplay').textContent = byId('statusPageMax').textContent = ROOM.settings.pageCount;
+	byId("pageCount").value =
+		byId("pageCountDisplay").textContent =
+		byId("statusPageMax").textContent =
+			ROOM.settings.pageCount;
 
 	// Page assignment
-	document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
-		elem.checked = (elem.value === ROOM.settings.pageOrder);
+	document.querySelectorAll("input[name=pageOrder]").forEach((elem) => {
+		elem.checked = elem.value === ROOM.settings.pageOrder;
 	});
-	byId('pageOrderDisplay').value = ROOM.settings.pageOrder;
+	byId("pageOrderDisplay").value = ROOM.settings.pageOrder;
 
 	// Color palette
-	document.querySelector('#colorPalette [value="' + ROOM.settings.palette + '"]').selected = true;
-	byId('colorPaletteDisplay').value = ROOM.settings.palette;
+	document.querySelector(
+		'#colorPalette [value="' + ROOM.settings.palette + '"]'
+	).selected = true;
+	byId("colorPaletteDisplay").value = ROOM.settings.palette;
 
 	// Write time limit
-	byId('timeWrite').value = ROOM.settings.timeWrite;
-	byId('timeWriteDisplay').value = parseInt(ROOM.settings.timeWrite) ? ROOM.settings.timeWrite + " min" : 'None';
+	byId("timeWrite").value = ROOM.settings.timeWrite;
+	byId("timeWriteDisplay").value = parseInt(ROOM.settings.timeWrite)
+		? ROOM.settings.timeWrite + " min"
+		: "None";
 
 	// Draw time limit
-	byId('timeDraw').value = ROOM.settings.timeDraw;
-	byId('timeDrawDisplay').value = parseInt(ROOM.settings.timeDraw) ? ROOM.settings.timeDraw + " min" : 'None';
+	byId("timeDraw").value = ROOM.settings.timeDraw;
+	byId("timeDrawDisplay").value = parseInt(ROOM.settings.timeDraw)
+		? ROOM.settings.timeDraw + " min"
+		: "None";
 }
 
 // Sidebar: Update host information on the page
 function updateHost() {
 	// Update the host name in the DOM
-	document.querySelectorAll('.hostName').forEach((elem) => {
+	document.querySelectorAll(".hostName").forEach((elem) => {
 		elem.textContent = "Host: " + getName(ROOM.host);
-	})
+	});
 
 	// Allow the client to edit settings if they're the host
-	document.querySelectorAll('.host').forEach((elem) => {
-		(ID === ROOM.host) ? show(elem) : hide(elem);
+	document.querySelectorAll(".host").forEach((elem) => {
+		ID === ROOM.host ? show(elem) : hide(elem);
 	});
-	document.querySelectorAll('.notHost').forEach((elem) => {
-		(ID === ROOM.host) ? hide(elem) : show(elem);
+	document.querySelectorAll(".notHost").forEach((elem) => {
+		ID === ROOM.host ? hide(elem) : show(elem);
 	});
 }
 
 // Sidebar: Update player list on the page
 function updatePlayers() {
-	let _playerList = byId('playersList');
-	_playerList.innerHTML = '';
+	let _playerList = byId("playersList");
+	_playerList.innerHTML = "";
 
 	// Add self to player list
-	let nameElem = document.createElement('li');
+	let nameElem = document.createElement("li");
 	nameElem.textContent = name;
 	nameElem.id = "you";
 	nameElem.title = "you!";
@@ -486,38 +500,39 @@ function updatePlayers() {
 
 	// Add other players to player list
 	for (let id in USERS) {
-		let nameElem = document.createElement('li');
+		let nameElem = document.createElement("li");
 		nameElem.textContent = getName(id);
 		_playerList.appendChild(nameElem);
 	}
 
 	// Increment player count
-	byId('playersCount').textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
+	byId("playersCount").textContent =
+		"(" + (Object.keys(USERS).length + 1).toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
 	if (Object.keys(USERS).length) {
-		show('inputStart');
-		hide('inputStartWarning');
+		show("inputStart");
+		hide("inputStartWarning");
 	} else {
-		hide('inputStart');
-		show('inputStartWarning');
+		hide("inputStart");
+		show("inputStartWarning");
 	}
 }
 
 // Sidebar: Update book list on the page
 function updateBooks() {
-	show('books');
+	show("books");
 
 	let _bookList, _id, _book, _bookTitle, _bookAuthor;
-	_bookList = byId('booksList');
-	_bookList.innerHTML = '';
+	_bookList = byId("booksList");
+	_bookList.innerHTML = "";
 
 	// Update the list of books
 	for (_id in BOOKS) {
 		// Create elements
-		_book = document.createElement('li');
-		_bookTitle = document.createElement('span');
-		_bookAuthor = document.createElement('span');
+		_book = document.createElement("li");
+		_bookTitle = document.createElement("span");
+		_bookAuthor = document.createElement("span");
 
 		// Assign the correct classes for styling
 		_bookAuthor.className = "author";
@@ -537,7 +552,7 @@ function updateBooks() {
 
 			// Indicate whether page has been completed or not
 			if (_page.value) {
-				_bookAuthor.classList.add('done')
+				_bookAuthor.classList.add("done");
 			}
 		}
 
@@ -550,11 +565,11 @@ function updateBooks() {
 
 // Game: Update previous page display
 function updatePrevious() {
-	hide('title');
-	show('previous');
+	hide("title");
+	show("previous");
 
-	let _previousDraw = byId('previousDraw');
-	let _previousWrite = byId('previousWrite');
+	let _previousDraw = byId("previousDraw");
+	let _previousWrite = byId("previousWrite");
 	let _previousPage = ROUND.book.book[ROUND.page - 1].value;
 
 	switch (ROUND.mode) {
@@ -580,92 +595,98 @@ function updateInput() {
 	switch (ROUND.mode) {
 		case "Write":
 			// Change to writing mode
-			hide('draw');
-			show('write');
+			hide("draw");
+			show("write");
 
 			// Enable/disable timer
 			if (+ROOM.settings.timeWrite) {
-				show('statusTimer');
+				show("statusTimer");
 			}
 
 			// Reset writing inputs
-			byId('inputWrite').disabled = false;
-			byId('inputWrite').value = "";
+			byId("inputWrite").disabled = false;
+			byId("inputWrite").value = "";
 			break;
 
 		case "Draw":
 			// Change to drawing mode
-			hide('write');
-			show('draw');
+			hide("write");
+			show("draw");
 
 			// Enable/disable timer
 			if (+ROOM.settings.timeDraw) {
-				show('statusTimer');
+				show("statusTimer");
 			}
 
 			// Reset drawing inputs
 			CANVAS.clear();
-			CANVAS.setBackgroundColor('#FFFFFF');
+			CANVAS.setBackgroundColor("#FFFFFF");
 			CANVAS.isDrawingMode = true;
 			CANVAS.selection = true;
 			DRAW.undo = [];
-			byId('toolUndo').disabled = true;
-			byId('toolRedo').disabled = true;
+			byId("toolUndo").disabled = true;
+			byId("toolRedo").disabled = true;
 			resizeCanvas();
 			break;
 	}
 
 	// Enable submit button
-	byId('inputSubmit').disabled = false;
+	byId("inputSubmit").disabled = false;
 }
 
 // Update presenting page
 function updatePresentList() {
 	let _presentTable;
-	_presentTable = byId('presentTable');
-	_presentTable.innerHTML = '';
+	_presentTable = byId("presentTable");
+	_presentTable.innerHTML = "";
 
 	// Present event (for binding to buttons)
 	const _presentBook = function (args) {
 		SOCKET.emit("presentBook", args);
-	}
+	};
 
 	// Update list of books
 	for (let _id in BOOKS) {
-		let _tr = document.createElement('tr');
+		let _tr = document.createElement("tr");
 		_tr.id = "p" + _id;
 
 		// Create book title
-		let _titleTD = document.createElement('td');
+		let _titleTD = document.createElement("td");
 		_titleTD.textContent = BOOKS[_id].title;
 
 		// Create button to let the host present
-		let _hostTD = document.createElement('td');
-		let _hostInput = document.createElement('input');
+		let _hostTD = document.createElement("td");
+		let _hostInput = document.createElement("input");
 		_hostInput.value = "Present";
 		_hostInput.type = "button";
-		_hostInput.addEventListener('click', _presentBook.bind(this, {
-			book: _id,
-			host: true,
-			key: SESSION_KEY
-		}));
+		_hostInput.addEventListener(
+			"click",
+			_presentBook.bind(this, {
+				book: _id,
+				host: true,
+				key: SESSION_KEY,
+			})
+		);
 		_hostTD.appendChild(_hostInput);
 
 		// Create button to let the original author present
-		let _userTD = document.createElement('td');
+		let _userTD = document.createElement("td");
 		if (ID !== _id) {
-			let _userInput = document.createElement('input');
+			let _userInput = document.createElement("input");
 			let _name = getName(_id);
 			if (_name.length > 12) {
 				_name = _name.substr(0, 12) + "…";
 			}
 			_userInput.value = "Let " + _name + " present";
 			_userInput.type = "button";
-			_userInput.addEventListener('click', _presentBook.bind(this, {
-				book: _id,
-				host: false,
-				key: SESSION_KEY
-			}));
+			_userInput.addEventListener(
+				"click",
+				_presentBook.bind(this, {
+					book: _id,
+					host: false,
+					key: SESSION_KEY,
+				})
+			);
 			_userTD.appendChild(_userInput);
 		}
 
@@ -679,7 +700,7 @@ function updatePresentList() {
 
 // Hide an element in the DOM
 function hide(e) {
-	if (typeof (e) === "string") {
+	if (typeof e === "string") {
 		e = byId(e);
 	}
 	e.classList.add("hidden");
@@ -689,7 +710,7 @@ function hide(e) {
 
 // Show an element in the DOM
 function show(e) {
-	if (typeof (e) === "string") {
+	if (typeof e === "string") {
 		e = byId(e);
 	}
 	e.classList.remove("hidden");
@@ -697,26 +718,36 @@ function show(e) {
 	return e;
 }
 
-
 /// --- INPUTS --- ///
 {
 	// Prefill name field with cookie
-	if (Cookies.get('name')) {
-		byId('inputName').value = Cookies.get('name');
+	if (Cookies.get("name")) {
+		byId("inputName").value = Cookies.get("name");
 	}
 
 	// Prefill room ID field with URL parameters
 	let _url = window.location.href;
-	let _params = new URLSearchParams(_url.slice(_url.indexOf('?') + 1));
+	let _params = new URLSearchParams(_url.slice(_url.indexOf("?") + 1));
 	if (_params.has("room")) {
-		byId('inputRoom').value = _params.get("room").replace(/[^a-zA-Z0-9-_]/g, '').substr(0, 12);
+		byId("inputRoom").value = _params
+			.get("room")
+			.replace(/[^a-zA-Z0-9-_]/g, "")
+			.substr(0, 12);
 	}
-
 
 	/// JOIN
 	// Join: Input filter
 	function setInputFilter(textbox, inputFilter) {
-		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach((event) => {
+		[
+			"input",
+			"keydown",
+			"keyup",
+			"mousedown",
+			"mouseup",
+			"select",
+			"contextmenu",
+			"drop",
+		].forEach((event) => {
 			textbox.addEventListener(event, function () {
 				if (inputFilter(this.value)) {
 					this.oldValue = this.value;
@@ -737,10 +768,10 @@ function show(e) {
 	});
 
 	// Join: Join button
-	byId('inputJoin').addEventListener('click', (e) => {
+	byId("inputJoin").addEventListener("click", (e) => {
 		// Receive and validate inputs
-		let _inputName = byId('inputName');
-		let _inputRoom = byId('inputRoom');
+		let _inputName = byId("inputName");
+		let _inputRoom = byId("inputRoom");
 
 		if (_inputName.reportValidity() && _inputRoom.reportValidity()) {
 			name = _inputName.value.substr(0, 32);
@@ -749,43 +780,48 @@ function show(e) {
 			_inputName.disabled = true;
 			_inputRoom.disabled = true;
 			e.target.disabled = true;
-			show('loading');
+			show("loading");
 
-			window.history.pushState({roomCode: ROOM.code}, '', '?room=' + ROOM.code);
+			window.history.pushState(
+				{ roomCode: ROOM.code },
+				"",
+				"?room=" + ROOM.code
+			);
 
 			SOCKET.emit("joinRoom", {
 				id: ID,
 				name: name,
 				roomCode: ROOM.code,
-				key: SESSION_KEY
+				key: SESSION_KEY,
 			});
 		}
 	});
 
-
 	/// SETUP
 	// Setup: Send settings to the server
 	function emitSettings() {
-		(ID === ROOM.host) ? SOCKET.emit("settings", {settings: ROOM.settings, key: SESSION_KEY}) : SOCKET.disconnect();
+		ID === ROOM.host
+			? SOCKET.emit("settings", { settings: ROOM.settings, key: SESSION_KEY })
+			: SOCKET.disconnect();
 		updateSettings();
 	}
 
 	// Setup: First page
-	document.querySelectorAll('input[name=firstPage]').forEach((elem) => {
-		elem.addEventListener('input', (e) => {
+	document.querySelectorAll("input[name=firstPage]").forEach((elem) => {
+		elem.addEventListener("input", (e) => {
 			if (ROOM.settings) {
 				ROOM.settings.firstPage = e.target.value;
 				emitSettings();
 			}
-		})
+		});
 	});
 
 	// Setup: Pages per book
-	let _pageCount = byId('pageCount');
-	_pageCount.addEventListener('input', (e) => {
-		byId('pageCountDisplay').textContent = e.target.value;
+	let _pageCount = byId("pageCount");
+	_pageCount.addEventListener("input", (e) => {
+		byId("pageCountDisplay").textContent = e.target.value;
 	});
-	_pageCount.addEventListener('change', (e) => {
+	_pageCount.addEventListener("change", (e) => {
 		if (ROOM.settings) {
 			ROOM.settings.pageCount = e.target.value;
 			emitSettings();
@@ -793,8 +829,8 @@ function show(e) {
 	});
 
 	// Setup: Page assignment
-	document.querySelectorAll('input[name=pageOrder]').forEach((elem) => {
-		elem.addEventListener('input', (e) => {
+	document.querySelectorAll("input[name=pageOrder]").forEach((elem) => {
+		elem.addEventListener("input", (e) => {
 			if (ROOM.settings) {
 				ROOM.settings.pageOrder = e.target.value;
 				emitSettings();
@@ -803,7 +839,7 @@ function show(e) {
 	});
 
 	// Setup: Color palette
-	byId('colorPalette').addEventListener('input', (e) => {
+	byId("colorPalette").addEventListener("input", (e) => {
 		if (ROOM.settings) {
 			ROOM.settings.palette = e.target.value;
 			emitSettings();
@@ -811,11 +847,13 @@ function show(e) {
 	});
 
 	// Setup: Write time limit
-	let _timeWrite = byId('timeWrite');
-	_timeWrite.addEventListener('input', (e) => {
-		byId('timeWriteDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
+	let _timeWrite = byId("timeWrite");
+	_timeWrite.addEventListener("input", (e) => {
+		byId("timeWriteDisplay").value = parseInt(e.target.value)
+			? e.target.value + " min"
+			: "None";
 	});
-	_timeWrite.addEventListener('change', (e) => {
+	_timeWrite.addEventListener("change", (e) => {
 		if (ROOM.settings) {
 			ROOM.settings.timeWrite = e.target.value;
 			emitSettings();
@@ -823,11 +861,13 @@ function show(e) {
 	});
 
 	// Setup: Draw time limit
-	let _timeDraw = byId('timeDraw');
-	_timeDraw.addEventListener('input', (e) => {
-		byId('timeDrawDisplay').value = parseInt(e.target.value) ? e.target.value + " min" : "None";
+	let _timeDraw = byId("timeDraw");
+	_timeDraw.addEventListener("input", (e) => {
+		byId("timeDrawDisplay").value = parseInt(e.target.value)
+			? e.target.value + " min"
+			: "None";
 	});
-	_timeDraw.addEventListener('change', (e) => {
+	_timeDraw.addEventListener("change", (e) => {
 		if (ROOM.settings) {
 			ROOM.settings.timeDraw = e.target.value;
 			emitSettings();
@@ -835,66 +875,69 @@ function show(e) {
 	});
 
 	// Setup: Start game button
-	byId('inputStart').addEventListener('click', () => {
+	byId("inputStart").addEventListener("click", () => {
 		if (ROOM.settings) {
-			SOCKET.emit('startGame', {settings: ROOM.settings, key: SESSION_KEY});
+			SOCKET.emit("startGame", { settings: ROOM.settings, key: SESSION_KEY });
 		}
-	})
+	});
 
 	// Setup: Room code toggle
-	byId('roomCode').addEventListener('mousedown', (e) => {
-		e.target.classList.add('blurred');
+	byId("roomCode").addEventListener("mousedown", (e) => {
+		e.target.classList.add("blurred");
 	});
-	byId('roomCode').addEventListener('mouseup', (e) => {
-		e.target.classList.remove('blurred');
+	byId("roomCode").addEventListener("mouseup", (e) => {
+		e.target.classList.remove("blurred");
 	});
 
 	// Setup: Invite button
-	byId('inviteButton').addEventListener('click', (e) => {
+	byId("inviteButton").addEventListener("click", (e) => {
 		// Disable button and show confirmation
 		e.target.disabled = true;
-		show('inviteButtonStatus');
+		show("inviteButtonStatus");
 
 		// Add room code to clipboard
 		copyToClipboard(window.location.href);
 
 		// Disappear after 2 seconds and re-enable button
 		setTimeout(() => {
-			hide('inviteButtonStatus');
+			hide("inviteButtonStatus");
 			e.target.disabled = false;
 		}, 2200);
 	});
 
-
 	/// GAME
 	// Game: Let player change their title
-	byId('inputTitle').addEventListener('input', (e) => {
-		byId('statusTitle').textContent = e.target.value.substr(0, 40);
+	byId("inputTitle").addEventListener("input", (e) => {
+		byId("statusTitle").textContent = e.target.value.substr(0, 40);
 	});
-	byId('inputTitle').addEventListener('change', (e) => {
+	byId("inputTitle").addEventListener("change", (e) => {
 		let _title = e.target.value.substr(0, 40);
-		SOCKET.emit('updateTitle', {title: _title, key: SESSION_KEY});
+		SOCKET.emit("updateTitle", { title: _title, key: SESSION_KEY });
 	});
 
 	// Game: Write textarea resizing
-	byId('inputWrite').addEventListener("input", (e) => {
+	byId("inputWrite").addEventListener("input", (e) => {
 		e.target.style.height = "auto";
-		e.target.style.height = (e.target.scrollHeight) + "px";
+		e.target.style.height = e.target.scrollHeight + "px";
 	});
 
 	// Game: Submit page
-	byId('inputSubmit').addEventListener('click', (e) => {
+	byId("inputSubmit").addEventListener("click", (e) => {
 		let _valid = false;
 		switch (ROUND.mode) {
 			case "Write":
 				// Writing round
-				let _inputWrite = byId('inputWrite');
+				let _inputWrite = byId("inputWrite");
 				if (_inputWrite.reportValidity()) {
 					_valid = true;
 
 					// Send page to the server
 					let _value = _inputWrite.value.substr(0, 140);
-					SOCKET.emit('submitPage', {mode: ROUND.mode, value: _value, key: SESSION_KEY});
+					SOCKET.emit("submitPage", {
+						mode: ROUND.mode,
+						value: _value,
+						key: SESSION_KEY,
+					});
 
 					// Disable text input
 					_inputWrite.disabled = true;
@@ -907,10 +950,14 @@ function show(e) {
 
 				// Export canvas to base64 and send to server
 				let _value = CANVAS.toDataURL({
-					format: 'png',
-					multiplier: (800 / CANVAS.getWidth())
+					format: "png",
+					multiplier: 800 / CANVAS.getWidth(),
 				});
-				SOCKET.emit('submitPage', {mode: ROUND.mode, value: _value, key: SESSION_KEY});
+				SOCKET.emit("submitPage", {
+					mode: ROUND.mode,
+					value: _value,
+					key: SESSION_KEY,
+				});
 
 				// Lock canvas from any further drawing/editing
 				CANVAS.isDrawingMode = false;
@@ -925,22 +972,21 @@ function show(e) {
 		if (_valid) {
 			// Put client in waiting state
 			e.target.disabled = true;
-			byId('inputTitle').disabled = true;
-			byId('wait').showModal();
+			byId("inputTitle").disabled = true;
+			byId("wait").showModal();
 		}
 	});
 
 	// Game: Waiting dialog
-	let _wait = byId('wait');
+	let _wait = byId("wait");
 	dialogPolyfill.registerDialog(_wait);
-	_wait.addEventListener('cancel', (e) => {
+	_wait.addEventListener("cancel", (e) => {
 		e.preventDefault();
-	})
-
+	});
 
 	/// DRAW
 	// Draw: Color picker
-	byId('toolColor').addEventListener('input', (event) => {
+	byId("toolColor").addEventListener("input", (event) => {
 		// Update draw color
 		DRAW.color = event.target.value;
 
@@ -952,14 +998,14 @@ function show(e) {
 	});
 
 	function changeTool(id) {
-		document.querySelectorAll('.toolSelected').forEach((e) => {
-			e.classList.remove('toolSelected');
-		})
-		id.classList.add('toolSelected');
+		document.querySelectorAll(".toolSelected").forEach((e) => {
+			e.classList.remove("toolSelected");
+		});
+		id.classList.add("toolSelected");
 	}
 
 	// Draw: Paint tool
-	byId('toolPaint').addEventListener('click', (event) => {
+	byId("toolPaint").addEventListener("click", (event) => {
 		// Change to paint tool
 		DRAW.tool = TOOL.PAINT;
 		changeTool(event.target);
@@ -970,7 +1016,7 @@ function show(e) {
 	});
 
 	// Draw: Erase tool
-	byId('toolErase').addEventListener('click', (event) => {
+	byId("toolErase").addEventListener("click", (event) => {
 		// Change to erase tool
 		DRAW.tool = TOOL.ERASE;
 		changeTool(event.target);
@@ -981,7 +1027,7 @@ function show(e) {
 	});
 
 	// Draw: Fill tool
-	byId('toolFill').addEventListener('click', (event) => {
+	byId("toolFill").addEventListener("click", (event) => {
 		// Change to fill tool
 		DRAW.tool = TOOL.FILL;
 		changeTool(event.target);
@@ -994,21 +1040,21 @@ function show(e) {
 	});
 
 	// Draw: Undo tool
-	byId('toolUndo').addEventListener('click', (event) => {
+	byId("toolUndo").addEventListener("click", (event) => {
 		// Undo last thingy
 		if (DRAW.undo.length) {
 			// Get last command and undo it
 			let _command = DRAW.undo.pop();
 			switch (_command.type) {
-				case 'path:created':
+				case "path:created":
 					if (CANVAS.contains(_command.object)) {
 						CANVAS.remove(_command.object);
 						DRAW.redo.push(_command);
-						byId('toolRedo').disabled = false;
+						byId("toolRedo").disabled = false;
 					}
 					break;
 
-				case 'object:modified':
+				case "object:modified":
 					break;
 			}
 
@@ -1022,19 +1068,19 @@ function show(e) {
 	});
 
 	// Draw: Redo tool
-	byId('toolRedo').addEventListener('click', (event) => {
+	byId("toolRedo").addEventListener("click", (event) => {
 		// Redo last undo
 		if (DRAW.redo.length) {
 			// Get last command and redo it
 			let _command = DRAW.redo.pop();
 			switch (_command.type) {
-				case 'path:created':
+				case "path:created":
 					CANVAS.add(_command.object);
 					DRAW.undo.push(_command);
-					byId('toolUndo').disabled = false;
+					byId("toolUndo").disabled = false;
 					break;
 
-				case 'object:modified':
+				case "object:modified":
 					break;
 			}
 
@@ -1048,96 +1094,98 @@ function show(e) {
 	});
 
 	// Draw: Use tools with keyboard
-	document.addEventListener('keydown', (event) => {
-		if (ROUND.mode === "Draw" && document.activeElement !== byId('inputTitle')) {
+	document.addEventListener("keydown", (event) => {
+		if (
+			ROUND.mode === "Draw" &&
+			document.activeElement !== byId("inputTitle")
+		) {
 			switch (event.code) {
 				case "KeyD":
-					byId('toolPaint').click();
+					byId("toolPaint").click();
 					break;
 				case "KeyE":
-					byId('toolErase').click();
+					byId("toolErase").click();
 					break;
 				case "KeyF":
-					byId('toolFill').click();
+					byId("toolFill").click();
 					break;
 				case "KeyZ":
-					byId('toolUndo').click();
+					byId("toolUndo").click();
 					break;
 				case "KeyY":
-					byId('toolRedo').click();
+					byId("toolRedo").click();
 					break;
 			}
 		}
 	});
 
-
 	/// PRESENT
 	// Present: Next page
-	byId('inputPresentForward').addEventListener('click', () => {
+	byId("inputPresentForward").addEventListener("click", () => {
 		if (ID === ROUND.presenter) {
 			if (ROUND.page < parseInt(ROOM.settings.pageCount) - 1) {
-				SOCKET.emit('presentForward', {key: SESSION_KEY});
+				SOCKET.emit("presentForward", { key: SESSION_KEY });
 			}
 		}
 	});
 
 	// Present: Previous page
-	byId('inputPresentBack').addEventListener('click', () => {
+	byId("inputPresentBack").addEventListener("click", () => {
 		if (ID === ROUND.presenter) {
 			if (ROUND.page > -1) {
-				SOCKET.emit('presentBack', {key: SESSION_KEY});
+				SOCKET.emit("presentBack", { key: SESSION_KEY });
 			}
 		}
 	});
 
 	// Present: Hijack presentation
-	byId('inputPresentOverride').addEventListener('click', () => {
+	byId("inputPresentOverride").addEventListener("click", () => {
 		if (ID === ROOM.host) {
-			SOCKET.emit('presentOverride', {key: SESSION_KEY});
+			SOCKET.emit("presentOverride", { key: SESSION_KEY });
 		}
 	});
 
 	// Present: Finished
-	byId('inputPresentFinish').addEventListener('click', () => {
+	byId("inputPresentFinish").addEventListener("click", () => {
 		if (ID === ROUND.presenter) {
-			SOCKET.emit('presentFinish', {key: SESSION_KEY});
+			SOCKET.emit("presentFinish", { key: SESSION_KEY });
 		}
 	});
 }
 
-
 /// --- CANVAS --- ///
 // Canvas drawing
-const CANVAS = new fabric.Canvas('c', {
-	isDrawingMode: true
+const CANVAS = new fabric.Canvas("c", {
+	isDrawingMode: true,
 });
-CANVAS.setBackgroundColor('#FFFFFF');
+CANVAS.setBackgroundColor("#FFFFFF");
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
 
 // Resize the drawing canvas
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener("resize", resizeCanvas);
 
 function resizeCanvas() {
 	// Get base image of canvas
-	let _base = byId('canvasBase');
+	let _base = byId("canvasBase");
 	_base.style.height = "";
 
 	// Make dimensions and ensure ratio is correct (sometimes gets weird in chrome)
-	let _w = _base.scrollWidth, _h = _base.scrollHeight;
-	let _ratio = (_h / _w) * 3 / 4;
-	if (_ratio <= .99 || _ratio >= 1.01) {
+	let _w = _base.scrollWidth,
+		_h = _base.scrollHeight;
+	let _ratio = ((_h / _w) * 3) / 4;
+	if (_ratio <= 0.99 || _ratio >= 1.01) {
 		// disproportionate, change height to compensate
-		_h = _w * 3 / 4;
+		_h = (_w * 3) / 4;
 	}
 
 	// Resize canvas
 	if (_w) {
 		let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
-		CANVAS.setDimensions({width: _w, height: _h});
+		CANVAS.setDimensions({ width: _w, height: _h });
 		CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
 		_base.style.height = _h + "px";
-		byId('previousWrite').style.maxWidth = _w + "px";//"calc(" + _w + "px + 10em)";
+		byId("previousWrite").style.maxWidth = _w + "px"; //"calc(" + _w + "px + 10em)";
 	}
 }
 
@@ -1152,21 +1200,21 @@ function record(type, object) {
 	// Ensure commands aren't doubled up
 	if (_last === undefined || type !== _last.type || object !== _last.object) {
 		// Add to undo stack
-		DRAW.undo.push({type: type, object: object});
+		DRAW.undo.push({ type: type, object: object });
 
 		// Enable undo button
-		byId('toolUndo').disabled = false;
+		byId("toolUndo").disabled = false;
 
 		// Clear redo stack
 		DRAW.redo = [];
-		byId('toolRedo').disabled = true;
+		byId("toolRedo").disabled = true;
 	}
 }
 
-CANVAS.on('path:created', (event) => {
-	record('path:created', event.path);
+CANVAS.on("path:created", (event) => {
+	record("path:created", event.path);
 });
 
-CANVAS.on('object:modified', (event) => {
-	record('object:modified', event);
+CANVAS.on("object:modified", (event) => {
+	record("object:modified", event);
 });
