@@ -24,9 +24,9 @@ const TOOL = {
 };
 
 /// --- GAME CONSTANTS --- ///
+const ROOM = {};
 const USERS = {};
 const BOOKS = {};
-const ROOM = {};
 const ROUND = {};
 const DRAW = {
 	tool: TOOL.PAINT,
@@ -129,6 +129,7 @@ SOCKET.on("startGame", (data) => {
 			title: getName(_id) + "'s book",
 			author: getName(_id),
 			book: data.books[_id],
+			p: false,
 		};
 	}
 
@@ -225,9 +226,11 @@ SOCKET.on("startPresenting", () => {
 SOCKET.on("presentBook", (data) => {
 	hide("presentMenu");
 	hide("presentControls");
-	hide("presentControlsFinish");
-	hide("presentControlsOverride");
+	hide("presentOverride");
 	show("presentWindow");
+	byId("inputPresentForward").disabled = false;
+	byId("inputPresentBack").disabled = true;
+	byId("inputPresentFinish").disabled = true;
 
 	// Keep track of presentation
 	ROUND.book = BOOKS[data.book];
@@ -255,8 +258,11 @@ SOCKET.on("presentBook", (data) => {
 		show("presentControls");
 	} else if (ID === ROOM.host) {
 		// Otherwise, enable override if client is the host
-		show("presentControlsOverride");
+		show("presentOverride");
 	}
+
+	// Cross out book into present menu
+	byId("p" + data.book.toString()).style.textDecoration = "line-through";
 });
 
 SOCKET.on("presentForward", () => {
@@ -298,7 +304,7 @@ SOCKET.on("presentForward", () => {
 		byId("inputPresentForward").disabled = true;
 
 		if (ID === ROUND.presenter) {
-			show("presentControlsFinish");
+			byId("inputPresentFinish").disabled = false;
 		}
 	}
 });
@@ -326,33 +332,43 @@ SOCKET.on("presentOverride", () => {
 	if (ID === ROOM.host) {
 		show("presentControls");
 		if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
-			show("presentControlsFinish");
+			byId("inputPresentFinish").disabled = false;
 		}
-		hide("presentControlsOverride");
+		hide("presentOverride");
 	} else {
 		hide("presentControls");
 	}
 
 	// Display new presenter of book
-	byId("presentBookPresenter").textContent =
-		"Presented by " + getName(ROOM.host);
+	byId("presenter").textContent = "Presented by " + getName(ROOM.host);
 });
 
 SOCKET.on("presentFinish", () => {
 	// Return to present lobby
 	hide("presentWindow");
 	hide("presentControls");
-	hide("presentControlsFinish");
-	hide("presentControlsOverride");
+	hide("presentOverride");
 	show("presentMenu");
-	byId("presentSection").classList.add("presentLobby");
 	byId("inputPresentForward").disabled = false;
 	byId("inputPresentBack").disabled = true;
+	byId("inputPresentFinish").disabled = true;
 
 	// Clear pages from presentWindow
 	document.querySelectorAll(".page").forEach((e) => {
 		e.remove();
 	});
+
+	// Keep track of book being presented
+	ROUND.book.p = true;
+
+	// If all books have been presented, allow host to return to lobby
+	let _done = true;
+	Object.keys(BOOKS).forEach((e) => {
+		_done = _done && BOOKS[e].p;
+	});
+	if (_done) {
+		byId("finish").disabled = false;
+	}
 });
 
 /// --- END --- ///
@@ -883,10 +899,10 @@ function show(e) {
 
 	// Setup: Room code toggle
 	byId("roomCode").addEventListener("mousedown", (e) => {
-		e.target.classList.add("blurred");
+		e.target.classList.remove("blurred");
 	});
 	byId("roomCode").addEventListener("mouseup", (e) => {
-		e.target.classList.remove("blurred");
+		e.target.classList.add("blurred");
 	});
 
 	// Setup: Invite button

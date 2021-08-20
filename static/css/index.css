@@ -216,6 +216,11 @@ ul {
 	flex-flow: column nowrap;
 }
 
+.page, .presentDraw {
+	display: block;
+	width: 100%;
+}
+
 .right {
 	overflow: hidden;
 	float: right;
@@ -284,19 +289,22 @@ ul {
 	cursor: wait;
 }
 
-#presentWindow {
-	overflow-x: hidden;
-	overflow-y: scroll;
-	max-width: min(calc((100vh - 210px) * 1.33), 820px);
-	min-width: 400px;
-	height: calc(100vh - 210px);
-	min-height: 210px;
-	background-color: #fff;
-	border: 2px solid #234567;
+#presentControls {
+	margin-bottom: -.5em;
 }
 
-#presentWindow * {
+#presentControls input, #inputPresentOverride {
+	margin: .12em;
+}
+
+#presentWindow {
+	width: calc((50vh) * 4 / 3);
+	height: calc(100vh - 12em);
+	overflow-x: hidden;
+	overflow-y: scroll;
 	color: #000;
+	background-color: #fff;
+	border: .12em solid #234567;
 }
 
 #previous {
@@ -368,7 +376,7 @@ ul {
 }
 
 
-/* DIALOGS POLYFILL */
+/* DIALOG POLYFILL */
 dialog {
 	position: absolute;
 	left: 0;
@@ -411,43 +419,10 @@ dialog.fixed {
 	transform: translate(0, -50%);
 }
 
-
 /* EVERYTHING BELOW IS DEPRECATED *//*
 .page {
-	min-height: 20px;
-	margin: 0 auto;
 	background-color: #eee;
-	border-bottom: 1px solid #ddd;
-	border-top: 1px solid #ddd;
-}
-.page:first-of-type {
-	border-top: 2px solid #ddd;
-}
-.page:last-of-type {
-	border-bottom: 2px solid #ddd;
-}
-.presentWrite {
-	margin: 14px;
-	font-size: 20px;
-}
-.presentDraw {
-	margin: 0 0 -5px;
-}
-
-*//* Other Stuff *//*
-#presentBookTitle {
-	margin: 40px auto 0;
-	text-align: center;
-	font-size: 28pt;
-}
-#presentControls, #presentControlsFinish, #presentControlsOverride {
-	display: flex;
-	flex-flow: row nowrap;
-	width: auto;
-	margin: 0 auto;
-}
-#presentControls input, #presentControlsFinish input, #inputPresentOverride {
-	margin: 4px !important;
+	border: 1px solid #ddd;
 }
 
 *//* Drawing tools *//*
