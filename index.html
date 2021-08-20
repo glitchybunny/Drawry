@@ -2,7 +2,7 @@
 
 <html lang="en">
 <head>
-	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css"/>
+	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
 	<title>Open Picturephone</title>
 </head>
 <body>
@@ -11,10 +11,10 @@
 		<section class="flex box" style="margin:1em;">
 			<label for="inputName">Name:</label>
 			<input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
-				   onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
+						 onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
 			<label for="inputRoom">Room Code:</label>
 			<input aria-required="true" autocomplete="on" id="inputRoom" maxlength="12" minlength="4"
-				   onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
+						 onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
 			<input id="inputJoin" type="button" value="Join">
 		</section>
 		<a href="/help.html" style="font-size:1.2em;">How to play</a>
@@ -65,19 +65,19 @@
 				<div id="settings">
 					<div class="flex row">
 						<dfn aria-label="Whether the first page is written or drawn"
-							 title="Whether the first page is written or drawn">
+								 title="Whether the first page is written or drawn">
 							First page
 						</dfn>
 						<div class="host hidden">
 							<label>
 								<input aria-label="The first page is a text input" name="firstPage" type="radio"
-									   value="Write">
+											 value="Write">
 								Write
 							</label>
 							<label>
 								<input aria-label="The first page is a drawable canvas input" name="firstPage"
-									   type="radio"
-									   value="Draw">
+											 type="radio"
+											 value="Draw">
 								Draw
 							</label>
 						</div>
@@ -87,13 +87,13 @@
 					</div>
 					<div class="flex row">
 						<dfn aria-label="Number of pages in each book" id="isHostLabel"
-							 title="Number of pages in each book">
+								 title="Number of pages in each book">
 							Pages per book
 						</dfn>
 						<div class="flex row">
 							<div class="host hidden">
 								<input aria-labelledby="isHostLabel" id="pageCount" max="20" min="2" name="pageCount"
-									   type="range">
+											 type="range">
 							</div>
 							<output for="pageCount" id="pageCountDisplay"></output>
 						</div>
@@ -105,13 +105,13 @@
 						<div class="host hidden">
 							<label>
 								<input aria-label="Pages are assigned in a cyclic order" name="pageOrder" type="radio"
-									   value="Normal">
+											 value="Normal">
 								Normal
 							</label>
 							<label>
 								<input aria-label="Pages are assigned in a semi-random order" name="pageOrder"
-									   type="radio"
-									   value="Random">
+											 type="radio"
+											 value="Random">
 								Random
 							</label>
 						</div>
@@ -121,7 +121,7 @@
 					</div>
 					<div class="flex row">
 						<dfn aria-label="Whether there are color palette restrictions on the drawings"
-							 title="Whether there are color palette restrictions on the drawings">
+								 title="Whether there are color palette restrictions on the drawings">
 							Color palette
 						</dfn>
 						<div class="host hidden">
@@ -136,26 +136,26 @@
 					<hr>
 					<div class="flex row">
 						<dfn aria-label="Time limit per writing page (in minutes)" id="timeWriteLabel"
-							 title="Time limit per writing page (in minutes)">
+								 title="Time limit per writing page (in minutes)">
 							Write time limit
 						</dfn>
 						<div class="flex row">
 							<div class="host hidden">
 								<input aria-labelledby="timeWriteLabel" id="timeWrite" max="15" min="0" name="timeWrite"
-									   type="range">
+											 type="range">
 							</div>
 							<output for="timeWrite" id="timeWriteDisplay" style="min-width:3.2em;"></output>
 						</div>
 					</div>
 					<div class="flex row">
 						<dfn aria-label="Time limit per drawing page (in minutes)" id="timeDrawLabel"
-							 title="Time limit per drawing page (in minutes)">
+								 title="Time limit per drawing page (in minutes)">
 							Draw time limit
 						</dfn>
 						<div class="flex row">
 							<div class="host hidden">
 								<input aria-labelledby="timeDrawLabel" id="timeDraw" max="15" min="0" name="timeDraw"
-									   type="range">
+											 type="range">
 							</div>
 							<output for="timeDraw" id="timeDrawDisplay" style="min-width:3.2em;"></output>
 						</div>
@@ -167,7 +167,7 @@
 						Two or more players required to start...
 					</p>
 					<input class="hidden" hidden id="inputStart" style="margin-top:.5em" type="button"
-						   value="Start game">
+								 value="Start game">
 				</div>
 				<div class="center notHost">
 					<p style="font-style:italic;">
@@ -179,26 +179,26 @@
 			<!-- GAMEPLAY -->
 			<section class="flex center hidden" hidden id="status">
 				<h2><span id="statusTitle"></span> - Page&nbsp;<span id="statusPage">1</span>/<span
-						id="statusPageMax"></span></h2>
+					id="statusPageMax"></span></h2>
 				<h2 class="hidden" hidden id="statusTimer">⏳ 4:20</h2>
 			</section>
 			<div class="flex hidden" hidden id="gameplay">
 				<section class="flex box" id="title">
 					<label for="inputTitle" style="font-weight:bold;">Title</label>
 					<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
-						   placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
-						   type="text">
+								 placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
+								 type="text">
 				</section>
 				<section class="flex box hidden" hidden id="previous">
 					<label style="font-weight:bold;">Previous page</label>
 					<p class="hidden" hidden id="previousWrite"></p>
-					<img alt="" class="hidden" hidden id="previousDraw" src="img/base.png"/>
+					<img alt="" class="hidden" hidden id="previousDraw" src="img/base.png" />
 				</section>
 				<section class="flex box hidden" hidden id="write">
 					<label for="inputWrite" style="font-weight:bold;">Story</label>
 					<textarea aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
-							  onkeydown="return enterBlock(event)" placeholder="What happens next?" required="required"
-							  spellcheck="true" style="height:4em; overflow-y:hidden;"></textarea>
+										onkeydown="return enterBlock(event)" placeholder="What happens next?" required="required"
+										spellcheck="true" style="height:4em; overflow-y:hidden;"></textarea>
 				</section>
 				<section class="flex box hidden" hidden id="draw">
 					<label style="font-weight:bold;">Drawing</label>
@@ -222,6 +222,10 @@
 				<div id="presentMenu">
 					<div class="host hidden" hidden style="flex-flow:column nowrap">
 						<table id="presentTable"></table>
+						<div class="center" style="margin:.5em">
+							<input disabled="disabled" id="finish" style="font-size:1em"
+										 type="button" value="Return to lobby">
+						</div>
 					</div>
 					<div class="notHost">
 						<p class="center" style="font-style:italic;margin:.5em;font-size:1.2em;">
@@ -230,21 +234,23 @@
 					</div>
 				</div>
 				<div class="hidden" hidden id="presentWindow">
-					<h1 class="center" id="presentTitle"></h1>
-					<p style="text-align:center; margin-bottom:40px;">
+					<h1 class="center" id="presentTitle" style="margin-top:40px;"></h1>
+					<p class="center" style="margin-bottom:40px;">
 						<span id="authors"></span>
 						<br>
 						<span id="presenter"></span>
 					</p>
 				</div>
-				<div class="hidden" hidden id="presentControls">
-					<input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
-					<input id="inputPresentForward" type="button" value="Next >">
+				<div class="center hidden flex" hidden id="presentControls">
+					<div class="flex" style="flex-flow:row nowrap">
+						<input disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
+						<input id="inputPresentForward" type="button" value="Next >">
+					</div>
+					<div class="flex">
+						<input disabled="disabled" id="inputPresentFinish" type="button" value="Finish presenting">
+					</div>
 				</div>
-				<div class="hidden" hidden id="presentControlsFinish">
-					<input id="inputPresentFinish" type="button" value="Finish presenting">
-				</div>
-				<div class="hidden" hidden id="presentControlsOverride">
+				<div class="hidden center flex" hidden id="presentOverride">
 					<input id="inputPresentOverride" type="button" value="Hijack presentation">
 				</div>
 			</section>
@@ -270,16 +276,16 @@
 			<input autocomplete="false" id="toolColor" title="Colour picker" type="color">
 			<div>
 				<input autocomplete="false" class="toolSelected" id="toolPaint" title="Draw tool (D)"
-					   type="button">
+							 type="button">
 				<input autocomplete="false" id="toolErase" title="Erase tool (E)" type="button">
 				<input autocomplete="false" disabled="disabled" id="toolFill" title="Fill tool (F)"
-					   type="button">
+							 type="button">
 			</div>
 			<div>
 				<input autocomplete="false" disabled="disabled" id="toolUndo" title="Undo (Z)"
-					   type="button">
+							 type="button">
 				<input autocomplete="false" disabled="disabled" id="toolRedo" title="Redo (Y)"
-					   type="button">
+							 type="button">
 			</div>
 		</div>
 	</div>
