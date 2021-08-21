@@ -5,7 +5,6 @@
 	font-display: swap;
 }
 
-
 /* HTML ELEMENTS */
 * {
 	font-family: "OpenSans", sans-serif;
@@ -164,7 +163,6 @@ ul {
 	list-style-type: none;
 }
 
-
 /* CLASSES */
 .author {
 	display: block;
@@ -211,6 +209,11 @@ ul {
 	padding: .5em;
 }
 
+.download {
+	float: right;
+	font-size: .85em;
+}
+
 .flex {
 	display: flex;
 	flex-flow: column nowrap;
@@ -238,7 +241,6 @@ ul {
 .spin {
 	animation: spin 2s infinite linear;
 }
-
 
 /* IDS */
 #canvasBase, #previousDraw {
@@ -336,7 +338,6 @@ ul {
 	font-weight: bold;
 }
 
-
 /* OVERRIDES */
 .hidden {
 	display: none !important;
@@ -351,7 +352,6 @@ ul {
 	opacity: 1;
 	animation: fade-out 1.5s linear forwards;
 }
-
 
 /* ANIMATIONS */
 @keyframes fade-out {
@@ -374,7 +374,6 @@ ul {
 		transform: rotate(359deg);
 	}
 }
-
 
 /* DIALOG POLYFILL */
 dialog {
