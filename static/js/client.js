@@ -271,6 +271,17 @@ SOCKET.on("presentForward", () => {
 	let _div = document.createElement("div");
 	_div.classList.add("page");
 
+	// Add attribution to page
+	let _attr = document.createElement("div");
+	let _author = document.createElement("span");
+	let _num = document.createElement("span");
+	_attr.classList.add("attribution");
+	_author.textContent = getName(_page.author) + ":";
+	_num.textContent = (ROUND.page + 1).toString() + "/" + ROOM.settings.pageCount.toString();
+	_attr.appendChild(_author);
+	_attr.appendChild(_num);
+	_div.appendChild(_attr);
+
 	// Add data to page
 	switch (_page.mode) {
 		case "Write":
@@ -291,6 +302,7 @@ SOCKET.on("presentForward", () => {
 			break;
 	}
 
+	// Add page to window
 	let _window = byId("presentWindow");
 	_window.appendChild(_div);
 	_window.scrollTop = _window.scrollHeight;
