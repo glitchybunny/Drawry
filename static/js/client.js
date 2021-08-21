@@ -8,11 +8,8 @@
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
 window.crypto.getRandomValues(array);
-const ID = Cookies.get("id")
-	? Cookies.get("id")
-	: (array[0].valueOf() + 1).toString();
-const SESSION_KEY =
-	array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
+const ID = Cookies.get("id") ? Cookies.get("id") : (array[0].valueOf() + 1).toString();
+const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 
 /// --- ENUMS --- ///
@@ -170,9 +167,7 @@ SOCKET.on("page", (data) => {
 	byId("b" + data.id).classList.add("done");
 
 	// Update how many pages are left in the round
-	byId("waitDisplay").textContent = (
-		parseInt(byId("waitDisplay").textContent) - 1
-	).toString();
+	byId("waitDisplay").textContent = (parseInt(byId("waitDisplay").textContent) - 1).toString();
 });
 
 // Go to next page in books
@@ -211,6 +206,7 @@ SOCKET.on("startPresenting", () => {
 	hide("gameplay");
 	hide("status");
 	show("present");
+	show("download");
 	byId("wait").close();
 
 	// Update round state
@@ -468,9 +464,7 @@ function updateSettings() {
 	byId("pageOrderDisplay").value = ROOM.settings.pageOrder;
 
 	// Color palette
-	document.querySelector(
-		'#colorPalette [value="' + ROOM.settings.palette + '"]'
-	).selected = true;
+	document.querySelector('#colorPalette [value="' + ROOM.settings.palette + '"]').selected = true;
 	byId("colorPaletteDisplay").value = ROOM.settings.palette;
 
 	// Write time limit
@@ -522,8 +516,7 @@ function updatePlayers() {
 	}
 
 	// Increment player count
-	byId("playersCount").textContent =
-		"(" + (Object.keys(USERS).length + 1).toString() + "/10)";
+	byId("playersCount").textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
 	if (Object.keys(USERS).length) {
@@ -539,7 +532,7 @@ function updatePlayers() {
 function updateBooks() {
 	show("books");
 
-	let _bookList, _id, _book, _bookTitle, _bookAuthor;
+	let _bookList, _id, _book, _bookTitle, _bookAuthor, _bookDL;
 	_bookList = byId("booksList");
 	_bookList.innerHTML = "";
 
@@ -549,6 +542,7 @@ function updateBooks() {
 		_book = document.createElement("li");
 		_bookTitle = document.createElement("span");
 		_bookAuthor = document.createElement("span");
+		_bookDL = document.createElement("input");
 
 		// Assign the correct classes for styling
 		_bookAuthor.className = "author";
@@ -572,10 +566,24 @@ function updateBooks() {
 			}
 		}
 
-		// Add to DOM
-		_book.appendChild(_bookTitle);
-		_book.appendChild(_bookAuthor);
-		_bookList.appendChild(_book);
+		if (ROUND.mode === "Presenting") {
+			// Add download buttons
+			_bookDL.type = "button";
+			_bookDL.value = "Download";
+			_bookDL.classList.add("download");
+			_bookDL.id = "d" + _id;
+
+			// Add to DOM
+			_book.appendChild(_bookTitle);
+			_book.appendChild(_bookDL);
+			_book.appendChild(_bookAuthor);
+			_bookList.appendChild(_book);
+		} else {
+			// Add to DOM
+			_book.appendChild(_bookTitle);
+			_book.appendChild(_bookAuthor);
+			_bookList.appendChild(_book);
+		}
 	}
 }
 
@@ -754,29 +762,22 @@ function show(e) {
 	/// JOIN
 	// Join: Input filter
 	function setInputFilter(textbox, inputFilter) {
-		[
-			"input",
-			"keydown",
-			"keyup",
-			"mousedown",
-			"mouseup",
-			"select",
-			"contextmenu",
-			"drop",
-		].forEach((event) => {
-			textbox.addEventListener(event, function () {
-				if (inputFilter(this.value)) {
-					this.oldValue = this.value;
-					this.oldSelectionStart = this.selectionStart;
-					this.oldSelectionEnd = this.selectionEnd;
-				} else if (this.hasOwnProperty("oldValue")) {
-					this.value = this.oldValue;
-					this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-				} else {
-					this.value = "";
-				}
-			});
-		});
+		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(
+			(event) => {
+				textbox.addEventListener(event, function () {
+					if (inputFilter(this.value)) {
+						this.oldValue = this.value;
+						this.oldSelectionStart = this.selectionStart;
+						this.oldSelectionEnd = this.selectionEnd;
+					} else if (this.hasOwnProperty("oldValue")) {
+						this.value = this.oldValue;
+						this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+					} else {
+						this.value = "";
+					}
+				});
+			}
+		);
 	}
 
 	setInputFilter(byId("inputRoom"), function (value) {
@@ -798,11 +799,7 @@ function show(e) {
 			e.target.disabled = true;
 			show("loading");
 
-			window.history.pushState(
-				{ roomCode: ROOM.code },
-				"",
-				"?room=" + ROOM.code
-			);
+			window.history.pushState({ roomCode: ROOM.code }, "", "?room=" + ROOM.code);
 
 			SOCKET.emit("joinRoom", {
 				id: ID,
@@ -865,9 +862,7 @@ function show(e) {
 	// Setup: Write time limit
 	let _timeWrite = byId("timeWrite");
 	_timeWrite.addEventListener("input", (e) => {
-		byId("timeWriteDisplay").value = parseInt(e.target.value)
-			? e.target.value + " min"
-			: "None";
+		byId("timeWriteDisplay").value = parseInt(e.target.value) ? e.target.value + " min" : "None";
 	});
 	_timeWrite.addEventListener("change", (e) => {
 		if (ROOM.settings) {
@@ -879,9 +874,7 @@ function show(e) {
 	// Setup: Draw time limit
 	let _timeDraw = byId("timeDraw");
 	_timeDraw.addEventListener("input", (e) => {
-		byId("timeDrawDisplay").value = parseInt(e.target.value)
-			? e.target.value + " min"
-			: "None";
+		byId("timeDrawDisplay").value = parseInt(e.target.value) ? e.target.value + " min" : "None";
 	});
 	_timeDraw.addEventListener("change", (e) => {
 		if (ROOM.settings) {
@@ -1111,10 +1104,7 @@ function show(e) {
 
 	// Draw: Use tools with keyboard
 	document.addEventListener("keydown", (event) => {
-		if (
-			ROUND.mode === "Draw" &&
-			document.activeElement !== byId("inputTitle")
-		) {
+		if (ROUND.mode === "Draw" && document.activeElement !== byId("inputTitle")) {
 			switch (event.code) {
 				case "KeyD":
 					byId("toolPaint").click();
