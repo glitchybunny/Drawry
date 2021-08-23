@@ -530,7 +530,7 @@ function shuffle(array) {
 const RateLimit = require("express-rate-limit");
 let limiter = new RateLimit({
 	windowMs: 60 * 1000,
-	max: 1000,
+	max: 50,
 });
 
 // apply rate limiter to all resource requests
