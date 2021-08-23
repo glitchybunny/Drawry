@@ -165,17 +165,16 @@ ul {
 
 /* CLASSES */
 .attribution {
-	display:flex;
+	font-size: .9em;
+	display: flex;
 	flex-flow: row nowrap;
 	justify-content: space-between;
-	border-bottom: calc(.12em / .9) solid #ddd;
-	background-color: #eee;
-	color: #666;
-	font-size: .9em;
+	border-top: .16em solid #123456;
+	color: #fff;
 }
 
 .attribution span {
-	padding: .12em .5em;
+	padding: .25em .5em;
 }
 
 .author {
@@ -234,22 +233,22 @@ ul {
 }
 
 .page {
-	border-bottom: .12em solid #ddd;
-}
-
-.page:first-of-type {
-	border-top: .12em solid #ddd;
-}
-
-.page, .presentDraw {
 	display: block;
 	width: 100%;
 }
 
+.presentDraw {
+	display: block;
+	width: calc(100% - 1em);
+	margin: 0 .5em .5em;
+	background-color: #fff;
+}
+
 .presentWrite {
-	margin: 0;
-	padding: 1em;
 	font-size: 1.1em;
+	margin: 0 .5em .5em;
+	padding: .5em;
+	background-color: #fff;
 }
 
 .right {
@@ -320,21 +319,23 @@ ul {
 }
 
 #presentControls {
-	margin-bottom: -.5em;
+	margin-bottom: -.75em;
 }
 
 #presentControls input, #inputPresentOverride {
+	font-size: 1em;
 	margin: .12em;
 }
 
 #presentWindow {
 	width: calc((60vh) * 4 / 3);
-	height: calc(100vh - 12em);
+	height: calc(100vh - 10em);
 	overflow-x: hidden;
 	overflow-y: scroll;
 	color: #000;
-	background-color: #fff;
-	border: .12em solid #234567;
+	background-color: #234567;
+	border: .12em solid #123456;
+	scrollbar-width: thin;
 }
 
 #previous {
@@ -447,12 +448,6 @@ dialog.fixed {
 }
 
 /* EVERYTHING BELOW IS DEPRECATED *//*
-.page {
-	background-color: #eee;
-	border: 1px solid #ddd;
-}
-
-*//* Drawing tools *//*
 #gameDrawTools {
 	display: flex;
 	flex-flow: row nowrap;
