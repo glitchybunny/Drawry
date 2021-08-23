@@ -20,7 +20,6 @@ const SOCKETS = [];
 const ROOMS = {};
 
 // Other constants
-const VERBOSE = true;
 const MAX_ROOM_SIZE = 10;
 const SETTINGS_CONSTRAINTS = {
 	firstPage: ["string", ["Write", "Draw"]],
@@ -42,7 +41,6 @@ const STATE = {
 	LOBBY: 0,
 	PLAYING: 1,
 	PRESENTING: 2,
-	END: 3,
 };
 
 ///// ----- ASYNC SERVER FUNCTIONS ----- /////
@@ -54,7 +52,7 @@ io.on("connection", (socket) => {
 	/// --- LOBBY --- ///
 	// Listen for client joining room
 	socket.on("joinRoom", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("joinRoom", data.id, {
 				name: data.name,
 				roomCode: data.roomCode,
@@ -73,8 +71,7 @@ io.on("connection", (socket) => {
 		let _client = CLIENTS[socket.id];
 		_client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, "") || 0;
 		_client.name = xss(data.name.substr(0, 32));
-		_client.roomCode =
-			xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, "") || 0;
+		_client.roomCode = xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, "") || 0;
 
 		if (_client.id && _client.roomCode) {
 			// add client to the room
@@ -124,7 +121,7 @@ io.on("connection", (socket) => {
 
 	// Listen for room settings changes
 	socket.on("settings", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("settings", CLIENTS[socket.id].id, data.settings);
 		}
 
@@ -136,7 +133,7 @@ io.on("connection", (socket) => {
 			// Host updating settings
 			_room.settings = data.settings;
 
-			// Propogate settings to other clients
+			// Propagate settings to other clients
 			socket.to(_roomCode).emit("settings", _room.settings);
 		} else {
 			// Invalid request, kick from game
@@ -147,7 +144,7 @@ io.on("connection", (socket) => {
 	/// --- GAME --- ///
 	// Start the game for the room
 	socket.on("startGame", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("startGame", CLIENTS[socket.id].id, data.settings);
 		}
 
@@ -182,7 +179,7 @@ io.on("connection", (socket) => {
 
 	// Update a player's book title
 	socket.on("updateTitle", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("updateTitle", CLIENTS[socket.id].id, { title: data.title });
 		}
 
@@ -206,7 +203,7 @@ io.on("connection", (socket) => {
 
 	// Get page from player
 	socket.on("submitPage", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("submitPage", CLIENTS[socket.id].id, {
 				mode: data.mode,
 				value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : ""),
@@ -240,10 +237,7 @@ io.on("connection", (socket) => {
 						_value = data.value;
 						// TODO: Either resize on server or tell client to resize image?
 					} else {
-						console.log("ERROR unexpected image size", [
-							dimensions.width,
-							dimensions.height,
-						]);
+						console.log("ERROR unexpected image size", [dimensions.width, dimensions.height]);
 					}
 				}
 			} else {
@@ -263,10 +257,7 @@ io.on("connection", (socket) => {
 		}
 
 		// Verify data.mode is valid
-		let _expected =
-			(_room.settings.firstPage === "Write") ^ _room.page % 2
-				? "Write"
-				: "Draw";
+		let _expected = (_room.settings.firstPage === "Write") ^ _room.page % 2 ? "Write" : "Draw";
 		if (_expected !== data.mode) {
 			// Client trying to send tampered data, overwrite
 			_value = undefined;
@@ -305,7 +296,7 @@ io.on("connection", (socket) => {
 	/// --- PRESENTING --- ///
 	// Begin presenting a book
 	socket.on("presentBook", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("presentBook", CLIENTS[socket.id].id, {
 				book: data.book,
 				host: data.host,
@@ -333,7 +324,7 @@ io.on("connection", (socket) => {
 
 	// Go to next page of presentation
 	socket.on("presentForward", () => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("presentForward", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
@@ -341,10 +332,7 @@ io.on("connection", (socket) => {
 
 		// Make sure request is from the presenter
 		if (_id === ROOMS[_roomCode].presenter) {
-			if (
-				ROOMS[_roomCode].page <
-				parseInt(ROOMS[_roomCode].settings.pageCount) - 1
-			) {
+			if (ROOMS[_roomCode].page < parseInt(ROOMS[_roomCode].settings.pageCount) - 1) {
 				ROOMS[_roomCode].page += 1;
 				io.to(_roomCode).emit("presentForward");
 			}
@@ -353,7 +341,7 @@ io.on("connection", (socket) => {
 
 	// Go to previous page of presentation (hide most recently shown page)
 	socket.on("presentBack", () => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("presentBack", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
@@ -370,7 +358,7 @@ io.on("connection", (socket) => {
 
 	// Take over presentation as host
 	socket.on("presentOverride", () => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("presentOverride", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
@@ -385,7 +373,7 @@ io.on("connection", (socket) => {
 
 	// Return to lobby for next book
 	socket.on("presentFinish", () => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("presentFinish", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
@@ -402,7 +390,7 @@ io.on("connection", (socket) => {
 	/// --- END --- ///
 	// Listen for disconnect events
 	socket.on("disconnect", (data) => {
-		if (VERBOSE) {
+		if (process.env.VERBOSE) {
 			console.log("disconnect", CLIENTS[socket.id].id, { type: data });
 		}
 
@@ -525,9 +513,9 @@ function generateBooks(room) {
 
 // Shuffle array (fisher yates)
 function shuffle(array) {
-	var m = array.length,
-		t,
-		i;
+	let t,
+		i,
+		m = array.length;
 	while (m) {
 		i = Math.floor(Math.random() * m--);
 		t = array[m];
