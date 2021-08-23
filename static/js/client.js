@@ -372,9 +372,7 @@ SOCKET.on("presentFinish", () => {
 	Object.keys(BOOKS).forEach((e) => {
 		_done = _done && BOOKS[e].p;
 	});
-	if (_done) {
-		byId("finish").disabled = false;
-	}
+	byId("finish").disabled = !_done;
 });
 
 /// --- END --- ///
