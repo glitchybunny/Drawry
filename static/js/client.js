@@ -368,11 +368,13 @@ SOCKET.on("presentFinish", () => {
 	ROUND.book.p = true;
 
 	// If all books have been presented, allow host to return to lobby
+	/*
 	let _done = true;
 	Object.keys(BOOKS).forEach((e) => {
 		_done = _done && BOOKS[e].p;
 	});
 	byId("finish").disabled = !_done;
+	 */
 });
 
 /// --- END --- ///
@@ -580,6 +582,7 @@ function updateBooks() {
 			_bookDL.value = "Download";
 			_bookDL.classList.add("download");
 			_bookDL.id = "d" + _id;
+			_bookDL.disabled = true;
 
 			// Add to DOM
 			_book.appendChild(_bookTitle);
