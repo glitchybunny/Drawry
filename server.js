@@ -307,18 +307,23 @@ io.on("connection", (socket) => {
 
 		// Make sure request is from the host
 		if (socket.id === ROOMS[_roomCode].host) {
-			ROOMS[_roomCode].page = -1;
+			// Ensure book ID is valid
+			let _book = xss(data.book.toString());
+			if (_book in Object.keys(ROOMS[_roomCode].books)) {
+				// Begin presenting book
+				ROOMS[_roomCode].page = -1;
+				if (data.host) {
+					ROOMS[_roomCode].presenter = _id;
+				} else {
+					ROOMS[_roomCode].presenter = _book;
+				}
 
-			// Tell all clients that a book is being presented
-			if (data.host) {
-				ROOMS[_roomCode].presenter = _id;
-			} else {
-				ROOMS[_roomCode].presenter = data.book;
+				// Tell all clients that a book is being presented
+				io.to(_roomCode).emit("presentBook", {
+					book: _book,
+					presenter: ROOMS[_roomCode].presenter,
+				});
 			}
-			io.to(_roomCode).emit("presentBook", {
-				book: data.book,
-				presenter: ROOMS[_roomCode].presenter,
-			});
 		}
 	});
 
