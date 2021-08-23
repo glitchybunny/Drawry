@@ -220,13 +220,12 @@ SOCKET.on("startPresenting", () => {
 });
 
 SOCKET.on("presentBook", (data) => {
-	hide("presentMenu");
-	hide("presentControls");
-	hide("presentOverride");
 	show("presentWindow");
+	hide("presentMenu");
 	byId("inputPresentForward").disabled = false;
 	byId("inputPresentBack").disabled = true;
 	byId("inputPresentFinish").disabled = true;
+	byId("presentBlurb").style.height = "100%";
 
 	// Keep track of presentation
 	ROUND.book = BOOKS[data.book];
@@ -264,6 +263,7 @@ SOCKET.on("presentBook", (data) => {
 SOCKET.on("presentForward", () => {
 	// Go to next page
 	byId("inputPresentBack").disabled = false;
+	byId("presentBlurb").style.height = "";
 	ROUND.page += 1;
 
 	// Add page to window
@@ -329,6 +329,7 @@ SOCKET.on("presentBack", () => {
 	// First page
 	if (ROUND.page === -1) {
 		byId("inputPresentBack").disabled = true;
+		byId("presentBlurb").style.height = "100%";
 	}
 });
 
@@ -353,13 +354,10 @@ SOCKET.on("presentOverride", () => {
 
 SOCKET.on("presentFinish", () => {
 	// Return to present lobby
+	show("presentMenu");
 	hide("presentWindow");
 	hide("presentControls");
 	hide("presentOverride");
-	show("presentMenu");
-	byId("inputPresentForward").disabled = false;
-	byId("inputPresentBack").disabled = true;
-	byId("inputPresentFinish").disabled = true;
 
 	// Clear pages from presentWindow
 	document.querySelectorAll(".page").forEach((e) => {
