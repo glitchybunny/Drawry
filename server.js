@@ -6,13 +6,13 @@
 "use strict";
 
 // Including libraries
-const express = require('express');
+const express = require("express");
 const app = express();
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+const server = require("http").createServer(app);
+const io = require("socket.io")(server);
 const xss = require("xss");
-const path = require('path');
-const sizeOf = require('image-size');
+const path = require("path");
+const sizeOf = require("image-size");
 
 // Server side variables (to keep track of games)
 const CLIENTS = [];
@@ -20,45 +20,43 @@ const SOCKETS = [];
 const ROOMS = {};
 
 // Other constants
-const VERBOSE = false;
 const MAX_ROOM_SIZE = 10;
-const SETTINGS_DEFAULT = {
-	firstPage: 'Write',
-	pageCount: '8',
-	pageOrder: 'Normal',
-	palette: 'No palette',
-	timeWrite: '0',
-	timeDraw: '0'
-};
 const SETTINGS_CONSTRAINTS = {
-	firstPage: ['string', ['Write', 'Draw']],
-	pageCount: ['number', [2, 20]],
-	pageOrder: ['string', ['Normal', 'Random']],
-	palette: ['string', ['No palette']],
-	timeWrite: ['number', [0, 15]],
-	timeDraw: ['number', [0, 15]]
+	firstPage: ["string", ["Write", "Draw"]],
+	pageCount: ["number", [2, 20]],
+	pageOrder: ["string", ["Normal", "Random"]],
+	palette: ["string", ["No palette"]],
+	timeWrite: ["number", [0, 15]],
+	timeDraw: ["number", [0, 15]],
+};
+const SETTINGS_DEFAULT = {
+	firstPage: "Draw",
+	pageCount: "2",
+	pageOrder: "Normal",
+	palette: "No palette",
+	timeWrite: "0",
+	timeDraw: "0",
 };
 const STATE = {
 	LOBBY: 0,
 	PLAYING: 1,
 	PRESENTING: 2,
-	END: 3
 };
-
 
 ///// ----- ASYNC SERVER FUNCTIONS ----- /////
 // Listen for incoming connections from clients
-io.on('connection', (socket) => {
-
+io.on("connection", (socket) => {
 	CLIENTS[socket.id] = {};
 	SOCKETS[socket.id] = socket;
 
-
 	/// --- LOBBY --- ///
 	// Listen for client joining room
-	socket.on('joinRoom', (data) => {
-		if (VERBOSE) {
-			console.log('joinRoom', data.id, {name: data.name, roomCode: data.roomCode});
+	socket.on("joinRoom", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("joinRoom", data.id, {
+				name: data.name,
+				roomCode: data.roomCode,
+			});
 		}
 
 		// first of all, make sure no two clients connect with the same ID
@@ -71,9 +69,9 @@ io.on('connection', (socket) => {
 
 		// fetch client values
 		let _client = CLIENTS[socket.id];
-		_client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, '') || 0;
+		_client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, "") || 0;
 		_client.name = xss(data.name.substr(0, 32));
-		_client.roomCode = xss(data.roomCode.substr(0, 8)).replace(/[^a-zA-Z0-9-_]/g, '') || 0;
+		_client.roomCode = xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, "") || 0;
 
 		if (_client.id && _client.roomCode) {
 			// add client to the room
@@ -89,8 +87,8 @@ io.on('connection', (socket) => {
 					state: STATE.LOBBY,
 					page: 0,
 					submitted: 0,
-					books: undefined
-				}
+					books: undefined,
+				};
 			}
 
 			// check if room can be joined
@@ -103,15 +101,14 @@ io.on('connection', (socket) => {
 				io.to(socket.id).emit("joined", {
 					roomCode: _client.roomCode,
 					users: Object.values(CLIENTS).filter((c) => {
-						return c.roomCode === _client.roomCode && c.id !== _client.id
+						return c.roomCode === _client.roomCode && c.id !== _client.id;
 					}),
 					host: CLIENTS[_room.host].id,
-					settings: _room.settings
+					settings: _room.settings,
 				});
 
 				// inform users in the room about the new client
 				socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
-
 			} else {
 				// room is full, boot client
 				io.to(socket.id).emit("disconnect", "server full");
@@ -123,9 +120,9 @@ io.on('connection', (socket) => {
 	});
 
 	// Listen for room settings changes
-	socket.on('settings', (data) => {
-		if (VERBOSE) {
-			console.log('settings', CLIENTS[socket.id].id, data.settings);
+	socket.on("settings", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("settings", CLIENTS[socket.id].id, data.settings);
 		}
 
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -136,28 +133,31 @@ io.on('connection', (socket) => {
 			// Host updating settings
 			_room.settings = data.settings;
 
-			// Propogate settings to other clients
+			// Propagate settings to other clients
 			socket.to(_roomCode).emit("settings", _room.settings);
-
 		} else {
 			// Invalid request, kick from game
 			socket.disconnect();
 		}
 	});
 
-
 	/// --- GAME --- ///
 	// Start the game for the room
-	socket.on('startGame', (data) => {
-		if (VERBOSE) {
-			console.log('startGame', CLIENTS[socket.id].id, data.settings);
+	socket.on("startGame", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("startGame", CLIENTS[socket.id].id, data.settings);
 		}
 
 		let _roomCode = CLIENTS[socket.id].roomCode;
 		let _room = ROOMS[_roomCode];
 
 		// Make sure user is the host, player count is reached, and settings are valid
-		if (socket.id === _room.host && _room.clients.length >= 2 && verifySettings(data.settings) && _room.state === STATE.LOBBY) {
+		if (
+			socket.id === _room.host &&
+			_room.clients.length >= 2 &&
+			verifySettings(data.settings) &&
+			_room.state === STATE.LOBBY
+		) {
 			// Update settings, change room state
 			_room.settings = data.settings;
 			_room.state = STATE.PLAYING;
@@ -167,8 +167,10 @@ io.on('connection', (socket) => {
 			generateBooks(_room);
 
 			// Start game
-			io.to(_roomCode).emit('startGame', {books: _room.books, start: _room.settings.firstPage});
-
+			io.to(_roomCode).emit("startGame", {
+				books: _room.books,
+				start: _room.settings.firstPage,
+			});
 		} else {
 			// Invalid request, kick from game
 			socket.disconnect();
@@ -176,9 +178,9 @@ io.on('connection', (socket) => {
 	});
 
 	// Update a player's book title
-	socket.on('updateBookTitle', (data) => {
-		if (VERBOSE) {
-			console.log('updateBookTitle', CLIENTS[socket.id].id, {title: data.title});
+	socket.on("updateTitle", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("updateTitle", CLIENTS[socket.id].id, { title: data.title });
 		}
 
 		let _id = CLIENTS[socket.id].id;
@@ -188,18 +190,23 @@ io.on('connection', (socket) => {
 		// make sure to sanitise title string
 		let _title = xss(data.title.substr(0, 40));
 
+		// ensure title is of adequate length, otherwise make it the player name + "'s book"
+		if (_title.length === 0) {
+			_title = CLIENTS[socket.id].name + "'s book";
+		}
+
 		// send title to other players
 		if (_room.page === 0) {
-			socket.to(_roomCode).emit("bookTitle", {id: _id, title: _title});
+			io.to(_roomCode).emit("title", { id: _id, title: _title });
 		}
 	});
 
 	// Get page from player
-	socket.on('submitPage', (data) => {
-		if (VERBOSE) {
-			console.log('submitPage', CLIENTS[socket.id].id, {
-				type: data.type,
-				value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : "")
+	socket.on("submitPage", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("submitPage", CLIENTS[socket.id].id, {
+				mode: data.mode,
+				value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : ""),
 			});
 		}
 		let _id = CLIENTS[socket.id].id;
@@ -208,15 +215,14 @@ io.on('connection', (socket) => {
 		let _value = undefined;
 
 		// Fetch page data
-		if (data.type === "Write") {
+		if (data.mode === "Write") {
 			// Data is text
 			_value = xss(data.value.substr(0, 140));
-
-		} else if (data.type === "Draw") {
+		} else if (data.mode === "Draw") {
 			// Data is encoded image
 			// make sure the image is expected format
-			if (data.value.indexOf('data:image/png;base64,') === 0) {
-				let img = Buffer.from(data.value.split(';base64,').pop(), 'base64')
+			if (data.value.indexOf("data:image/png;base64,") === 0) {
+				let img = Buffer.from(data.value.split(";base64,").pop(), "base64");
 				let dimensions = sizeOf(img);
 
 				// make sure image is correct size
@@ -235,7 +241,9 @@ io.on('connection', (socket) => {
 					}
 				}
 			} else {
-				console.log("ERROR unexpected image format", {format: data.value.substr(0, 22)});
+				console.log("ERROR unexpected image format", {
+					format: data.value.substr(0, 22),
+				});
 			}
 		}
 
@@ -248,16 +256,25 @@ io.on('connection', (socket) => {
 			}
 		}
 
-		// Verify data.type is valid
-		let _expected = ((_room.settings.firstPage === "Write") ^ (_room.page % 2)) ? "Write" : "Draw";
-		if (_expected !== data.type) {
+		// Verify data.mode is valid
+		let _expected = (_room.settings.firstPage === "Write") ^ _room.page % 2 ? "Write" : "Draw";
+		if (_expected !== data.mode) {
 			// Client trying to send tampered data, overwrite
 			_value = undefined;
-			console.log("ERROR unexpected data.type", {received: data.type, expected: _expected})
+			console.log("ERROR unexpected data.mode", {
+				received: data.mode,
+				expected: _expected,
+			});
 		}
 
 		// Send page data to all players
-		io.to(_roomCode).emit('page', {id: _bookID, page: _room.page, value: _value, author: _id, type: _expected});
+		io.to(_roomCode).emit("page", {
+			id: _bookID,
+			page: _room.page,
+			value: _value,
+			author: _id,
+			mode: _expected,
+		});
 
 		// Check if all players have submitted
 		_room.submitted += 1;
@@ -268,20 +285,22 @@ io.on('connection', (socket) => {
 			if (_room.page === parseInt(_room.settings.pageCount)) {
 				// Finished creation part of game, move to presenting
 				_room.state = STATE.PRESENTING;
-				io.to(_roomCode).emit('startPresenting')
+				io.to(_roomCode).emit("startPresenting");
 			} else {
 				// Go to next page
-				io.to(_roomCode).emit('nextPage');
+				io.to(_roomCode).emit("pageForward");
 			}
 		}
 	});
 
-
 	/// --- PRESENTING --- ///
 	// Begin presenting a book
-	socket.on('presentBook', (data) => {
-		if (VERBOSE) {
-			console.log('presentBook', CLIENTS[socket.id].id, {book: data.book, host: data.host});
+	socket.on("presentBook", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("presentBook", CLIENTS[socket.id].id, {
+				book: data.book,
+				host: data.host,
+			});
 		}
 		let _id = CLIENTS[socket.id].id;
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -296,14 +315,17 @@ io.on('connection', (socket) => {
 			} else {
 				ROOMS[_roomCode].presenter = data.book;
 			}
-			io.to(_roomCode).emit('presentBook', {book: data.book, presenter: ROOMS[_roomCode].presenter});
+			io.to(_roomCode).emit("presentBook", {
+				book: data.book,
+				presenter: ROOMS[_roomCode].presenter,
+			});
 		}
 	});
 
 	// Go to next page of presentation
-	socket.on('presentForward', () => {
-		if (VERBOSE) {
-			console.log('presentForward', CLIENTS[socket.id].id);
+	socket.on("presentForward", () => {
+		if (process.env.VERBOSE) {
+			console.log("presentForward", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -312,15 +334,15 @@ io.on('connection', (socket) => {
 		if (_id === ROOMS[_roomCode].presenter) {
 			if (ROOMS[_roomCode].page < parseInt(ROOMS[_roomCode].settings.pageCount) - 1) {
 				ROOMS[_roomCode].page += 1;
-				io.to(_roomCode).emit('presentForward');
+				io.to(_roomCode).emit("presentForward");
 			}
 		}
 	});
 
 	// Go to previous page of presentation (hide most recently shown page)
-	socket.on('presentBack', () => {
-		if (VERBOSE) {
-			console.log('presentBack', CLIENTS[socket.id].id);
+	socket.on("presentBack", () => {
+		if (process.env.VERBOSE) {
+			console.log("presentBack", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -329,15 +351,15 @@ io.on('connection', (socket) => {
 		if (_id === ROOMS[_roomCode].presenter) {
 			if (ROOMS[_roomCode].page > -1) {
 				ROOMS[_roomCode].page -= 1;
-				io.to(_roomCode).emit('presentBack');
+				io.to(_roomCode).emit("presentBack");
 			}
 		}
 	});
 
 	// Take over presentation as host
-	socket.on('presentOverride', () => {
-		if (VERBOSE) {
-			console.log('presentOverride', CLIENTS[socket.id].id);
+	socket.on("presentOverride", () => {
+		if (process.env.VERBOSE) {
+			console.log("presentOverride", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -345,14 +367,14 @@ io.on('connection', (socket) => {
 		// Make sure request is from the host
 		if (socket.id === ROOMS[_roomCode].host) {
 			ROOMS[_roomCode].presenter = _id;
-			io.to(_roomCode).emit('presentOverride');
+			io.to(_roomCode).emit("presentOverride");
 		}
-	})
+	});
 
 	// Return to lobby for next book
-	socket.on('presentFinish', () => {
-		if (VERBOSE) {
-			console.log('presentFinish', CLIENTS[socket.id].id);
+	socket.on("presentFinish", () => {
+		if (process.env.VERBOSE) {
+			console.log("presentFinish", CLIENTS[socket.id].id);
 		}
 		let _id = CLIENTS[socket.id].id;
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -361,16 +383,15 @@ io.on('connection', (socket) => {
 		if (_id === ROOMS[_roomCode].presenter) {
 			ROOMS[_roomCode].page = undefined;
 			ROOMS[_roomCode].presenter = undefined;
-			io.to(_roomCode).emit('presentFinish');
+			io.to(_roomCode).emit("presentFinish");
 		}
-	})
-
+	});
 
 	/// --- END --- ///
 	// Listen for disconnect events
-	socket.on('disconnect', (data) => {
-		if (VERBOSE) {
-			console.log('disconnect', CLIENTS[socket.id].id, {type: data});
+	socket.on("disconnect", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("disconnect", CLIENTS[socket.id].id, { type: data });
 		}
 
 		if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
@@ -379,7 +400,7 @@ io.on('connection', (socket) => {
 			let _roomCode = CLIENTS[socket.id].roomCode;
 
 			// alert others that client has left the room
-			socket.to(_roomCode).emit('userLeave', _id);
+			socket.to(_roomCode).emit("userLeave", _id);
 
 			if (ROOMS[_roomCode]) {
 				// remove client from the room
@@ -406,7 +427,6 @@ io.on('connection', (socket) => {
 	});
 });
 
-
 ///// ----- SYNCHRONOUS SERVER FUNCTIONS ----- /////
 // Ensure game settings are within reasonable constraints
 function verifySettings(settings) {
@@ -417,13 +437,13 @@ function verifySettings(settings) {
 		let _constraint = SETTINGS_CONSTRAINTS[_rule];
 
 		switch (_constraint[0]) {
-			case('string'):
+			case "string":
 				// Ensure string is in the list of valid strings
 				if (!_constraint[1].includes(_setting)) {
 					_valid = false;
 				}
 				break;
-			case('number'):
+			case "number":
 				// Ensure value is a valid integer, and is within the valid range
 				if (/^[0-9]+$/.test(_setting)) {
 					_setting = +_setting;
@@ -493,7 +513,9 @@ function generateBooks(room) {
 
 // Shuffle array (fisher yates)
 function shuffle(array) {
-	var m = array.length, t, i;
+	let t,
+		i,
+		m = array.length;
 	while (m) {
 		i = Math.floor(Math.random() * m--);
 		t = array[m];
@@ -503,26 +525,25 @@ function shuffle(array) {
 	return array;
 }
 
-
 ///// ----- HTTP SERVER ----- /////
 // setup rate limiter, max of 50 resource requests per minute
-const RateLimit = require('express-rate-limit');
+const RateLimit = require("express-rate-limit");
 let limiter = new RateLimit({
 	windowMs: 60 * 1000,
-	max: 50
+	max: 50,
 });
 
 // apply rate limiter to all resource requests
 app.use(limiter);
 
 // handle requests
-app.get('/', (req, res) => {
-	res.sendFile(path.join(__dirname + '/index.html'));
+app.get("/", (req, res) => {
+	res.sendFile(path.join(__dirname + "/index.html"));
 });
-app.get('/help.html', (req, res) => {
-	res.sendFile(path.join(__dirname + '/help.html'));
+app.get("/help.html", (req, res) => {
+	res.sendFile(path.join(__dirname + "/help.html"));
 });
-app.use(express.static('static'));
+app.use(express.static("static"));
 
 // Open server to manage server things
 server.listen(process.env.PORT ?? 80);
