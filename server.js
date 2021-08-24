@@ -309,7 +309,7 @@ io.on("connection", (socket) => {
 		if (socket.id === ROOMS[_roomCode].host) {
 			// Ensure book ID is valid
 			let _book = xss(data.book.toString());
-			if (_book in Object.keys(ROOMS[_roomCode].books)) {
+			if (_book in ROOMS[_roomCode].books) {
 				// Begin presenting book
 				ROOMS[_roomCode].page = -1;
 				if (data.host) {
