@@ -2,8 +2,9 @@
 
 <html lang="en">
 <head>
-	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
+	<meta charset="utf-8">
 	<title>Open Picturephone</title>
+	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
 	<div class="flex center" id="join" style="max-width:20em; margin:auto;">
@@ -25,8 +26,8 @@
 	</div>
 
 	<div class="flex hidden" hidden id="game" style="flex-wrap:wrap;">
+		<!-- SIDEBAR -->
 		<aside class="flex">
-			<!-- SIDEBAR -->
 			<header style="padding:.5em 0">
 				<h1 class="center">Open Picturephone</h1>
 			</header>
@@ -49,13 +50,14 @@
 			<section class="boxlet hidden" hidden id="books">
 				<h2>Books</h2>
 				<ul id="booksList"></ul>
-				<input class="hidden" hidden id="download" disabled="disabled" style="font-size:1em; display:block;"
+				<input class="hidden" hidden id="download" style="font-size:1em; display:block;"
 							 type="button" value="Download all">
 			</section>
 			<footer style="text-align:center; padding:.5em;">
 				<a href="https://github.com/darkrilin/open-picturephone">&copy; darkrilin 2021</a>
 			</footer>
 		</aside>
+		<!-- GAME AREA -->
 		<main>
 			<!-- LOBBY/SETUP -->
 			<section class="flex box" id="setup" style="width:23em; margin:auto;">

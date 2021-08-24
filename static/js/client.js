@@ -380,6 +380,8 @@ SOCKET.on("presentFinish", () => {
 /// --- END --- ///
 // Game finish event
 SOCKET.on("finish", () => {
+	console.log("Started new game");
+
 	// Reset game data
 	for (let _ in BOOKS) {
 		delete BOOKS[_];
@@ -402,6 +404,7 @@ SOCKET.on("finish", () => {
 	byId("previousWrite").src = "";
 	byId("inputTitle").disabled = false;
 	byId("statusPage").textContent = "1";
+	byId("finish").disabled = true;
 
 	show("setup");
 	show("invite");
@@ -613,8 +616,11 @@ function updateBooks() {
 			_bookDL.type = "button";
 			_bookDL.value = "Download";
 			_bookDL.classList.add("download");
-			_bookDL.id = "d" + _id;
-			_bookDL.disabled = true;
+			(function (i) {
+				_bookDL.addEventListener("click", () => {
+					download([i]);
+				});
+			})(_id);
 
 			// Add to DOM
 			_book.appendChild(_bookTitle);
@@ -1212,6 +1218,34 @@ function show(e) {
 			}
 		}
 	});
+
+	// Download: Download all books
+	byId("download").addEventListener("click", () => {
+		download(Object.keys(BOOKS));
+	});
+}
+
+// Download books in a condensed HTML file
+function download(books) {
+	console.log(books);
+
+	// Generate contents for each book
+	let filename = "picturephone_" + Date.now() + ".html";
+	let html =
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Test</title></head><body>';
+	html += books.join(", ");
+	html += "</body></html>";
+
+	// Add to hidden dom element in the body
+	let element = document.createElement("a");
+	element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
+	element.setAttribute("download", filename);
+	element.style.display = "none";
+
+	// Save as file
+	document.body.appendChild(element);
+	element.click();
+	document.body.removeChild(element);
 }
 
 /// --- CANVAS --- ///
