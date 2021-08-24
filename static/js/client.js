@@ -143,6 +143,8 @@ SOCKET.on("startGame", (data) => {
 	// Update round status
 	show("status");
 	byId("statusTitle").textContent = byId("inputTitle").value = BOOKS[ID].title;
+	byId("statusPage").textContent = "1";
+	byId("statusPageMax").textContent = ROOM.settings.pageCount;
 	byId("waitDisplay").textContent = (Object.keys(USERS).length + 1).toString();
 
 	// Show first round input
@@ -368,16 +370,48 @@ SOCKET.on("presentFinish", () => {
 	ROUND.book.p = true;
 
 	// If all books have been presented, allow host to return to lobby
-	/*
 	let _done = true;
 	Object.keys(BOOKS).forEach((e) => {
 		_done = _done && BOOKS[e].p;
 	});
 	byId("finish").disabled = !_done;
-	 */
 });
 
 /// --- END --- ///
+// Game finish event
+SOCKET.on("finish", () => {
+	// Reset game data
+	for (let _ in BOOKS) {
+		delete BOOKS[_];
+	}
+	for (let _ in ROUND) {
+		delete ROUND[_];
+	}
+
+	// Reset layout
+	hide("present");
+	hide("books");
+	hide("download");
+
+	hide("previous");
+	hide("previousDraw");
+	hide("previousWrite");
+	show("title");
+
+	byId("previousDraw").textContent = "";
+	byId("previousWrite").src = "";
+	byId("inputTitle").disabled = false;
+	byId("statusPage").textContent = "1";
+
+	show("setup");
+	show("invite");
+
+	// Force Update DOM
+	updatePlayers();
+	updateHost();
+	updateSettings();
+});
+
 // Disconnect from the server
 SOCKET.on("disconnect", (data) => {
 	// Determine which disconnect has occurred and display relevant error
@@ -392,6 +426,7 @@ SOCKET.on("disconnect", (data) => {
 			break;
 		case "transport close":
 			alert("Lost connection to server.");
+			window.location.reload(true);
 			break;
 		case "server full":
 			alert("Server full! Can't connect.");
@@ -462,10 +497,7 @@ function updateSettings() {
 	byId("firstPageDisplay").value = ROOM.settings.firstPage;
 
 	// Pages per book
-	byId("pageCount").value =
-		byId("pageCountDisplay").textContent =
-		byId("statusPageMax").textContent =
-			ROOM.settings.pageCount;
+	byId("pageCount").value = byId("pageCountDisplay").textContent = ROOM.settings.pageCount;
 
 	// Page assignment
 	document.querySelectorAll("input[name=pageOrder]").forEach((elem) => {
@@ -1166,6 +1198,18 @@ function show(e) {
 	byId("inputPresentFinish").addEventListener("click", () => {
 		if (ID === ROUND.presenter) {
 			SOCKET.emit("presentFinish", { key: SESSION_KEY });
+		}
+	});
+
+	// Present: Finish game, return to lobby
+	byId("finish").addEventListener("click", () => {
+		// Ensure user is host
+		if (ID === ROOM.host) {
+			// Confirm the host really wants to end the game
+			if (window.confirm("Are you sure you want to end this game and return to the lobby?")) {
+				// Finish game
+				SOCKET.emit("finish", { key: SESSION_KEY });
+			}
 		}
 	});
 }
