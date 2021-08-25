@@ -1226,26 +1226,69 @@ function show(e) {
 }
 
 // Download books in a condensed HTML file
-function download(books) {
-	console.log(books);
-
+function download(bookIDs) {
 	// Generate contents for each book
 	let filename = "picturephone_" + Date.now() + ".html";
 	let html =
-		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Test</title></head><body>';
-	html += books.join(", ");
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
+	for (let _id of bookIDs) {
+		// Iterate over each book and generate HTML for it
+		let _book = document.createElement("article");
+
+		// Book header information
+		let _bookHeader = document.createElement("header");
+		let _title = document.createElement("h1");
+		let _authors = document.createElement("h4");
+		let _names = [];
+		_title.textContent = BOOKS[_id].title;
+		BOOKS[_id].book.forEach((_page) => {
+			let _n = getName(_page.author);
+			if (_names.indexOf(_n) === -1) {
+				_names.push(_n);
+			}
+		});
+		_authors.textContent = "by " + _names.join(", ");
+		_bookHeader.appendChild(_title);
+		_bookHeader.appendChild(_authors);
+
+		// Book content / pages
+		let _pages = document.createElement("ol");
+		BOOKS[_id].book.forEach((_p) => {
+			// Create page
+			let _page = document.createElement("li");
+			switch (_p.mode) {
+				case "Write":
+					_page.textContent = _p.value;
+					_page.classList.add("write");
+					break;
+				case "Draw":
+					let _img = document.createElement("img");
+					_img.src = _p.value;
+					_page.appendChild(_img);
+					_page.classList.add("draw");
+					break;
+			}
+			_pages.appendChild(_page);
+		});
+
+		// Add book to HTML
+		_book.appendChild(_bookHeader);
+		_book.appendChild(_pages);
+		html += _book.outerHTML;
+		html += "<hr>";
+	}
 	html += "</body></html>";
 
 	// Add to hidden dom element in the body
-	let element = document.createElement("a");
-	element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
-	element.setAttribute("download", filename);
-	element.style.display = "none";
+	let _element = document.createElement("a");
+	_element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
+	_element.setAttribute("download", filename);
+	_element.style.display = "none";
 
 	// Save as file
-	document.body.appendChild(element);
-	element.click();
-	document.body.removeChild(element);
+	document.body.appendChild(_element);
+	_element.click();
+	document.body.removeChild(_element);
 }
 
 /// --- CANVAS --- ///
