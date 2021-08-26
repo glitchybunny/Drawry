@@ -270,7 +270,13 @@ ul {
 }
 
 /* IDS */
+#canvas {
+	position: relative;
+	border: .12em solid #234567;
+}
+
 #canvasBase, #previousDraw {
+	display: block;
 	height: calc(100vh - 18em);
 	min-width: 20em;
 	min-height: 15em;
@@ -365,6 +371,59 @@ ul {
 
 #you {
 	font-weight: bold;
+}
+
+/* DRAWING */
+[id^=tool] {
+	display: block;
+	width: 2em;
+	height: 2em;
+	margin: .2em !important;
+	padding: 0 !important;
+	border: none;
+	outline: .12em solid #012345;
+	background: #6789AB url(/img/tools.png) no-repeat top left;
+	background-size: auto 4em;
+}
+
+[id^=tool]:hover {
+	z-index: 1;
+	outline: .12em solid #89ABCD;
+	cursor: pointer;
+}
+
+[id^=tool]:disabled {
+	opacity: 40%;
+	outline: .12em solid #012345;
+	background-position-y: top !important;
+	cursor: default;
+}
+
+[id^=tool]:active, .selected {
+	background-position-y: bottom;
+}
+
+#toolErase {
+	background-position-x: -2em;
+}
+
+#toolFill {
+	background-position-x: -4em;
+}
+
+#toolUndo, #toolRedo {
+	width: 1em;
+	height: 1em;
+	margin: 0 .06em !important;
+	background-size: auto 2em;
+}
+
+#toolUndo {
+	background-position-x: -3em;
+}
+
+#toolRedo {
+	background-position-x: -4em;
 }
 
 /* OVERRIDES */
