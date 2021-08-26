@@ -1018,10 +1018,10 @@ function show(e) {
 	});
 
 	function changeTool(id) {
-		document.querySelectorAll(".toolSelected").forEach((e) => {
-			e.classList.remove("toolSelected");
+		document.querySelectorAll(".selected").forEach((e) => {
+			e.classList.remove("selected");
 		});
-		id.classList.add("toolSelected");
+		id.classList.add("selected");
 	}
 
 	// Draw: Paint tool
