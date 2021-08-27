@@ -27,7 +27,9 @@ const BOOKS = {};
 const ROUND = {};
 const DRAW = {
 	tool: TOOL.PAINT,
+	brush: undefined,
 	color: "#000000",
+	colorHistory: [],
 	width: 6,
 	undo: [],
 	redo: [],
@@ -661,12 +663,48 @@ function updateInput() {
 			DRAW.undo = [];
 			byId("toolUndo").disabled = true;
 			byId("toolRedo").disabled = true;
+			updatePalette();
 			resizeCanvas();
 			break;
 	}
 
 	// Enable submit button
 	byId("inputSubmit").disabled = false;
+}
+
+// Update color input/palette
+function updatePalette() {
+	// Change which drawing inputs are available depending on the palette
+	switch (ROOM.settings.palette) {
+		case "No palette":
+		default:
+			// No palette, let users select whatever colors they want
+			byId("toolColor").disabled = false;
+			byId("toolColor").style.display = "block";
+
+			// Keep track of color history
+			let _history = byId("colorHistory");
+			_history.innerHTML = "";
+
+			for (let i = 0; i < 16; i++) {
+				let _elem = document.createElement("input");
+				_elem.classList.add("colorSmall");
+
+				if (DRAW.colorHistory[i]) {
+					_elem.style.backgroundColor = DRAW.colorHistory[i];
+					(function (c) {
+						_elem.addEventListener("click", () => {
+							changeColor(c);
+						});
+					})(DRAW.colorHistory[i]);
+				} else {
+					_elem.disabled = true;
+				}
+				_history.appendChild(_elem);
+			}
+
+			break;
+	}
 }
 
 // Update presenting page
@@ -1006,23 +1044,9 @@ function show(e) {
 
 	/// DRAW
 	// Draw: Color picker
-	byId("toolColor").addEventListener("input", (event) => {
-		// Update draw color
-		DRAW.color = event.target.value;
-
-		// Update everything to use new color
-		event.target.style.borderColor = DRAW.color;
-		if (DRAW.tool !== TOOL.ERASE) {
-			CANVAS.freeDrawingBrush.color = DRAW.color;
-		}
+	byId("toolColor").addEventListener("change", (event) => {
+		changeColor(event.target.value);
 	});
-
-	function changeTool(id) {
-		document.querySelectorAll(".selected").forEach((e) => {
-			e.classList.remove("selected");
-		});
-		id.classList.add("selected");
-	}
 
 	// Draw: Paint tool
 	byId("toolPaint").addEventListener("click", (event) => {
@@ -1055,7 +1079,7 @@ function show(e) {
 		// Flood fill tool
 		// 1. Get raster image of the canvas
 		// 2. Run flood fill algorithm on it
-		// 3. Convert newly coloured pixels into an image
+		// 3. Convert newly colored pixels into an image
 		// 4. Place image back onto fabric.js canvas
 	});
 
@@ -1168,6 +1192,33 @@ function show(e) {
 			SOCKET.emit("presentFinish", { key: SESSION_KEY });
 		}
 	});
+}
+
+// Draw: Update which color is selected
+function changeColor(color) {
+	// Update draw color
+	let _oldColor = DRAW.color;
+	DRAW.color = color;
+
+	// Update everything to use new color
+	byId("toolColor").value = color;
+	if (DRAW.tool !== TOOL.ERASE) {
+		CANVAS.freeDrawingBrush.color = color;
+	}
+
+	// Update history
+	DRAW.colorHistory.unshift(_oldColor); // add previous color to history
+	DRAW.colorHistory = DRAW.colorHistory.filter((i) => i !== color); // remove new color (if in history)
+	DRAW.colorHistory.slice(0, 16); // limit length
+	updatePalette();
+}
+
+// Draw: Update which tool is selected
+function changeTool(id) {
+	document.querySelectorAll(".selected").forEach((e) => {
+		e.classList.remove("selected");
+	});
+	id.classList.add("selected");
 }
 
 /// --- CANVAS --- ///
