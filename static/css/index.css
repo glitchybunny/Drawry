@@ -383,7 +383,7 @@ ul {
 	border: none;
 	outline: .12em solid #012345;
 	background: #6789AB url(/img/tools.png) no-repeat top left;
-	background-size: auto 4em;
+	background-size: auto 6em;
 }
 
 [id^=tool]:hover {
@@ -393,14 +393,15 @@ ul {
 }
 
 [id^=tool]:disabled {
-	opacity: 40%;
-	outline: .12em solid #012345;
-	background-position-y: top !important;
+	z-index: -1;
+	outline: .12em solid #1f4163;
+	background-color: #486a8c;
+	background-position-y: bottom !important;
 	cursor: default;
 }
 
 [id^=tool]:active, .selected {
-	background-position-y: bottom;
+	background-position-y: center;
 }
 
 #toolErase {
@@ -415,7 +416,7 @@ ul {
 	width: 1em;
 	height: 1em;
 	margin: 0 .06em !important;
-	background-size: auto 2em;
+	background-size: auto 3em;
 }
 
 #toolUndo {

@@ -772,10 +772,10 @@ function show(e) {
 
 	/// JOIN
 	// Join: Input filter
-	function setInputFilter(textbox, inputFilter) {
+	function setInputFilter(textBox, inputFilter) {
 		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(
 			(event) => {
-				textbox.addEventListener(event, function () {
+				textBox.addEventListener(event, function () {
 					if (inputFilter(this.value)) {
 						this.oldValue = this.value;
 						this.oldSelectionStart = this.selectionStart;
@@ -1041,7 +1041,7 @@ function show(e) {
 		DRAW.tool = TOOL.ERASE;
 		changeTool(event.target);
 
-		// Erasing is just drawing white :trollface:
+		// Erasing is just drawing white
 		CANVAS.freeDrawingBrush.color = "#FFFFFF";
 		CANVAS.freeDrawingBrush.width = DRAW.width * 4;
 	});
@@ -1056,7 +1056,7 @@ function show(e) {
 		// 1. Get raster image of the canvas
 		// 2. Run flood fill algorithm on it
 		// 3. Convert newly coloured pixels into an image
-		// 4. Place image back onto fabricjs canvas
+		// 4. Place image back onto fabric.js canvas
 	});
 
 	// Draw: Undo tool
