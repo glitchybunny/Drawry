@@ -206,23 +206,26 @@
 				</section>
 				<section class="flex box hidden" hidden id="draw">
 					<label style="font-weight:bold;">Drawing</label>
-					<div style="position:relative;">
-						<img alt="" id="canvasBase" src="img/base.png">
-						<canvas height="600" id="c" width="800"></canvas>
-					</div>
-					<div class="hidden" hidden id="drawTools">
-						<input autocomplete="off" id="toolColor" title="Colour picker" type="color">
-						<div>
-							<input autocomplete="off" class="toolSelected" id="toolPaint" title="Draw tool (D)"
+					<div style="display:flex;">
+						<div id="palette">
+							<input autocomplete="off" id="toolColor" title="Colour picker" type="color" value="Pick a colour">
+							<div id="colorHistory"></div>
+						</div>
+						<div id="canvas">
+							<img alt="" id="canvasBase" src="img/base.png">
+							<canvas height="600" id="c" width="800"></canvas>
+						</div>
+						<div id="stuff">
+							<div style="display:flex; flex-flow:row nowrap; justify-content:center;">
+								<input autocomplete="off" disabled="disabled" id="toolUndo" title="Undo (Z)"
+											 type="button">
+								<input autocomplete="off" disabled="disabled" id="toolRedo" title="Redo (Y)"
+											 type="button">
+							</div>
+							<input autocomplete="off" class="selected" id="toolPaint" title="Draw tool (D)"
 										 type="button">
 							<input autocomplete="off" id="toolErase" title="Erase tool (E)" type="button">
-							<input autocomplete="off" disabled="disabled" id="toolFill" title="Fill tool (F)"
-										 type="button">
-						</div>
-						<div>
-							<input autocomplete="off" disabled="disabled" id="toolUndo" title="Undo (Z)"
-										 type="button">
-							<input autocomplete="off" disabled="disabled" id="toolRedo" title="Redo (Y)"
+							<input disabled="disabled" autocomplete="off" id="toolFill" title="Fill tool (F)"
 										 type="button">
 						</div>
 					</div>
