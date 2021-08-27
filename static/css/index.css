@@ -324,6 +324,13 @@ ul {
 	cursor: wait;
 }
 
+#palette, #stuff {
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	width: 3em;
+}
+
 #presentControls {
 	margin-bottom: -.75em;
 }
@@ -374,27 +381,33 @@ ul {
 }
 
 /* DRAWING */
-[id^=tool] {
+[id^=tool], .colorSmall {
 	display: block;
-	width: 2em;
-	height: 2em;
-	margin: .2em !important;
+	width: 2.24em;
+	height: 2.24em;
+	margin: 0 !important;
 	padding: 0 !important;
-	border: none;
-	outline: .12em solid #012345;
+	border: .12em solid #012345;
+	outline: none;
 	background: #6789AB url(/img/tools.png) no-repeat top left;
 	background-size: auto 6em;
 }
 
-[id^=tool]:hover {
+.colorSmall {
+	width: 1em;
+	height: 1em;
+	background: none;
+}
+
+[id^=tool]:hover, .colorSmall:hover {
 	z-index: 1;
-	outline: .12em solid #89ABCD;
+	border-color: #89ABCD;
 	cursor: pointer;
 }
 
-[id^=tool]:disabled {
+[id^=tool]:disabled, .colorSmall:disabled {
 	z-index: -1;
-	outline: .12em solid #1f4163;
+	border-color: #1f4163;
 	background-color: #486a8c;
 	background-position-y: bottom !important;
 	cursor: default;
@@ -413,18 +426,26 @@ ul {
 }
 
 #toolUndo, #toolRedo {
-	width: 1em;
-	height: 1em;
-	margin: 0 .06em !important;
+	width: 1.24em;
+	height: 1.24em;
 	background-size: auto 3em;
+	background-position-y: top;
 }
 
 #toolUndo {
 	background-position-x: -3em;
+	margin-right: -.12em !important;
 }
 
 #toolRedo {
 	background-position-x: -4em;
+}
+
+#colorHistory {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+	margin: .12em 0;
 }
 
 /* OVERRIDES */
