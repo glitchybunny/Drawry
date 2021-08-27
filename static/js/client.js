@@ -771,6 +771,33 @@ function updatePresentList() {
 	}
 }
 
+// Change which color is selected
+function changeColor(color) {
+	// Update draw color
+	let _oldColor = DRAW.color;
+	DRAW.color = color;
+
+	// Update everything to use new color
+	byId("toolColor").value = color;
+	if (DRAW.tool !== TOOL.ERASE) {
+		CANVAS.freeDrawingBrush.color = color;
+	}
+
+	// Update history
+	DRAW.colorHistory.unshift(_oldColor); // add previous color to history
+	DRAW.colorHistory = DRAW.colorHistory.filter((i) => i !== color); // remove new color (if in history)
+	DRAW.colorHistory.slice(0, 16); // limit length
+	updatePalette();
+}
+
+// Change which tool is selected
+function changeTool(id) {
+	document.querySelectorAll(".selected").forEach((e) => {
+		e.classList.remove("selected");
+	});
+	id.classList.add("selected");
+}
+
 // Hide an element in the DOM
 function hide(e) {
 	if (typeof e === "string") {
@@ -1192,33 +1219,6 @@ function show(e) {
 			SOCKET.emit("presentFinish", { key: SESSION_KEY });
 		}
 	});
-}
-
-// Draw: Update which color is selected
-function changeColor(color) {
-	// Update draw color
-	let _oldColor = DRAW.color;
-	DRAW.color = color;
-
-	// Update everything to use new color
-	byId("toolColor").value = color;
-	if (DRAW.tool !== TOOL.ERASE) {
-		CANVAS.freeDrawingBrush.color = color;
-	}
-
-	// Update history
-	DRAW.colorHistory.unshift(_oldColor); // add previous color to history
-	DRAW.colorHistory = DRAW.colorHistory.filter((i) => i !== color); // remove new color (if in history)
-	DRAW.colorHistory.slice(0, 16); // limit length
-	updatePalette();
-}
-
-// Draw: Update which tool is selected
-function changeTool(id) {
-	document.querySelectorAll(".selected").forEach((e) => {
-		e.classList.remove("selected");
-	});
-	id.classList.add("selected");
 }
 
 /// --- CANVAS --- ///
