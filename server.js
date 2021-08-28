@@ -328,7 +328,7 @@ io.on("connection", (socket) => {
 	});
 
 	// Go to next page of presentation
-	socket.on("presentForward", () => {
+	socket.on("presentForward", (data) => {
 		if (process.env.VERBOSE) {
 			console.log("presentForward", CLIENTS[socket.id].id);
 		}
@@ -345,7 +345,7 @@ io.on("connection", (socket) => {
 	});
 
 	// Go to previous page of presentation (hide most recently shown page)
-	socket.on("presentBack", () => {
+	socket.on("presentBack", (data) => {
 		if (process.env.VERBOSE) {
 			console.log("presentBack", CLIENTS[socket.id].id);
 		}
@@ -362,7 +362,7 @@ io.on("connection", (socket) => {
 	});
 
 	// Take over presentation as host
-	socket.on("presentOverride", () => {
+	socket.on("presentOverride", (data) => {
 		if (process.env.VERBOSE) {
 			console.log("presentOverride", CLIENTS[socket.id].id);
 		}
@@ -377,7 +377,7 @@ io.on("connection", (socket) => {
 	});
 
 	// Return to lobby for next book
-	socket.on("presentFinish", () => {
+	socket.on("presentFinish", (data) => {
 		if (process.env.VERBOSE) {
 			console.log("presentFinish", CLIENTS[socket.id].id);
 		}
@@ -393,6 +393,23 @@ io.on("connection", (socket) => {
 	});
 
 	/// --- END --- ///
+	// Listen for game finish events
+	socket.on("finish", (data) => {
+		if (process.env.VERBOSE) {
+			console.log("finish", CLIENTS[socket.id].id);
+		}
+
+		// Make sure request is from the host
+		let _roomCode = CLIENTS[socket.id].roomCode;
+		if (socket.id === ROOMS[_roomCode].host) {
+			ROOMS[_roomCode].state = STATE.LOBBY;
+			ROOMS[_roomCode].page = 0;
+			ROOMS[_roomCode].submitted = 0;
+			ROOMS[_roomCode].books = undefined;
+			io.to(_roomCode).emit("finish");
+		}
+	});
+
 	// Listen for disconnect events
 	socket.on("disconnect", (data) => {
 		if (process.env.VERBOSE) {
@@ -531,11 +548,11 @@ function shuffle(array) {
 }
 
 ///// ----- HTTP SERVER ----- /////
-// setup rate limiter, max of 50 resource requests per minute
+// setup rate limiter, default max of 50 resource requests per minute
 const RateLimit = require("express-rate-limit");
 let limiter = new RateLimit({
 	windowMs: 60 * 1000,
-	max: 50,
+	max: process.env.RATE_LIMIT ?? 50,
 });
 
 // apply rate limiter to all resource requests
