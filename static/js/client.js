@@ -781,6 +781,7 @@ function changeColor(color) {
 	byId("toolColor").value = color;
 	if (DRAW.tool !== TOOL.ERASE) {
 		CANVAS.freeDrawingBrush.color = color;
+		MOUSE_CURSOR.set({ fill: color });
 	}
 
 	// Update history
@@ -796,6 +797,19 @@ function changeTool(id) {
 		e.classList.remove("selected");
 	});
 	id.classList.add("selected");
+}
+
+// Change size of the tool
+function changeSize(size) {
+	// Validate size
+	size = size ? Math.min(Math.max(size, 1), 99) : 4;
+	DRAW.width = size;
+
+	// Update brush size
+	CANVAS.freeDrawingBrush.width = size;
+	MOUSE_CURSOR.set({ radius: size / 2, top: 300, left: 400 })
+		.setCoords()
+		.canvas.renderAll();
 }
 
 // Hide an element in the DOM
@@ -1070,38 +1084,35 @@ function show(e) {
 	});
 
 	/// DRAW
-	// Draw: Color picker
-	byId("toolColor").addEventListener("change", (event) => {
-		changeColor(event.target.value);
-	});
-
 	// Draw: Paint tool
-	byId("toolPaint").addEventListener("click", (event) => {
+	byId("toolPaint").addEventListener("click", (e) => {
 		// Change to paint tool
 		DRAW.tool = TOOL.PAINT;
-		changeTool(event.target);
+		changeTool(e.target);
 
 		// Draw with so many beautiful colors
 		CANVAS.freeDrawingBrush.color = DRAW.color;
 		CANVAS.freeDrawingBrush.width = DRAW.width;
+		MOUSE_CURSOR.set({ fill: DRAW.color, stroke: "black" });
 	});
 
 	// Draw: Erase tool
-	byId("toolErase").addEventListener("click", (event) => {
+	byId("toolErase").addEventListener("click", (e) => {
 		// Change to erase tool
 		DRAW.tool = TOOL.ERASE;
-		changeTool(event.target);
+		changeTool(e.target);
 
 		// Erasing is just drawing white
 		CANVAS.freeDrawingBrush.color = "#FFFFFF";
-		CANVAS.freeDrawingBrush.width = DRAW.width * 4;
+		CANVAS.freeDrawingBrush.width = DRAW.width;
+		MOUSE_CURSOR.set({ fill: "white", stroke: "grey" });
 	});
 
 	// Draw: Fill tool
-	byId("toolFill").addEventListener("click", (event) => {
+	byId("toolFill").addEventListener("click", (e) => {
 		// Change to fill tool
 		DRAW.tool = TOOL.FILL;
-		changeTool(event.target);
+		changeTool(e.target);
 
 		// Flood fill tool
 		// 1. Get raster image of the canvas
@@ -1111,7 +1122,7 @@ function show(e) {
 	});
 
 	// Draw: Undo tool
-	byId("toolUndo").addEventListener("click", (event) => {
+	byId("toolUndo").addEventListener("click", (e) => {
 		// Undo last thingy
 		if (DRAW.undo.length) {
 			// Get last command and undo it
@@ -1131,15 +1142,15 @@ function show(e) {
 
 			// If there's nothing left to undo, disable button
 			if (DRAW.undo.length === 0) {
-				event.target.disabled = true;
+				e.target.disabled = true;
 			}
 		} else {
-			event.target.disabled = true;
+			e.target.disabled = true;
 		}
 	});
 
 	// Draw: Redo tool
-	byId("toolRedo").addEventListener("click", (event) => {
+	byId("toolRedo").addEventListener("click", (e) => {
 		// Redo last undo
 		if (DRAW.redo.length) {
 			// Get last command and redo it
@@ -1157,17 +1168,17 @@ function show(e) {
 
 			// If there's nothing left to undo, disable button
 			if (DRAW.redo.length === 0) {
-				event.target.disabled = true;
+				e.target.disabled = true;
 			}
 		} else {
-			event.target.disabled = true;
+			e.target.disabled = true;
 		}
 	});
 
 	// Draw: Use tools with keyboard
-	document.addEventListener("keydown", (event) => {
+	document.addEventListener("keydown", (e) => {
 		if (ROUND.mode === "Draw" && document.activeElement !== byId("inputTitle")) {
-			switch (event.code) {
+			switch (e.code) {
 				case "KeyD":
 					byId("toolPaint").click();
 					break;
@@ -1185,6 +1196,27 @@ function show(e) {
 					break;
 			}
 		}
+	});
+
+	// Draw: Color picker
+	byId("toolColor").addEventListener("change", (e) => {
+		changeColor(e.target.value);
+	});
+
+	// Draw: Brush size
+	byId("brushSize").addEventListener("input", (e) => {
+		// Update brush width
+		changeSize(parseInt(e.target.value));
+
+		// Update range input
+		byId("brushSizeRange").value = Math.round(Math.sqrt(DRAW.width) * 10) / 10;
+	});
+	byId("brushSizeRange").addEventListener("input", (e) => {
+		// Update brush width
+		changeSize(Math.round(parseFloat(e.target.value) ** 2));
+
+		// Update text input
+		byId("brushSize").value = DRAW.width;
 	});
 
 	/// PRESENT
@@ -1225,10 +1257,31 @@ function show(e) {
 // Canvas drawing
 const CANVAS = new fabric.Canvas("c", {
 	isDrawingMode: true,
+	freeDrawingCursor: "none",
 });
 CANVAS.setBackgroundColor("#FFFFFF");
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
+
+// Add a cursor layer (to show the current brush/tool)
+const CURSOR = new fabric.StaticCanvas("cursor");
+const MOUSE_CURSOR = new fabric.Circle({
+	left: -100,
+	top: -100,
+	radius: DRAW.width / 2,
+	fill: DRAW.color,
+	stroke: "black",
+	originX: "center",
+	originY: "center",
+});
+CURSOR.add(MOUSE_CURSOR);
+CANVAS.on("mouse:move", (obj) => {
+	let mouse = obj.absolutePointer;
+	MOUSE_CURSOR.set({ top: mouse.y, left: mouse.x }).setCoords().canvas.renderAll();
+});
+CANVAS.on("mouse:out", () => {
+	MOUSE_CURSOR.set({ top: -100, left: -100 }).setCoords().canvas.renderAll();
+});
 
 // Resize the drawing canvas
 window.addEventListener("resize", resizeCanvas);
@@ -1252,6 +1305,8 @@ function resizeCanvas() {
 		let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
 		CANVAS.setDimensions({ width: _w, height: _h });
 		CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+		CURSOR.setDimensions({ width: _w, height: _h });
+		CURSOR.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
 		_base.style.height = _h + "px";
 		byId("previousWrite").style.maxWidth = _w + "px"; //"calc(" + _w + "px + 10em)";
 	}
@@ -1279,10 +1334,10 @@ function record(type, object) {
 	}
 }
 
-CANVAS.on("path:created", (event) => {
-	record("path:created", event.path);
+CANVAS.on("path:created", (obj) => {
+	record("path:created", obj.path);
 });
 
-CANVAS.on("object:modified", (event) => {
-	record("object:modified", event);
+CANVAS.on("object:modified", (obj) => {
+	record("object:modified", obj);
 });

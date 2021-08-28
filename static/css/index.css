@@ -67,7 +67,7 @@ header {
 }
 
 hr {
-	width: 100%;
+	width: calc(100% - .5em);
 	margin: .5em auto;
 	border: 0;
 	border-bottom: .12em solid #234567;
@@ -205,7 +205,7 @@ ul {
 	text-align: start;
 }
 
-.canvas-container {
+.canvas-container, #cursor {
 	position: absolute !important;
 	top: 0;
 }
@@ -272,6 +272,7 @@ ul {
 /* IDS */
 #canvas {
 	position: relative;
+	height: min-content;
 	border: .12em solid #234567;
 }
 
@@ -280,6 +281,10 @@ ul {
 	height: calc(100vh - 18em);
 	min-width: 20em;
 	min-height: 15em;
+}
+
+#cursor {
+	pointer-events: none !important;
 }
 
 #draw, #write {
@@ -383,6 +388,7 @@ ul {
 /* DRAWING */
 [id^=tool], .colorSmall {
 	display: block;
+	box-sizing: border-box;
 	width: 2.24em;
 	height: 2.24em;
 	margin: 0 !important;
@@ -417,6 +423,11 @@ ul {
 	background-position-y: center;
 }
 
+#toolColor {
+	background-color: #345678;
+	background-image: none;
+}
+
 #toolErase {
 	background-position-x: -2em;
 }
@@ -446,6 +457,18 @@ ul {
 	flex-flow: row wrap;
 	justify-content: center;
 	margin: .12em 0;
+}
+
+#brushSize {
+	width: 2em;
+}
+
+#brushSizeRange {
+	width: 2.24em;
+	height: 6.72em;
+	margin: .12em 0;
+	writing-mode: bt-lr;
+	-webkit-appearance: slider-vertical;
 }
 
 /* OVERRIDES */
