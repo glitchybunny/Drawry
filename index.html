@@ -2,8 +2,9 @@
 
 <html lang="en">
 <head>
-	<meta charset="utf-8">
+  <meta charset="utf-8">
 	<title>Open Picturephone</title>
+	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
 	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -214,6 +215,7 @@
 						<div id="canvas">
 							<img alt="" id="canvasBase" src="img/base.png">
 							<canvas height="600" id="c" width="800"></canvas>
+							<canvas height="600" id="cursor" width="800"></canvas>
 						</div>
 						<div id="stuff">
 							<div style="display:flex; flex-flow:row nowrap; justify-content:center;">
@@ -227,6 +229,12 @@
 							<input autocomplete="off" id="toolErase" title="Erase tool (E)" type="button">
 							<input disabled="disabled" autocomplete="off" id="toolFill" title="Fill tool (F)"
 										 type="button">
+
+							<!-- Tool options -->
+							<hr>
+							<input class="vertical" type="range" min="1" max="10" value="2" step="0.1" orient="vertical"
+										 autocomplete="off" id="brushSizeRange">
+							<input type="number" min="1" max="99" value="4" autocomplete="off" id="brushSize">
 						</div>
 					</div>
 				</section>
