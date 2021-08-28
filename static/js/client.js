@@ -145,6 +145,8 @@ SOCKET.on("startGame", (data) => {
 	// Update round status
 	show("status");
 	byId("statusTitle").textContent = byId("inputTitle").value = BOOKS[ID].title;
+	byId("statusPage").textContent = "1";
+	byId("statusPageMax").textContent = ROOM.settings.pageCount;
 	byId("waitDisplay").textContent = (Object.keys(USERS).length + 1).toString();
 
 	// Show first round input
@@ -370,16 +372,51 @@ SOCKET.on("presentFinish", () => {
 	ROUND.book.p = true;
 
 	// If all books have been presented, allow host to return to lobby
-	/*
 	let _done = true;
 	Object.keys(BOOKS).forEach((e) => {
 		_done = _done && BOOKS[e].p;
 	});
 	byId("finish").disabled = !_done;
-	 */
 });
 
 /// --- END --- ///
+// Game finish event
+SOCKET.on("finish", () => {
+	console.log("Started new game");
+
+	// Reset game data
+	for (let _ in BOOKS) {
+		delete BOOKS[_];
+	}
+	for (let _ in ROUND) {
+		delete ROUND[_];
+	}
+
+	// Reset layout
+	hide("present");
+	hide("books");
+	hide("download");
+
+	hide("previous");
+	hide("previousDraw");
+	hide("previousWrite");
+	show("title");
+
+	byId("previousDraw").textContent = "";
+	byId("previousWrite").src = "";
+	byId("inputTitle").disabled = false;
+	byId("statusPage").textContent = "1";
+	byId("finish").disabled = true;
+
+	show("setup");
+	show("invite");
+
+	// Force Update DOM
+	updatePlayers();
+	updateHost();
+	updateSettings();
+});
+
 // Disconnect from the server
 SOCKET.on("disconnect", (data) => {
 	// Determine which disconnect has occurred and display relevant error
@@ -394,6 +431,7 @@ SOCKET.on("disconnect", (data) => {
 			break;
 		case "transport close":
 			alert("Lost connection to server.");
+			window.location.reload(true);
 			break;
 		case "server full":
 			alert("Server full! Can't connect.");
@@ -464,10 +502,7 @@ function updateSettings() {
 	byId("firstPageDisplay").value = ROOM.settings.firstPage;
 
 	// Pages per book
-	byId("pageCount").value =
-		byId("pageCountDisplay").textContent =
-		byId("statusPageMax").textContent =
-			ROOM.settings.pageCount;
+	byId("pageCount").value = byId("pageCountDisplay").textContent = ROOM.settings.pageCount;
 
 	// Page assignment
 	document.querySelectorAll("input[name=pageOrder]").forEach((elem) => {
@@ -583,8 +618,11 @@ function updateBooks() {
 			_bookDL.type = "button";
 			_bookDL.value = "Download";
 			_bookDL.classList.add("download");
-			_bookDL.id = "d" + _id;
-			_bookDL.disabled = true;
+			(function (i) {
+				_bookDL.addEventListener("click", () => {
+					download([i]);
+				});
+			})(_id);
 
 			// Add to DOM
 			_book.appendChild(_bookTitle);
@@ -1251,6 +1289,89 @@ function show(e) {
 			SOCKET.emit("presentFinish", { key: SESSION_KEY });
 		}
 	});
+
+	// Present: Finish game, return to lobby
+	byId("finish").addEventListener("click", () => {
+		// Ensure user is host
+		if (ID === ROOM.host) {
+			// Confirm the host really wants to end the game
+			if (window.confirm("Are you sure you want to end this game and return to the lobby?")) {
+				// Finish game
+				SOCKET.emit("finish", { key: SESSION_KEY });
+			}
+		}
+	});
+
+	// Download: Download all books
+	byId("download").addEventListener("click", () => {
+		download(Object.keys(BOOKS));
+	});
+}
+
+// Download books in a condensed HTML file
+function download(bookIDs) {
+	// Generate contents for each book
+	let filename = "picturephone_" + Date.now() + ".html";
+	let html =
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
+	for (let _id of bookIDs) {
+		// Iterate over each book and generate HTML for it
+		let _book = document.createElement("article");
+
+		// Book header information
+		let _bookHeader = document.createElement("header");
+		let _title = document.createElement("h1");
+		let _authors = document.createElement("h4");
+		let _names = [];
+		_title.textContent = BOOKS[_id].title;
+		BOOKS[_id].book.forEach((_page) => {
+			let _n = getName(_page.author);
+			if (_names.indexOf(_n) === -1) {
+				_names.push(_n);
+			}
+		});
+		_authors.textContent = "by " + _names.join(", ");
+		_bookHeader.appendChild(_title);
+		_bookHeader.appendChild(_authors);
+
+		// Book content / pages
+		let _pages = document.createElement("ol");
+		BOOKS[_id].book.forEach((_p) => {
+			// Create page
+			let _page = document.createElement("li");
+			switch (_p.mode) {
+				case "Write":
+					_page.textContent = _p.value;
+					_page.classList.add("write");
+					break;
+				case "Draw":
+					let _img = document.createElement("img");
+					_img.src = _p.value;
+					_page.appendChild(_img);
+					_page.classList.add("draw");
+					break;
+			}
+			_pages.appendChild(_page);
+		});
+
+		// Add book to HTML
+		_book.appendChild(_bookHeader);
+		_book.appendChild(_pages);
+		html += _book.outerHTML;
+		html += "<hr>";
+	}
+	html += "</body></html>";
+
+	// Add to hidden dom element in the body
+	let _element = document.createElement("a");
+	_element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
+	_element.setAttribute("download", filename);
+	_element.style.display = "none";
+
+	// Save as file
+	document.body.appendChild(_element);
+	_element.click();
+	document.body.removeChild(_element);
 }
 
 /// --- CANVAS --- ///
