@@ -1,0 +1,34 @@
+First Page
+Whether the first page is a writing or drawing page
+    Write:
+        The first page is a text input
+    Draw:
+        The first page is a drawable canvas input
+
+Pages per book
+Number of pages in each book
+    2 - 20
+
+Page assignment
+The order in which pages are assigned to players
+    Normal:
+        Pages are assigned cyclically, as if each player is sitting
+        in a circle and passes the book to the next player
+        upon finishing their page
+    Random:
+        Pages are assigned semi-randomly, as if all the books are
+        shuffled after each page. Checks are in place to ensure
+        players don't get the same book more than once in a row.
+
+Color palette
+Whether there are color palette restrictions for the storybook
+    No palette:
+        Players are free to select any colors they wish to draw with
+
+Write time limit
+Time limit per writing page (in minutes)
+    0 - 15
+
+Draw time limit
+Time limit per drawing page (in minutes)
+    0 - 15
