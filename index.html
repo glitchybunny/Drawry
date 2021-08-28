@@ -2,9 +2,10 @@
 
 <html lang="en">
 <head>
+  <meta charset="utf-8">
+	<title>Open Picturephone</title>
 	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
 	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
-	<title>Open Picturephone</title>
 </head>
 <body>
 	<div class="flex center" id="join" style="max-width:20em; margin:auto;">
@@ -26,8 +27,8 @@
 	</div>
 
 	<div class="flex hidden" hidden id="game" style="flex-wrap:wrap;">
+		<!-- SIDEBAR -->
 		<aside class="flex">
-			<!-- SIDEBAR -->
 			<header style="padding:.5em 0">
 				<h1 class="center">Open Picturephone</h1>
 			</header>
@@ -50,13 +51,14 @@
 			<section class="boxlet hidden" hidden id="books">
 				<h2>Books</h2>
 				<ul id="booksList"></ul>
-				<input class="hidden" hidden id="download" disabled="disabled" style="font-size:1em; display:block;"
+				<input class="hidden" hidden id="download" style="font-size:1em; display:block;"
 							 type="button" value="Download all">
 			</section>
 			<footer style="text-align:center; padding:.5em;">
 				<a href="https://github.com/darkrilin/open-picturephone">&copy; darkrilin 2021</a>
 			</footer>
 		</aside>
+		<!-- GAME AREA -->
 		<main>
 			<!-- LOBBY/SETUP -->
 			<section class="flex box" id="setup" style="width:23em; margin:auto;">
@@ -181,9 +183,9 @@
 
 			<!-- GAMEPLAY -->
 			<section class="flex center hidden" hidden id="status">
-				<h2><span id="statusTitle"></span> - Page&nbsp;<span id="statusPage">1</span>/<span
+				<h2><span id="statusTitle"></span> - Page&nbsp;<span id="statusPage"></span>/<span
 					id="statusPageMax"></span></h2>
-				<h2 class="hidden" hidden id="statusTimer">⏳ 4:20</h2>
+				<h2 class="hidden" hidden id="statusTimer">⏳ 0:00</h2>
 			</section>
 			<div class="flex hidden" hidden id="gameplay">
 				<section class="flex box" id="title">
@@ -253,7 +255,7 @@
 						<table id="presentTable"></table>
 						<div class="center" style="margin:.5em">
 							<input disabled="disabled" id="finish" style="font-size:1em"
-										 type="button" value="Return to lobby" autocomplete="off">
+										 type="button" value="Play again?" autocomplete="off">
 						</div>
 					</div>
 					<div class="notHost">
@@ -287,7 +289,7 @@
 				</div>
 			</section>
 
-			<!-- WAITING -->
+			<!-- DIALOGS -->
 			<dialog id="wait" role="alertdialog">
 				<p class="center" style="display:block">
 					Waiting for others to finish their page...
