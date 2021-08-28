@@ -1055,7 +1055,11 @@ function show(e) {
 	// Game: Write textarea resizing
 	byId("inputWrite").addEventListener("input", (e) => {
 		e.target.style.height = "auto";
-		e.target.style.height = e.target.scrollHeight + "px";
+		if (e.target.scrollHeight) {
+			e.target.style.height = e.target.scrollHeight + "px";
+		} else {
+			e.target.style.height = "2em";
+		}
 	});
 
 	// Game: Submit page
