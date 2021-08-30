@@ -35,9 +35,6 @@ const DRAW = {
 	redo: [],
 };
 
-/// --- VARIABLES --- ///
-var name = undefined;
-
 // Ensure browser compatibility
 if (!("getContext" in document.createElement("canvas"))) {
 	let message =
@@ -85,7 +82,7 @@ SOCKET.on("joined", (data) => {
 	updateSettings();
 
 	// set cookies so game remembers the session (in case user accidentally closes tab and needs to rejoin)
-	Cookies.set("name", name);
+	Cookies.set("name", getName(ID));
 	Cookies.set("room", ROOM.code);
 	Cookies.set("id", ID);
 });
@@ -147,7 +144,7 @@ SOCKET.on("startGame", (data) => {
 	byId("statusTitle").textContent = byId("inputTitle").value = BOOKS[ID].title;
 	byId("statusPage").textContent = "1";
 	byId("statusPageMax").textContent = ROOM.settings.pageCount;
-	byId("waitDisplay").textContent = (Object.keys(USERS).length + 1).toString();
+	byId("waitDisplay").textContent = (Object.keys(USERS).length - 1).toString();
 
 	// Show first round input
 	updateInput();
@@ -171,7 +168,9 @@ SOCKET.on("page", (data) => {
 	byId("b" + data.id).classList.add("done");
 
 	// Update how many pages are left in the round
-	byId("waitDisplay").textContent = (parseInt(byId("waitDisplay").textContent) - 1).toString();
+	if (data.author !== ID) {
+		byId("waitDisplay").textContent = (parseInt(byId("waitDisplay").textContent) - 1).toString();
+	}
 });
 
 // Go to next page in books
@@ -197,7 +196,7 @@ SOCKET.on("pageForward", () => {
 	updateBooks();
 
 	// Show how many pages are left
-	byId("waitDisplay").textContent = Object.keys(USERS).length + 1;
+	byId("waitDisplay").textContent = (Object.keys(USERS).length - 1).toString();
 
 	// Set timer
 	// TODO: timers
@@ -234,11 +233,11 @@ SOCKET.on("presentBook", (data) => {
 	// Keep track of presentation
 	ROUND.book = BOOKS[data.book];
 	ROUND.page = -1;
-	ROUND.presenter = data.presenter;
+	ROOM.presenter = data.presenter;
 
 	// Get book title and authors
 	let _title = ROUND.book.title;
-	let _presenter = getName(ROUND.presenter);
+	let _presenter = getName(ROOM.presenter);
 	let _authors = [];
 	ROUND.book.book.forEach((_page) => {
 		let _author = getName(_page.author);
@@ -253,7 +252,7 @@ SOCKET.on("presentBook", (data) => {
 	byId("presenter").textContent = "Presented by " + _presenter;
 
 	// If you're the presenter, enable controls
-	if (ID === ROUND.presenter) {
+	if (ID === ROOM.presenter) {
 		show("presentControls");
 	} else if (ID === ROOM.host) {
 		// Otherwise, enable override if client is the host
@@ -315,7 +314,7 @@ SOCKET.on("presentForward", () => {
 	if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
 		byId("inputPresentForward").disabled = true;
 
-		if (ID === ROUND.presenter) {
+		if (ID === ROOM.presenter) {
 			byId("inputPresentFinish").disabled = false;
 		}
 	}
@@ -339,7 +338,7 @@ SOCKET.on("presentBack", () => {
 
 SOCKET.on("presentOverride", () => {
 	// Update presenter
-	ROUND.presenter = ROOM.host;
+	ROOM.presenter = ROOM.host;
 
 	// Update UI buttons
 	if (ID === ROOM.host) {
@@ -404,7 +403,6 @@ SOCKET.on("finish", () => {
 
 	byId("previousDraw").textContent = "";
 	byId("previousWrite").src = "";
-	byId("inputTitle").disabled = false;
 	byId("statusPage").textContent = "1";
 	byId("finish").disabled = true;
 
@@ -447,11 +445,7 @@ SOCKET.on("disconnect", (data) => {
 // Get name from ID
 function getName(id) {
 	if (id) {
-		if (id === ID) {
-			return name;
-		} else {
-			return USERS[id].name;
-		}
+		return USERS[id].name;
 	} else {
 		console.error("ID is undefined");
 	}
@@ -471,7 +465,7 @@ function htmlDecode(input) {
 function copyToClipboard(text) {
 	// Copy using the navigator API
 	if (navigator.clipboard && window.isSecureContext) {
-		navigator.clipboard.writeText(text);
+		navigator.clipboard.writeText(text).then();
 	} else {
 		// If not supported, create a textarea to copy from
 		let textArea = document.createElement("textarea");
@@ -548,25 +542,21 @@ function updatePlayers() {
 	let _playerList = byId("playersList");
 	_playerList.innerHTML = "";
 
-	// Add self to player list
-	let nameElem = document.createElement("li");
-	nameElem.textContent = name;
-	nameElem.id = "you";
-	nameElem.title = "you!";
-	_playerList.appendChild(nameElem);
-
-	// Add other players to player list
-	for (let id in USERS) {
+	// Add everyone to player list
+	for (let _id in USERS) {
 		let nameElem = document.createElement("li");
-		nameElem.textContent = getName(id);
+		nameElem.textContent = getName(_id);
+		if (_id === ID) {
+			nameElem.title = "You!";
+		}
 		_playerList.appendChild(nameElem);
 	}
 
 	// Increment player count
-	byId("playersCount").textContent = "(" + (Object.keys(USERS).length + 1).toString() + "/10)";
+	byId("playersCount").textContent = "(" + Object.keys(USERS).length.toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
-	if (Object.keys(USERS).length) {
+	if (Object.keys(USERS).length > 1) {
 		show("inputStart");
 		hide("inputStartWarning");
 	} else {
@@ -678,8 +668,7 @@ function updateInput() {
 				show("statusTimer");
 			}
 
-			// Reset writing inputs
-			byId("inputWrite").disabled = false;
+			// Reset writing input
 			byId("inputWrite").value = "";
 			break;
 
@@ -696,8 +685,6 @@ function updateInput() {
 			// Reset drawing inputs
 			CANVAS.clear();
 			CANVAS.setBackgroundColor("#FFFFFF");
-			CANVAS.isDrawingMode = true;
-			CANVAS.selection = true;
 			DRAW.undo = [];
 			byId("toolUndo").disabled = true;
 			byId("toolRedo").disabled = true;
@@ -919,7 +906,7 @@ function show(e) {
 		let _inputRoom = byId("inputRoom");
 
 		if (_inputName.reportValidity() && _inputRoom.reportValidity()) {
-			name = _inputName.value.substr(0, 32);
+			USERS[ID] = { name: _inputName.value.substr(0, 32) };
 			ROOM.code = _inputRoom.value.substr(0, 12);
 
 			_inputName.disabled = true;
@@ -931,7 +918,7 @@ function show(e) {
 
 			SOCKET.emit("joinRoom", {
 				id: ID,
-				name: name,
+				name: getName(ID),
 				roomCode: ROOM.code,
 				key: SESSION_KEY,
 			});
@@ -1058,7 +1045,7 @@ function show(e) {
 		if (e.target.scrollHeight) {
 			e.target.style.height = e.target.scrollHeight + "px";
 		} else {
-			e.target.style.height = "2em";
+			e.target.style.height = "1em";
 		}
 	});
 
@@ -1079,9 +1066,6 @@ function show(e) {
 						value: _value,
 						key: SESSION_KEY,
 					});
-
-					// Disable text input
-					_inputWrite.disabled = true;
 				}
 				break;
 
@@ -1099,21 +1083,12 @@ function show(e) {
 					value: _value,
 					key: SESSION_KEY,
 				});
-
-				// Lock canvas from any further drawing/editing
-				CANVAS.isDrawingMode = false;
-				CANVAS.selection = false;
-				CANVAS.forEachObject(function (object) {
-					object.selectable = false;
-					object.evented = false;
-				});
 				break;
 		}
 
 		if (_valid) {
 			// Put client in waiting state
 			e.target.disabled = true;
-			byId("inputTitle").disabled = true;
 			byId("wait").showModal();
 		}
 	});
@@ -1264,7 +1239,7 @@ function show(e) {
 	/// PRESENT
 	// Present: Next page
 	byId("inputPresentForward").addEventListener("click", () => {
-		if (ID === ROUND.presenter) {
+		if (ID === ROOM.presenter) {
 			if (ROUND.page < parseInt(ROOM.settings.pageCount) - 1) {
 				SOCKET.emit("presentForward", { key: SESSION_KEY });
 			}
@@ -1273,7 +1248,7 @@ function show(e) {
 
 	// Present: Previous page
 	byId("inputPresentBack").addEventListener("click", () => {
-		if (ID === ROUND.presenter) {
+		if (ID === ROOM.presenter) {
 			if (ROUND.page > -1) {
 				SOCKET.emit("presentBack", { key: SESSION_KEY });
 			}
@@ -1289,7 +1264,7 @@ function show(e) {
 
 	// Present: Finished
 	byId("inputPresentFinish").addEventListener("click", () => {
-		if (ID === ROUND.presenter) {
+		if (ID === ROOM.presenter) {
 			SOCKET.emit("presentFinish", { key: SESSION_KEY });
 		}
 	});
