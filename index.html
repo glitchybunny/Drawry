@@ -2,7 +2,7 @@
 
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+	<meta charset="utf-8">
 	<title>Open Picturephone</title>
 	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
 	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
@@ -184,8 +184,8 @@
 			<!-- GAMEPLAY -->
 			<section class="flex center hidden" hidden id="status">
 				<h2><span id="statusTitle"></span> - Page&nbsp;<span id="statusPage"></span>/<span
-					id="statusPageMax"></span></h2>
-				<h2 class="hidden" hidden id="statusTimer">⏳ 0:00</h2>
+					id="statusPageMax"></span><span class="hidden" hidden id="statusTimer"> - ⏳ 0:00</span>
+				</h2>
 			</section>
 			<div class="flex hidden" hidden id="gameplay">
 				<section class="flex box" id="title">
@@ -202,8 +202,8 @@
 				<section class="flex box hidden" hidden id="write">
 					<label for="inputWrite" style="font-weight:bold;">Story</label>
 					<textarea aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
-										onkeydown="return enterBlock(event)" placeholder="What happens next?" required="required"
-										spellcheck="true" style="height:4em; overflow-y:hidden;"></textarea>
+										onkeydown="return enterPrevent(event)" placeholder="What happens next?" required="required"
+										spellcheck="true"></textarea>
 				</section>
 				<section class="flex box hidden" hidden id="draw">
 					<label style="font-weight:bold;">Drawing</label>
@@ -218,7 +218,8 @@
 							<canvas height="600" id="cursor" width="800"></canvas>
 						</div>
 						<div id="stuff">
-							<div style="display:flex; flex-flow:row nowrap; justify-content:center;">
+							<!-- Tools -->
+							<div id="undoRedo">
 								<input autocomplete="off" disabled="disabled" id="toolUndo" title="Undo (Z)"
 											 type="button">
 								<input autocomplete="off" disabled="disabled" id="toolRedo" title="Redo (Y)"
@@ -320,7 +321,7 @@
 			return true;
 		}
 
-		function enterBlock(e) {
+		function enterPrevent(e) {
 			if (e.keyCode === 13) {
 				e.preventDefault();
 				return false;
