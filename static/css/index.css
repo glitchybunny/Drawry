@@ -18,7 +18,6 @@ body, html {
 	padding: 0;
 	color: #fff;
 	background: #567890;
-	font-size: 18px;
 	overflow-wrap: anywhere;
 }
 
@@ -39,7 +38,7 @@ dfn {
 	text-decoration: underline dotted;
 	text-decoration-skip: none;
 	text-decoration-skip-ink: none;
-	text-decoration-thickness: 0.12em;
+	text-decoration-thickness: .15em;
 	text-decoration-color: #fff;
 	font-style: normal;
 	cursor: help;
@@ -70,7 +69,7 @@ hr {
 	width: calc(100% - .5em);
 	margin: .5em auto;
 	border: 0;
-	border-bottom: .12em solid #234567;
+	border-bottom: .15em solid #234567;
 }
 
 input, textarea {
@@ -142,7 +141,7 @@ select {
 
 table {
 	border-collapse: collapse;
-	border: .12em solid #234567;
+	border: .15em solid #234567;
 }
 
 td {
@@ -170,7 +169,7 @@ ul {
 	display: flex;
 	flex-flow: row nowrap;
 	justify-content: space-between;
-	border-top: .16em solid #123456;
+	border-top: .15em solid #123456;
 	color: #fff;
 }
 
@@ -187,7 +186,7 @@ ul {
 .author.done:after {
 	content: "Done!";
 	margin-left: .5em;
-	padding: .12em .25em;
+	padding: .15em .25em;
 	background-color: #123456;
 	font-style: normal;
 }
@@ -202,7 +201,7 @@ ul {
 .boxlet {
 	margin: 1em 0 0;
 	padding: .5em;
-	border: .12em solid #234567;
+	border: .15em solid #234567;
 	text-align: start;
 }
 
@@ -274,12 +273,12 @@ ul {
 #canvas {
 	position: relative;
 	height: min-content;
-	border: .12em solid #234567;
+	border: .15em solid #234567;
 }
 
 #canvasBase, #previousDraw {
 	display: block;
-	height: calc(100vh - 18em);
+	height: calc(100vh - 16em);
 	min-width: 20em;
 	min-height: 15em;
 }
@@ -291,7 +290,7 @@ ul {
 #draw, #write {
 	min-width: 20em;
 	padding: .5em 1em;
-	border-top: .12em solid #234567;
+	border-top: .15em solid #234567;
 }
 
 #game {
@@ -300,7 +299,7 @@ ul {
 
 #gameplay {
 	margin: auto;
-	max-height: calc(100% - 3.1em);
+	max-height: calc(100% - 2em);
 }
 
 #inviteButton, #presentTable input {
@@ -309,8 +308,10 @@ ul {
 }
 
 #inputWrite {
-	resize: vertical;
+	min-height: 1em;
 	max-height: 12em;
+	resize: vertical;
+	overflow-y: hidden;
 }
 
 #join input[type=text] {
@@ -343,7 +344,7 @@ ul {
 
 #presentControls input, #inputPresentOverride {
 	font-size: 1em;
-	margin: .12em;
+	margin: .15em;
 }
 
 #presentWindow {
@@ -353,7 +354,7 @@ ul {
 	overflow-y: scroll;
 	color: #000;
 	background-color: #234567;
-	border: .12em solid #123456;
+	border: .15em solid #123456;
 	scrollbar-width: thin;
 }
 
@@ -378,7 +379,6 @@ ul {
 
 #status {
 	justify-content: center;
-	height: 3.1em;
 	padding: .5em .5em 0;
 }
 
@@ -389,15 +389,16 @@ ul {
 /* DRAWING */
 [id^=tool], .colorSmall {
 	display: block;
-	box-sizing: border-box;
-	width: 2.24em;
-	height: 2.24em;
+	box-sizing: content-box;
+	width: 2em;
+	height: 2em;
 	margin: 0 !important;
 	padding: 0 !important;
-	border: .12em solid #012345;
+	border: .15em solid #012345;
 	outline: none;
 	background: #6789AB url(/img/tools.png) no-repeat top left;
-	background-size: auto 6em;
+	background-size: 10em 6em;
+	/*box-shadow: 0 0 .15em #6789AB inset;*/
 }
 
 .colorSmall {
@@ -437,16 +438,21 @@ ul {
 	background-position-x: -4em;
 }
 
+#undoRedo {
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: center;
+	margin: .15em 0;
+}
+
 #toolUndo, #toolRedo {
-	width: 1.24em;
-	height: 1.24em;
-	background-size: auto 3em;
-	background-position-y: top;
+	width: 1em;
+	height: 1em;
+	background-size: 5em 3em;
 }
 
 #toolUndo {
 	background-position-x: -3em;
-	margin-right: -.12em !important;
 }
 
 #toolRedo {
@@ -457,17 +463,18 @@ ul {
 	display: flex;
 	flex-flow: row wrap;
 	justify-content: center;
-	margin: .12em 0;
+	margin: .15em 0;
 }
 
 #brushSize {
-	width: 2em;
+	width: 2.3em;
+	font-size: 1em;
 }
 
 #brushSizeRange {
-	width: 2.24em;
-	height: 6.72em;
-	margin: .12em 0;
+	width: 2.3em;
+	height: 6.9em;
+	margin: .15em 0;
 	writing-mode: bt-lr;
 	-webkit-appearance: slider-vertical;
 }
@@ -517,7 +524,7 @@ dialog {
 	width: fit-content;
 	height: fit-content;
 	margin: auto;
-	border: .12em solid #001234;
+	border: .15em solid #001234;
 	padding: 1em;
 	background-color: #345678;
 	color: #fff;
