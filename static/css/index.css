@@ -302,6 +302,10 @@ ul {
 	max-height: calc(100% - 2em);
 }
 
+#gameplay label {
+	line-height: 1.3em;
+}
+
 #inviteButton, #presentTable input {
 	padding: 0 .2em;
 	font-size: 1em;
@@ -387,7 +391,7 @@ ul {
 }
 
 /* DRAWING */
-[id^=tool], .colorSmall {
+[id^=tool], .colorSmall, .colorBig {
 	display: block;
 	box-sizing: content-box;
 	width: 2em;
@@ -407,7 +411,21 @@ ul {
 	background: none;
 }
 
-[id^=tool]:hover, .colorSmall:hover {
+.colorBig {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	flex: 1 1 1em;
+	width: 2em;
+	background: none;
+}
+
+.colorBig:checked {
+	z-index: 0;
+	border-color: #fff;
+}
+
+[id^=tool]:hover, .colorSmall:hover, .colorBig:hover {
 	z-index: 1;
 	border-color: #89ABCD;
 	cursor: pointer;
@@ -464,6 +482,12 @@ ul {
 	flex-flow: row wrap;
 	justify-content: center;
 	margin: .15em 0;
+}
+
+#colorRadio {
+	display: flex;
+	flex-flow: column nowrap;
+	height: 100%;
 }
 
 #brushSize {

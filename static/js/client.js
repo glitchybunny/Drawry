@@ -12,12 +12,44 @@ const ID = Cookies.get("id") ? Cookies.get("id") : (array[0].valueOf() + 1).toSt
 const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 
-/// --- ENUMS --- ///
+/// --- CONSTS/ENUMS --- ///
 const TOOL = {
 	PAINT: 0,
 	ERASE: 1,
 	FILL: 2,
 	STICKER: 3,
+};
+const PALETTES = {
+	"Bluescale": ["#000123", "#012345", "#234567", "#456789", "#6789AB", "#89ABCD", "#ABCDEF"],
+	"Rainbow": [
+		"#FF0000",
+		"#FFAA00",
+		"#AAFF00",
+		"#00FF00",
+		"#00FFAA",
+		"#00AAFF",
+		"#0000FF",
+		"#AA00FF",
+		"#FF00AA",
+	],
+	"PICO-8": [
+		"#000000",
+		"#1D2B53",
+		"#7E2553",
+		"#008751",
+		"#AB5236",
+		"#5F574F",
+		"#C2C3C7",
+		"#FFF1E8",
+		"#FF004D",
+		"#FFA300",
+		"#FFEC27",
+		"#00E436",
+		"#29ADFF",
+		"#83769C",
+		"#FF77A8",
+		"#FFCCAA",
+	],
 };
 
 /// --- GAME CONSTANTS --- ///
@@ -689,6 +721,7 @@ function updateInput() {
 			byId("toolUndo").disabled = true;
 			byId("toolRedo").disabled = true;
 			updatePalette();
+			changeColor(PALETTES[ROOM.settings.palette][0] ?? "#000000");
 			resizeCanvas();
 			break;
 	}
@@ -699,36 +732,54 @@ function updateInput() {
 
 // Update color input/palette
 function updatePalette() {
+	// Clear divs
+	byId("colorHistory").innerHTML = "";
+	byId("colorRadio").innerHTML = "";
+
 	// Change which drawing inputs are available depending on the palette
-	switch (ROOM.settings.palette) {
-		case "No palette":
-		default:
-			// No palette, let users select whatever colors they want
-			byId("toolColor").disabled = false;
-			byId("toolColor").style.display = "block";
+	if (ROOM.settings.palette in PALETTES) {
+		// Give the player a specific palette
+		hide("toolColor");
 
-			// Keep track of color history
-			let _history = byId("colorHistory");
-			_history.innerHTML = "";
+		// Generate palette buttons
+		for (let _color of PALETTES[ROOM.settings.palette]) {
+			let _elem = document.createElement("input");
+			_elem.classList.add("colorBig");
+			_elem.style.backgroundColor = _color;
+			_elem.type = "radio";
+			_elem.name = "palette";
+			_elem.id = _color;
+			(function (c) {
+				_elem.addEventListener("click", () => {
+					changeColor(c);
+				});
+			})(_color);
+			byId("colorRadio").appendChild(_elem);
+		}
+	} else if (ROOM.settings.palette === "Random") {
+		// Give the player a random selection of colors
+		hide("toolColor");
+	} else {
+		// No palette, let users select whatever colors they want
+		show("toolColor");
 
-			for (let i = 0; i < 16; i++) {
-				let _elem = document.createElement("input");
-				_elem.classList.add("colorSmall");
-
-				if (DRAW.colorHistory[i]) {
-					_elem.style.backgroundColor = DRAW.colorHistory[i];
-					(function (c) {
-						_elem.addEventListener("click", () => {
-							changeColor(c);
-						});
-					})(DRAW.colorHistory[i]);
-				} else {
-					_elem.disabled = true;
-				}
-				_history.appendChild(_elem);
+		// Keep track of color history
+		for (let i = 0; i < 16; i++) {
+			let _elem = document.createElement("input");
+			_elem.classList.add("colorSmall");
+			_elem.type = "button";
+			if (DRAW.colorHistory[i]) {
+				_elem.style.backgroundColor = DRAW.colorHistory[i];
+				(function (c) {
+					_elem.addEventListener("click", () => {
+						changeColor(c);
+					});
+				})(DRAW.colorHistory[i]);
+			} else {
+				_elem.disabled = true;
 			}
-
-			break;
+			byId("colorHistory").appendChild(_elem);
+		}
 	}
 }
 
@@ -809,11 +860,17 @@ function changeColor(color) {
 		MOUSE_CURSOR.set({ fill: color });
 	}
 
-	// Update history
-	DRAW.colorHistory.unshift(_oldColor); // add previous color to history
-	DRAW.colorHistory = DRAW.colorHistory.filter((i) => i !== color); // remove new color (if in history)
-	DRAW.colorHistory.slice(0, 16); // limit length
-	updatePalette();
+	// History/selection
+	if (ROOM.settings.palette === "No palette") {
+		// If there's no palette, keep track of history
+		DRAW.colorHistory.unshift(_oldColor); // add previous color to history
+		DRAW.colorHistory = DRAW.colorHistory.filter((i) => i !== color); // remove new color (if in history)
+		DRAW.colorHistory.slice(0, 16); // limit length
+		updatePalette();
+	} else {
+		// Otherwise, ensure input element button is selected
+		byId(color).checked = true;
+	}
 }
 
 // Change which tool is selected
