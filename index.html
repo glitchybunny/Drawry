@@ -132,6 +132,10 @@
 						<div class="host hidden">
 							<select id="colorPalette">
 								<option value="No palette">No palette</option>
+								<option value="Bluescale">Bluescale</option>
+								<option value="Rainbow">Rainbow</option>
+								<option value="PICO-8">PICO-8</option>
+								<!--<option value="Random">Random</option>-->
 							</select>
 						</div>
 						<div class="notHost">
@@ -209,8 +213,9 @@
 					<label style="font-weight:bold;">Drawing</label>
 					<div style="display:flex;">
 						<div id="palette">
-							<input autocomplete="off" id="toolColor" title="Colour picker" type="color" value="Pick a colour">
+							<input autocomplete="off" id="toolColor" title="Color picker" type="color" value="Pick a color">
 							<div id="colorHistory"></div>
+							<div id="colorRadio"></div>
 						</div>
 						<div id="canvas">
 							<img alt="" id="canvasBase" src="img/base.png">

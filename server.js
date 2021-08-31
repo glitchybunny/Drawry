@@ -25,7 +25,7 @@ const SETTINGS_CONSTRAINTS = {
 	firstPage: ["string", ["Write", "Draw"]],
 	pageCount: ["number", [2, 20]],
 	pageOrder: ["string", ["Normal", "Random"]],
-	palette: ["string", ["No palette"]],
+	palette: ["string", ["No palette", "Bluescale", "Rainbow", "PICO-8" /*, "Random"*/]],
 	timeWrite: ["number", [0, 15]],
 	timeDraw: ["number", [0, 15]],
 };
@@ -235,7 +235,6 @@ io.on("connection", (socket) => {
 					if (_diffWidth < 8 && _diffHeight < 6) {
 						// Send image data anyway, it's close enough
 						_value = data.value;
-						// TODO: Either resize on server or tell client to resize image?
 					} else {
 						console.log("ERROR unexpected image size", [dimensions.width, dimensions.height]);
 					}
