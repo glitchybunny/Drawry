@@ -721,7 +721,7 @@ function updateInput() {
 			byId("toolUndo").disabled = true;
 			byId("toolRedo").disabled = true;
 			updatePalette();
-			changeColor(PALETTES[ROOM.settings.palette][0] ?? "#000000");
+			changeColor();
 			resizeCanvas();
 			break;
 	}
@@ -849,6 +849,15 @@ function updatePresentList() {
 
 // Change which color is selected
 function changeColor(color) {
+	// If no color value is passed in, reset color
+	if (color === undefined) {
+		if (PALETTES[ROOM.settings.palette]) {
+			color = PALETTES[ROOM.settings.palette][0];
+		} else {
+			color = "#000000";
+		}
+	}
+
 	// Update draw color
 	let _oldColor = DRAW.color;
 	DRAW.color = color;
