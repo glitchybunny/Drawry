@@ -444,6 +444,7 @@ ul {
 }
 
 #toolColor {
+	min-height: 2em;
 	background-color: #345678;
 	background-image: none;
 }
