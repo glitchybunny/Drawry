@@ -30,7 +30,7 @@ const SETTINGS_CONSTRAINTS = {
 	timeDraw: ["number", [0, 15]],
 };
 const SETTINGS_DEFAULT = {
-	firstPage: "Write",
+	firstPage: "Draw",
 	pageCount: "8",
 	pageOrder: "Normal",
 	palette: "No palette",
