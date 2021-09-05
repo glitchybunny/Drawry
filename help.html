@@ -4,6 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<title>Open Picturephone - How to play</title>
+	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
 	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
 	<style>
 	  body {
@@ -12,53 +13,52 @@
 	  }
 
 	  img {
-		  margin: 20px auto;
+		  margin: 1em auto;
 		  display: block;
-	  }
-
-	  div {
-		  padding: 0 10px;
 	  }
 
 	  section {
-		  padding-bottom: 20px;
-		  margin-bottom: 200px;
+		  padding-bottom: 1em;
+		  margin: 5em 0;
 	  }
 
 	  a {
-		  width: 100% !important;
-		  text-align: center;
-		  font-size: 22px;
+		  font-size: 1.3em;
 		  display: block;
-		  margin: 20px auto;
+		  padding: 1em;
+		  margin: auto;
 	  }
 	</style>
 </head>
 <body>
-	<section>
-		<h1 style="text-align:center;">How to play Open Picturephone</h1>
-		<hr>
-		<div>
-			<p>1. All players title a storybook, and write the first page</p>
-			<img alt="" src="img/tutorial/1.png">
-		</div>
-		<div>
-			<p>2. The books are shuffled and prompts drawn by random players</p>
-			<img alt="" src="img/tutorial/2.png">
-		</div>
-		<div>
-			<p>3. Then the drawing is passed to another random player to describe</p>
-			<img alt="" src="img/tutorial/3.png">
-		</div>
-		<div>
-			<p>4. Steps 2 and 3 repeat until all the books are finished!</p>
-		</div>
-		<div>
-			<p>5. At the end, each player takes turns presenting the storybook they started to everyone else!!!</p>
-		</div>
-		<div>
-			<a href="./">Return to homepage</a>
-		</div>
-	</section>
+	<div class="flex center" style="margin:auto;">
+		<section class="flex box">
+			<header>
+				<h1 style="text-align:center;">How to play Open Picturephone</h1>
+			</header>
+			<hr>
+			<div>
+				<p>1. All players title a storybook, and write the first page</p>
+				<img alt="" src="img/tutorial/1.png">
+			</div>
+			<div>
+				<p>2. The books are shuffled and prompts drawn by random players</p>
+				<img alt="" src="img/tutorial/2.png">
+			</div>
+			<div>
+				<p>3. Then the drawing is passed to another random player to describe</p>
+				<img alt="" src="img/tutorial/3.png">
+			</div>
+			<div>
+				<p>4. Steps 2 and 3 repeat until all the books are finished!</p>
+			</div>
+			<div>
+				<p>5. At the end, each player takes turns presenting the storybook they started to everyone else!!!</p>
+			</div>
+			<div>
+				<a href="./" class="center">Return to homepage</a>
+			</div>
+		</section>
+	</div>
 </body>
 </html>
