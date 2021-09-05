@@ -63,6 +63,7 @@ const DRAW = {
 	color: "#000000",
 	colorHistory: [],
 	width: 6,
+	flow: 50,
 	undo: [],
 	redo: [],
 };
@@ -1172,11 +1173,13 @@ function show(e) {
 		// Change to paint tool
 		DRAW.tool = TOOL.PAINT;
 		changeTool(e.target);
+		hide("optionsFill");
+		show("optionsBrush");
 
 		// Draw with so many beautiful colors
 		CANVAS.freeDrawingBrush.color = DRAW.color;
 		CANVAS.freeDrawingBrush.width = DRAW.width;
-		MOUSE_CURSOR.set({ fill: DRAW.color, stroke: "black" });
+		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: DRAW.color, stroke: "black", strokeWidth: 1 });
 	});
 
 	// Draw: Erase tool
@@ -1184,11 +1187,13 @@ function show(e) {
 		// Change to erase tool
 		DRAW.tool = TOOL.ERASE;
 		changeTool(e.target);
+		hide("optionsFill");
+		show("optionsBrush");
 
 		// Erasing is just drawing white
 		CANVAS.freeDrawingBrush.color = "#FFFFFF";
 		CANVAS.freeDrawingBrush.width = DRAW.width;
-		MOUSE_CURSOR.set({ fill: "white", stroke: "grey" });
+		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: "white", stroke: "grey", strokeWidth: 1 });
 	});
 
 	// Draw: Fill tool
@@ -1196,6 +1201,13 @@ function show(e) {
 		// Change to fill tool
 		DRAW.tool = TOOL.FILL;
 		changeTool(e.target);
+		hide("optionsBrush");
+		show("optionsFill");
+
+		// Disable drawing and instead change to own event listener
+		CANVAS.freeDrawingBrush.color = "rgba(0,0,0,0)";
+		CANVAS.freeDrawingBrush.width = 0;
+		MOUSE_CURSOR.set({ radius: 5, fill: DRAW.color, stroke: "white", strokeWidth: 2 });
 
 		// Flood fill tool
 		// 1. Get raster image of the canvas
@@ -1300,6 +1312,18 @@ function show(e) {
 
 		// Update text input
 		byId("brushSize").value = DRAW.width;
+	});
+
+	// Draw: Fill Threshold
+	byId("fillThreshold").addEventListener("input", (e) => {
+		// Update fill threshold
+		DRAW.flow = parseInt(e.target.value);
+		byId("fillThresholdRange").value = DRAW.flow;
+	});
+	byId("fillThresholdRange").addEventListener("input", (e) => {
+		// Update fill threshold
+		DRAW.flow = parseInt(e.target.value);
+		byId("fillThreshold").value = DRAW.flow;
 	});
 
 	/// PRESENT
@@ -1488,15 +1512,23 @@ function record(type, object) {
 
 	// Ensure commands aren't doubled up
 	if (_last === undefined || type !== _last.type || object !== _last.object) {
-		// Add to undo stack
-		DRAW.undo.push({ type: type, object: object });
+		if (DRAW.tool === TOOL.FILL) {
+			// If using the fill tool, remove the invisible object that was added when the user clicked
+			if (CANVAS.contains(object)) {
+				CANVAS.remove(object);
+			}
+		} else {
+			// Brush/erase tool, so record undo normally
+			// Add to undo stack
+			DRAW.undo.push({ type: type, object: object });
 
-		// Enable undo button
-		byId("toolUndo").disabled = false;
+			// Enable undo button
+			byId("toolUndo").disabled = false;
 
-		// Clear redo stack
-		DRAW.redo = [];
-		byId("toolRedo").disabled = true;
+			// Clear redo stack
+			DRAW.redo = [];
+			byId("toolRedo").disabled = true;
+		}
 	}
 }
 
@@ -1507,3 +1539,6 @@ CANVAS.on("path:created", (obj) => {
 CANVAS.on("object:modified", (obj) => {
 	record("object:modified", obj);
 });
+
+// Flood fill function
+function fill(pos) {}
