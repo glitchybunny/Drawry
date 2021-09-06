@@ -167,12 +167,10 @@ SOCKET.on("startGame", (data) => {
 	ROUND.mode = data.start;
 
 	// Update DOM
-	hide("setup");
-	hide("invite");
-	show("gameplay");
+	hide(["setup", "invite"]);
+	show(["gameplay", "status"]);
 
 	// Update round status
-	show("status");
 	byId("statusTitle").textContent = byId("inputTitle").value = BOOKS[ID].title;
 	byId("statusPage").textContent = "1";
 	byId("statusPageMax").textContent = ROOM.settings.pageCount;
@@ -238,10 +236,8 @@ SOCKET.on("pageForward", () => {
 // Start presenting mode
 SOCKET.on("startPresenting", () => {
 	// Update DOM
-	hide("gameplay");
-	hide("status");
-	show("present");
-	show("download");
+	hide(["gameplay", "status"]);
+	show(["present", "download"]);
 	byId("wait").close();
 
 	// Update round state
@@ -390,9 +386,7 @@ SOCKET.on("presentOverride", () => {
 SOCKET.on("presentFinish", () => {
 	// Return to present lobby
 	show("presentMenu");
-	hide("presentWindow");
-	hide("presentControls");
-	hide("presentOverride");
+	hide(["presentWindow", "presentControls", "presentOverride"]);
 
 	// Clear pages from presentWindow
 	document.querySelectorAll(".page").forEach((e) => {
@@ -424,22 +418,12 @@ SOCKET.on("finish", () => {
 	}
 
 	// Reset layout
-	hide("present");
-	hide("books");
-	hide("download");
-
-	hide("previous");
-	hide("previousDraw");
-	hide("previousWrite");
-	show("title");
-
+	show(["title", "setup", "invite"]);
+	hide(["present", "books", "download", "previous", "previousDraw", "previousWrite"]);
 	byId("previousDraw").textContent = "";
 	byId("previousWrite").src = "";
 	byId("statusPage").textContent = "1";
 	byId("finish").disabled = true;
-
-	show("setup");
-	show("invite");
 
 	// Force Update DOM
 	updatePlayers();
@@ -905,22 +889,42 @@ function changeSize(size) {
 
 // Hide an element in the DOM
 function hide(e) {
-	if (typeof e === "string") {
-		e = byId(e);
+	function hideElem(e) {
+		if (typeof e === "string") {
+			e = byId(e);
+		}
+		e.classList.add("hidden");
+		e.hidden = true;
 	}
-	e.classList.add("hidden");
-	e.hidden = true;
-	return e;
+
+	if (Array.isArray(e)) {
+		for (let i of e) {
+			hideElem(i);
+		}
+	} else {
+		hideElem(e);
+		return e;
+	}
 }
 
 // Show an element in the DOM
 function show(e) {
-	if (typeof e === "string") {
-		e = byId(e);
+	function showElem(e) {
+		if (typeof e === "string") {
+			e = byId(e);
+		}
+		e.classList.remove("hidden");
+		e.hidden = false;
 	}
-	e.classList.remove("hidden");
-	e.hidden = false;
-	return e;
+
+	if (Array.isArray(e)) {
+		for (let i of e) {
+			showElem(i);
+		}
+	} else {
+		showElem(e);
+		return e;
+	}
 }
 
 /// --- INPUTS --- ///
