@@ -564,6 +564,15 @@ app.get("/", (req, res) => {
 app.get("/help.html", (req, res) => {
 	res.sendFile(path.join(__dirname + "/help.html"));
 });
+app.get("/js/socket.io.min.js", (req, res) => {
+	res.sendFile(path.join(__dirname + "/node_modules/socket.io/client-dist/socket.io.min.js"));
+});
+app.get("/js/fabric.min.js", (req, res) => {
+	res.sendFile(path.join(__dirname + "/node_modules/fabric/dist/fabric.min.js"));
+});
+app.get("/js/dialog-polyfill.js", (req, res) => {
+	res.sendFile(path.join(__dirname + "/node_modules/dialog-polyfill/dist/dialog-polyfill.js"));
+});
 app.use(express.static("static"));
 
 // Open server to manage server things
