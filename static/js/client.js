@@ -1179,7 +1179,7 @@ function show(e) {
 		// Draw with so many beautiful colors
 		CANVAS.freeDrawingBrush.color = DRAW.color;
 		CANVAS.freeDrawingBrush.width = DRAW.width;
-		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: DRAW.color, stroke: "black", strokeWidth: 1 });
+		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: DRAW.color, stroke: "black" });
 	});
 
 	// Draw: Erase tool
@@ -1193,7 +1193,7 @@ function show(e) {
 		// Erasing is just drawing white
 		CANVAS.freeDrawingBrush.color = "#FFFFFF";
 		CANVAS.freeDrawingBrush.width = DRAW.width;
-		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: "white", stroke: "grey", strokeWidth: 1 });
+		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: "white", stroke: "grey" });
 	});
 
 	// Draw: Fill tool
@@ -1207,7 +1207,7 @@ function show(e) {
 		// Disable drawing and instead change to own event listener
 		CANVAS.freeDrawingBrush.color = "rgba(0,0,0,0)";
 		CANVAS.freeDrawingBrush.width = 0;
-		MOUSE_CURSOR.set({ radius: 5, fill: DRAW.color, stroke: "white", strokeWidth: 2 });
+		MOUSE_CURSOR.set({ radius: 5, fill: DRAW.color, stroke: "white" });
 
 		// Flood fill tool
 		// 1. Get raster image of the canvas
@@ -1447,7 +1447,7 @@ function download(bookIDs) {
 // Canvas drawing
 const CANVAS = new fabric.Canvas("c", {
 	isDrawingMode: true,
-	freeDrawingCursor: "none",
+	freeDrawingCursor: "crosshair",
 });
 CANVAS.setBackgroundColor("#FFFFFF");
 CANVAS.freeDrawingBrush.width = DRAW.width;
