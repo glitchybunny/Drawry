@@ -511,6 +511,10 @@ ul {
 	-webkit-appearance: slider-vertical;
 }
 
+#fillThresholdRange {
+	height: 4.6em;
+}
+
 /* OVERRIDES */
 .hidden {
 	display: none !important;
