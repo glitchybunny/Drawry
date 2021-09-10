@@ -22,7 +22,7 @@
 		<a href="/help.html" style="font-size:1.2em;">How to play</a>
 
 		<footer class="copyright">
-			<a href="https://github.com/darkrilin/open-picturephone">&copy; glitch 2021</a>
+			<a href="https://github.com/darkrilin/open-picturephone">&copy; Glitch 2021</a>
 		</footer>
 	</div>
 
@@ -55,7 +55,7 @@
 							 type="button" value="Download all">
 			</section>
 			<footer style="text-align:center; padding:.5em;">
-				<a href="https://github.com/darkrilin/open-picturephone">&copy; glitch 2021</a>
+				<a href="https://github.com/darkrilin/open-picturephone">&copy; Glitch 2021</a>
 			</footer>
 		</aside>
 		<!-- GAME AREA -->
@@ -233,14 +233,22 @@
 							<input autocomplete="off" class="selected" id="toolPaint" title="Draw tool (D)"
 										 type="button">
 							<input autocomplete="off" id="toolErase" title="Erase tool (E)" type="button">
-							<input disabled="disabled" autocomplete="off" id="toolFill" title="Fill tool (F)"
-										 type="button">
+							<input autocomplete="off" id="toolFill" title="Fill tool (F)" type="button">
 
 							<!-- Tool options -->
 							<hr>
-							<input class="vertical" type="range" min="1" max="10" value="2" step="0.1" orient="vertical"
-										 autocomplete="off" id="brushSizeRange">
-							<input type="number" min="1" max="99" value="4" autocomplete="off" id="brushSize">
+							<div id="optionsBrush">
+								<label for="brushSizeRange">Size:</label>
+								<input class="vertical" type="range" min="1" max="10" value="2" step="0.1" orient="vertical"
+											 autocomplete="off" id="brushSizeRange">
+								<input type="number" min="1" max="99" value="4" autocomplete="off" id="brushSize">
+							</div>
+							<div id="optionsFill" hidden class="hidden">
+								<label for="fillThresholdRange">Flow:</labeL>
+								<input class="vertical" type="range" min="0" max="100" value="50" step="1" orient="vertical"
+											 autocomplete="off" id="fillThresholdRange">
+								<input type="text" min="0" max="100" value="50" autocomplete="off" id="fillThreshold">
+							</div>
 						</div>
 					</div>
 				</section>
