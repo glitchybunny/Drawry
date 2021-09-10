@@ -1221,14 +1221,12 @@ function show(e) {
 			let _command = DRAW.undo.pop();
 			switch (_command.type) {
 				case "path:created":
+				case "floodfill:created":
 					if (CANVAS.contains(_command.object)) {
 						CANVAS.remove(_command.object);
 						DRAW.redo.push(_command);
 						byId("toolRedo").disabled = false;
 					}
-					break;
-
-				case "object:modified":
 					break;
 			}
 
@@ -1249,12 +1247,10 @@ function show(e) {
 			let _command = DRAW.redo.pop();
 			switch (_command.type) {
 				case "path:created":
+				case "floodfill:created":
 					CANVAS.add(_command.object);
 					DRAW.undo.push(_command);
 					byId("toolUndo").disabled = false;
-					break;
-
-				case "object:modified":
 					break;
 			}
 
@@ -1445,8 +1441,8 @@ function download(bookIDs) {
 const CANVAS = new fabric.Canvas("c", {
 	isDrawingMode: true,
 	freeDrawingCursor: "crosshair",
+	backgroundColor: "#FFFFFF",
 });
-CANVAS.setBackgroundColor("#FFFFFF");
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
 
@@ -1509,17 +1505,15 @@ function record(type, object) {
 
 	// Ensure commands aren't doubled up
 	if (_last === undefined || type !== _last.type || object !== _last.object) {
-		if (DRAW.tool === TOOL.FILL) {
-			// If using the fill tool, remove the invisible object that was added when the user clicked
+		if (type === "path:created" && DRAW.tool === TOOL.FILL) {
+			// If using the fill tool, remove the invisible path that was created when clicking
 			if (CANVAS.contains(object)) {
 				CANVAS.remove(object);
 			}
 		} else {
-			// Brush/erase tool, so record undo normally
+			// Otherwise, record event properly
 			// Add to undo stack
 			DRAW.undo.push({ type: type, object: object });
-
-			// Enable undo button
 			byId("toolUndo").disabled = false;
 
 			// Clear redo stack
@@ -1533,10 +1527,6 @@ CANVAS.on("path:created", (obj) => {
 	record("path:created", obj.path);
 });
 
-CANVAS.on("object:modified", (obj) => {
-	record("object:modified", obj);
-});
-
 // Flood fill function
 CANVAS.on("mouse:up", (obj) => {
 	if (DRAW.tool === TOOL.FILL) {
@@ -1548,9 +1538,10 @@ CANVAS.on("mouse:up", (obj) => {
 });
 
 function fill(pos) {
+	/// FLOOD FILL ALGORITHM
 	// Get position from coords
-	const getPos = (x, y) => {
-		return (y * 800 + x) * 4;
+	const getPos = (x, y, w) => {
+		return (y * w + x) * 4;
 	};
 
 	// Get difference between two colors
@@ -1565,104 +1556,132 @@ function fill(pos) {
 		); // between 0 and ~95.5
 	};
 
+	const check = (data, pos, col) => {
+		// Checks if a cell can be filled
+		// Cells can only be filled if they haven't been visited (alpha = 0)
+		// And they're similar enough (defined by DRAW.flow)
+		if (data[pos + 3] === 0 && diff(data, pos, col) <= DRAW.flow) {
+			return true;
+		}
+	};
+
 	// Change color of pixel
 	const colorPixel = (data, pos, col) => {
 		// color pixels with the draw color
-		data[pos] = col[0];
-		data[pos + 1] = col[1];
-		data[pos + 2] = col[2];
+		data[pos] = col.r;
+		data[pos + 1] = col.g;
+		data[pos + 2] = col.b;
 		data[pos + 3] = 255;
 	};
 
 	// Todo: See if it would be more efficient to clone the objects to a new canvas instead of baking and loading image data
+	// I've done some testing and this seems to be the slowest part (slower than the flood algorithm even)
 
 	/// Flood fill
-	let _source = fabric.Color.fromHex(DRAW.color)._source;
-	let drawColor = { r: _source[0], g: _source[1], b: _source[2] };
+	if (pos.x >= 0 && pos.x <= 800 && pos.y >= 0 && pos.y <= 600) {
+		let _source = fabric.Color.fromHex(DRAW.color)._source;
+		let drawColor = { r: _source[0], g: _source[1], b: _source[2] };
 
-	// 1. Get canvas data and put it on a temporary canvas
-	let canvas = document.createElement("canvas");
-	canvas.width = 800;
-	canvas.height = 600;
-	let ctx = canvas.getContext("2d");
-	let img = new Image(canvas.width, canvas.height);
-	let threshold = DRAW.flow * 0.95;
-	img.src = CANVAS.toDataURL({
-		format: "png",
-		multiplier: canvas.width / CANVAS.getWidth(),
-	});
-	img.onload = () => {
-		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-		let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-		let data = imgData.data;
-		let startPos = getPos(pos.x, pos.y);
-		let startColor = {
-			r: data[startPos],
-			g: data[startPos + 1],
-			b: data[startPos + 2],
-		};
+		// Create a temporary canvas to calculate flood fill
+		let canvas = document.createElement("canvas");
+		canvas.width = 800;
+		canvas.height = 600;
 
-		// 2. Run flood fill algorithm on it
-		let todo = [[pos.x, pos.y]];
-		let n = 0;
-		while (todo.length) {
-			let pos = todo.pop();
-			let x = pos[0];
-			let y = pos[1];
-			let currentPos = getPos(x, y);
+		// Put current canvas data into image
+		let img = new Image(canvas.width, canvas.height);
+		img.src = CANVAS.toDataURL({
+			format: "png",
+			multiplier: canvas.width / CANVAS.getWidth(),
+		});
+		img.onload = () => {
+			// Draw image on temp canvas
+			let ctx = canvas.getContext("2d");
+			ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+			let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			let data = imgData.data;
 
-			while (y-- >= 0 && diff(data, currentPos, startColor) < threshold) {
-				currentPos -= canvas.width * 4;
+			let startPos = getPos(pos.x, pos.y, canvas.width);
+			let startColor = {
+				r: data[startPos],
+				g: data[startPos + 1],
+				b: data[startPos + 2],
+			};
+
+			// Change all pixels to alpha 0
+			for (let i = 0; i < canvas.width * canvas.height; i++) {
+				data[4 * i + 3] = 0;
 			}
 
-			currentPos += canvas.width * 4;
-			++y;
-			let reachLeft = false;
-			let reachRight = false;
+			// Run flood fill algorithm on the temp canvas
+			let todo = [[pos.x, pos.y]];
+			let n = 0;
+			while (todo.length) {
+				let pos = todo.pop();
+				let x = pos[0];
+				let y = pos[1];
+				let currentPos = getPos(x, y, canvas.width);
 
-			while (y++ < canvas.height - 1 && diff(data, currentPos, startColor) < threshold) {
-				colorPixel(data, currentPos, drawColor);
-
-				if (x > 0) {
-					if (diff(data, currentPos - 4, startColor) < threshold) {
-						if (!reachLeft) {
-							todo.push([x - 1, y]);
-							reachLeft = true;
-						}
-					} else if (reachLeft) {
-						reachLeft = false;
-					}
-				}
-
-				if (x < canvas.width - 1) {
-					if (diff(data, currentPos + 4, startColor) < threshold) {
-						if (!reachRight) {
-							todo.push([x + 1, y]);
-							reachRight = true;
-						}
-					} else if (reachRight) {
-						reachRight = false;
-					}
+				while (y-- >= 0 && check(data, currentPos, startColor)) {
+					currentPos -= canvas.width * 4;
 				}
 
 				currentPos += canvas.width * 4;
+				++y;
+				let reachLeft = false;
+				let reachRight = false;
 
-				if (++n > 800 * 600) {
-					// Automatically break if the code gets stuck in an infinite loop
-					// These happen when the flood fill begins on a start pixel that matches the colour being filled in
-					// Because the simple diff() has no way of determining if a pixel has been filled or not
-					// So it loops endlessly
-					// I'm considering using the spare alpha channel to keep track of this
-					console.error("Infinite while loop in flood fill algorithm");
-					todo = [];
-					break;
+				while (y++ < canvas.height - 1 && check(data, currentPos, startColor)) {
+					colorPixel(data, currentPos, drawColor);
+
+					if (x > 0) {
+						if (check(data, currentPos - 4, startColor)) {
+							if (!reachLeft) {
+								todo.push([x - 1, y]);
+								reachLeft = true;
+							}
+						} else if (reachLeft) {
+							reachLeft = false;
+						}
+					}
+
+					if (x < canvas.width - 1) {
+						if (check(data, currentPos + 4, startColor)) {
+							if (!reachRight) {
+								todo.push([x + 1, y]);
+								reachRight = true;
+							}
+						} else if (reachRight) {
+							reachRight = false;
+						}
+					}
+
+					currentPos += canvas.width * 4;
+
+					if (++n > canvas.width * canvas.height) {
+						// Automatically break if the code gets stuck in an infinite loop
+						// THIS SHOULD NEVER HAPPEN
+						console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
+						todo = [];
+						break;
+					}
 				}
 			}
-		}
-		ctx.putImageData(imgData, 0, 0);
-		document.body.appendChild(canvas);
+			ctx.putImageData(imgData, 0, 0);
 
-		// 3. Convert newly colored pixels into an image (keep track of them separately from the imagedata)
-		// 4. Place image back onto fabric.js canvas
-	};
+			// Place filled shape back onto the original canvas
+			fabric.Image.fromURL(canvas.toDataURL(), (e) => {
+				CANVAS.add(e);
+				e.bringToFront();
+				CANVAS.renderAll();
+
+				// also add to undo stack
+				record("floodfill:created", e);
+
+				// delete temp data
+				img = null;
+				imgData = null;
+				canvas.remove();
+			});
+		};
+	}
 }
