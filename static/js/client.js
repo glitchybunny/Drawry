@@ -63,8 +63,11 @@ const DRAW = {
 	color: "#000000",
 	colorHistory: [],
 	width: 6,
+	flow: 50,
 	undo: [],
 	redo: [],
+	WIDTH: 800,
+	HEIGHT: 600,
 };
 
 // Ensure browser compatibility
@@ -849,8 +852,11 @@ function changeColor(color) {
 	// Update everything to use new color
 	byId("toolColor").value = color;
 	if (DRAW.tool !== TOOL.ERASE) {
-		CANVAS.freeDrawingBrush.color = color;
 		MOUSE_CURSOR.set({ fill: color });
+
+		if (DRAW.tool !== TOOL.FILL) {
+			CANVAS.freeDrawingBrush.color = color;
+		}
 	}
 
 	// History/selection
@@ -1146,7 +1152,7 @@ function show(e) {
 				// Export canvas to base64 and send to server
 				let _value = CANVAS.toDataURL({
 					format: "png",
-					multiplier: 800 / CANVAS.getWidth(),
+					multiplier: DRAW.WIDTH / CANVAS.getWidth(),
 				});
 				SOCKET.emit("submitPage", {
 					mode: ROUND.mode,
@@ -1176,11 +1182,14 @@ function show(e) {
 		// Change to paint tool
 		DRAW.tool = TOOL.PAINT;
 		changeTool(e.target);
+		hide("optionsFill");
+		show("optionsBrush");
 
 		// Draw with so many beautiful colors
 		CANVAS.freeDrawingBrush.color = DRAW.color;
 		CANVAS.freeDrawingBrush.width = DRAW.width;
-		MOUSE_CURSOR.set({ fill: DRAW.color, stroke: "black" });
+		CANVAS.set({ freeDrawingCursor: "none" });
+		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: DRAW.color, stroke: "black" });
 	});
 
 	// Draw: Erase tool
@@ -1188,11 +1197,14 @@ function show(e) {
 		// Change to erase tool
 		DRAW.tool = TOOL.ERASE;
 		changeTool(e.target);
+		hide("optionsFill");
+		show("optionsBrush");
 
 		// Erasing is just drawing white
 		CANVAS.freeDrawingBrush.color = "#FFFFFF";
 		CANVAS.freeDrawingBrush.width = DRAW.width;
-		MOUSE_CURSOR.set({ fill: "white", stroke: "grey" });
+		CANVAS.set({ freeDrawingCursor: "none" });
+		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: "white", stroke: "grey" });
 	});
 
 	// Draw: Fill tool
@@ -1200,12 +1212,14 @@ function show(e) {
 		// Change to fill tool
 		DRAW.tool = TOOL.FILL;
 		changeTool(e.target);
+		hide("optionsBrush");
+		show("optionsFill");
 
-		// Flood fill tool
-		// 1. Get raster image of the canvas
-		// 2. Run flood fill algorithm on it
-		// 3. Convert newly colored pixels into an image
-		// 4. Place image back onto fabric.js canvas
+		// Disable drawing and change cursor
+		CANVAS.freeDrawingBrush.color = "rgba(0,0,0,0)";
+		CANVAS.freeDrawingBrush.width = 0;
+		CANVAS.set({ freeDrawingCursor: "crosshair" });
+		MOUSE_CURSOR.set({ radius: 0, fill: "rgba(0,0,0,0)", stroke: "rgba(0,0,0,0)" });
 	});
 
 	// Draw: Undo tool
@@ -1216,14 +1230,12 @@ function show(e) {
 			let _command = DRAW.undo.pop();
 			switch (_command.type) {
 				case "path:created":
+				case "floodfill:created":
 					if (CANVAS.contains(_command.object)) {
 						CANVAS.remove(_command.object);
 						DRAW.redo.push(_command);
 						byId("toolRedo").disabled = false;
 					}
-					break;
-
-				case "object:modified":
 					break;
 			}
 
@@ -1244,12 +1256,10 @@ function show(e) {
 			let _command = DRAW.redo.pop();
 			switch (_command.type) {
 				case "path:created":
+				case "floodfill:created":
 					CANVAS.add(_command.object);
 					DRAW.undo.push(_command);
 					byId("toolUndo").disabled = false;
-					break;
-
-				case "object:modified":
 					break;
 			}
 
@@ -1304,6 +1314,18 @@ function show(e) {
 
 		// Update text input
 		byId("brushSize").value = DRAW.width;
+	});
+
+	// Draw: Fill Threshold
+	byId("fillThreshold").addEventListener("input", (e) => {
+		// Update fill threshold
+		DRAW.flow = parseInt(e.target.value);
+		byId("fillThresholdRange").value = DRAW.flow;
+	});
+	byId("fillThresholdRange").addEventListener("input", (e) => {
+		// Update fill threshold
+		DRAW.flow = parseInt(e.target.value);
+		byId("fillThreshold").value = DRAW.flow;
 	});
 
 	/// PRESENT
@@ -1428,8 +1450,8 @@ function download(bookIDs) {
 const CANVAS = new fabric.Canvas("c", {
 	isDrawingMode: true,
 	freeDrawingCursor: "none",
+	backgroundColor: "#FFFFFF",
 });
-CANVAS.setBackgroundColor("#FFFFFF");
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
 
@@ -1492,15 +1514,21 @@ function record(type, object) {
 
 	// Ensure commands aren't doubled up
 	if (_last === undefined || type !== _last.type || object !== _last.object) {
-		// Add to undo stack
-		DRAW.undo.push({ type: type, object: object });
+		if (type === "path:created" && DRAW.tool === TOOL.FILL) {
+			// If using the fill tool, remove the invisible path that was created when clicking
+			if (CANVAS.contains(object)) {
+				CANVAS.remove(object);
+			}
+		} else {
+			// Otherwise, record event properly
+			// Add to undo stack
+			DRAW.undo.push({ type: type, object: object });
+			byId("toolUndo").disabled = false;
 
-		// Enable undo button
-		byId("toolUndo").disabled = false;
-
-		// Clear redo stack
-		DRAW.redo = [];
-		byId("toolRedo").disabled = true;
+			// Clear redo stack
+			DRAW.redo = [];
+			byId("toolRedo").disabled = true;
+		}
 	}
 }
 
@@ -1508,6 +1536,194 @@ CANVAS.on("path:created", (obj) => {
 	record("path:created", obj.path);
 });
 
-CANVAS.on("object:modified", (obj) => {
-	record("object:modified", obj);
+// Flood fill function
+CANVAS.on("mouse:up", (obj) => {
+	if (DRAW.tool === TOOL.FILL) {
+		let mouse = obj.absolutePointer;
+		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < DRAW.WIDTH && mouse.y < DRAW.HEIGHT) {
+			fill({ x: Math.floor(mouse.x), y: Math.floor(mouse.y) });
+		}
+	}
 });
+
+function fill(pos) {
+	/// FLOOD FILL ALGORITHM
+	// This code is so ugly and messy :(
+	let xMin, yMin, xMax, yMax;
+
+	// Get position from coords (and vice versa)
+	const getPos = (x, y) => {
+		return (y * DRAW.WIDTH + x) * 4;
+	};
+	const getCoords = (pos) => {
+		let p = pos / 4;
+		let x = p % DRAW.WIDTH;
+		let y = (p - x) / DRAW.WIDTH;
+		return { x: x, y: y };
+	};
+
+	// Get difference between two colors
+	const diff = (data, pos, col) => {
+		// comparison algorithm from here https://www.compuphase.com/cmetric.htm
+		let rAvg = (data[pos] + col.r) / 2;
+		let r = data[pos] - col.r;
+		let g = data[pos + 1] - col.g;
+		let b = data[pos + 2] - col.b;
+		return (
+			Math.sqrt((((512 + rAvg) * r * r) >> 8) + 4 * g * g + (((767 - rAvg) * b * b) >> 8)) >> 3
+		); // between 0 and ~95.5
+	};
+
+	const check = (data, pos, col) => {
+		// Check if pos hasn't been visited (alpha = 0) and has similar color
+		if (data[pos + 3] === 0 && diff(data, pos, col) <= DRAW.flow) {
+			return true;
+		}
+	};
+
+	// Change color of pixel
+	const colorPixel = (data, pos, col) => {
+		// color pixels with the draw color
+		data[pos] = col.r;
+		data[pos + 1] = col.g;
+		data[pos + 2] = col.b;
+		data[pos + 3] = 255;
+
+		// track colored pixel bounds
+		let coords = getCoords(pos);
+		xMin = Math.min(xMin, coords.x);
+		yMin = Math.min(yMin, coords.y);
+		xMax = Math.max(xMax, coords.x);
+		yMax = Math.max(yMax, coords.y);
+	};
+
+	// Crop the canvas (for after the flood has been done)
+	const cropCanvas = (source, left, top, width, height) => {
+		let dest = document.createElement("canvas");
+		dest.width = width;
+		dest.height = height;
+		dest.getContext("2d").drawImage(source, left, top, width, height, 0, 0, width, height);
+		return dest;
+	};
+
+	// Todo: See if it would be more efficient to clone the objects to a new canvas instead of baking and loading image data
+	// I've done some testing and this seems to be the slowest part (slower than the flood algorithm even)
+
+	/// Flood fill
+	if (pos.x >= 0 && pos.x <= DRAW.WIDTH && pos.y >= 0 && pos.y <= DRAW.HEIGHT) {
+		// Variables to keep track of flood fill dimensions
+		xMin = xMax = pos.x;
+		yMin = yMax = pos.y;
+
+		// Colour to flood fill with
+		let _source = fabric.Color.fromHex(DRAW.color)._source;
+		let drawColor = { r: _source[0], g: _source[1], b: _source[2] };
+
+		// Create a temporary canvas to calculate flood fill
+		let canvas = document.createElement("canvas");
+		canvas.width = DRAW.WIDTH;
+		canvas.height = DRAW.HEIGHT;
+
+		// Put current canvas data into image
+		let img = new Image(DRAW.WIDTH, DRAW.HEIGHT);
+		img.src = CANVAS.toDataURL({
+			format: "png",
+			multiplier: DRAW.WIDTH / CANVAS.getWidth(),
+		});
+		img.onload = () => {
+			// Draw image on temp canvas
+			let ctx = canvas.getContext("2d");
+			ctx.drawImage(img, 0, 0, DRAW.WIDTH, DRAW.HEIGHT);
+			let imgData = ctx.getImageData(0, 0, DRAW.WIDTH, DRAW.HEIGHT);
+			let data = imgData.data;
+
+			// Change all pixels to alpha 0
+			for (let i = 0; i < DRAW.WIDTH * DRAW.HEIGHT; i++) {
+				data[4 * i + 3] = 0;
+			}
+
+			// Get fill start
+			let startPos = getPos(pos.x, pos.y);
+			let startColor = {
+				r: data[startPos],
+				g: data[startPos + 1],
+				b: data[startPos + 2],
+			};
+
+			// Run flood fill algorithm on the temp canvas
+			let todo = [[pos.x, pos.y]];
+			let n = 0;
+			while (todo.length) {
+				let pos = todo.pop();
+				let x = pos[0];
+				let y = pos[1];
+				let currentPos = getPos(x, y);
+
+				while (y-- >= 0 && check(data, currentPos, startColor)) {
+					currentPos -= DRAW.WIDTH * 4;
+				}
+
+				currentPos += DRAW.WIDTH * 4;
+				++y;
+				let reachLeft = false;
+				let reachRight = false;
+
+				while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startColor)) {
+					colorPixel(data, currentPos, drawColor);
+
+					if (x > 0) {
+						if (check(data, currentPos - 4, startColor)) {
+							if (!reachLeft) {
+								todo.push([x - 1, y]);
+								reachLeft = true;
+							}
+						} else if (reachLeft) {
+							reachLeft = false;
+						}
+					}
+
+					if (x < DRAW.WIDTH - 1) {
+						if (check(data, currentPos + 4, startColor)) {
+							if (!reachRight) {
+								todo.push([x + 1, y]);
+								reachRight = true;
+							}
+						} else if (reachRight) {
+							reachRight = false;
+						}
+					}
+
+					currentPos += DRAW.WIDTH * 4;
+
+					if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
+						// Automatically break if the code gets stuck in an infinite loop
+						// THIS SHOULD NEVER HAPPEN
+						console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
+						todo = [];
+						break;
+					}
+				}
+			}
+
+			// Place filled shape back onto the original canvas
+			ctx.putImageData(imgData, 0, 0);
+			fabric.Image.fromURL(
+				cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
+				(e) => {
+					CANVAS.add(e);
+					e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
+					e.bringToFront();
+					CANVAS.renderAll();
+
+					// also add to undo stack
+					record("floodfill:created", e);
+
+					// delete temp data
+					img = null;
+					imgData = null;
+					canvas.remove();
+				}
+			);
+		};
+	}
+}

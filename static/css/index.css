@@ -491,12 +491,19 @@ ul {
 	height: 100%;
 }
 
-#brushSize {
+[id^=options] {
+	display: flex;
+	flex-flow: column nowrap;
+	width: 100%;
+	align-items: center;
+}
+
+#brushSize, #fillThreshold {
 	width: 2.3em;
 	font-size: 1em;
 }
 
-#brushSizeRange {
+#brushSizeRange, #fillThresholdRange {
 	width: 2.3em;
 	height: 6.9em;
 	margin: .15em 0;
