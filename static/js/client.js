@@ -66,6 +66,8 @@ const DRAW = {
 	flow: 50,
 	undo: [],
 	redo: [],
+	WIDTH: 800,
+	HEIGHT: 600,
 };
 
 // Ensure browser compatibility
@@ -1146,7 +1148,7 @@ function show(e) {
 				// Export canvas to base64 and send to server
 				let _value = CANVAS.toDataURL({
 					format: "png",
-					multiplier: 800 / CANVAS.getWidth(),
+					multiplier: DRAW.WIDTH / CANVAS.getWidth(),
 				});
 				SOCKET.emit("submitPage", {
 					mode: ROUND.mode,
@@ -1531,7 +1533,7 @@ CANVAS.on("path:created", (obj) => {
 CANVAS.on("mouse:up", (obj) => {
 	if (DRAW.tool === TOOL.FILL) {
 		let mouse = obj.absolutePointer;
-		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < 800 && mouse.y < 600) {
+		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < DRAW.WIDTH && mouse.y < DRAW.HEIGHT) {
 			fill({ x: Math.floor(mouse.x), y: Math.floor(mouse.y) });
 		}
 	}
@@ -1539,9 +1541,18 @@ CANVAS.on("mouse:up", (obj) => {
 
 function fill(pos) {
 	/// FLOOD FILL ALGORITHM
-	// Get position from coords
-	const getPos = (x, y, w) => {
-		return (y * w + x) * 4;
+	// This code is so ugly and messy :(
+	let xMin, yMin, xMax, yMax;
+
+	// Get position from coords (and vice versa)
+	const getPos = (x, y) => {
+		return (y * DRAW.WIDTH + x) * 4;
+	};
+	const getCoords = (pos) => {
+		let p = pos / 4;
+		let x = p % DRAW.WIDTH;
+		let y = (p - x) / DRAW.WIDTH;
+		return { x: x, y: y };
 	};
 
 	// Get difference between two colors
@@ -1557,9 +1568,7 @@ function fill(pos) {
 	};
 
 	const check = (data, pos, col) => {
-		// Checks if a cell can be filled
-		// Cells can only be filled if they haven't been visited (alpha = 0)
-		// And they're similar enough (defined by DRAW.flow)
+		// Check if pos hasn't been visited (alpha = 0) and has similar color
 		if (data[pos + 3] === 0 && diff(data, pos, col) <= DRAW.flow) {
 			return true;
 		}
@@ -1572,45 +1581,67 @@ function fill(pos) {
 		data[pos + 1] = col.g;
 		data[pos + 2] = col.b;
 		data[pos + 3] = 255;
+
+		// track colored pixel bounds
+		let coords = getCoords(pos);
+		xMin = Math.min(xMin, coords.x);
+		yMin = Math.min(yMin, coords.y);
+		xMax = Math.max(xMax, coords.x);
+		yMax = Math.max(yMax, coords.y);
+	};
+
+	// Crop the canvas (for after the flood has been done)
+	const cropCanvas = (source, left, top, width, height) => {
+		let dest = document.createElement("canvas");
+		dest.width = width;
+		dest.height = height;
+		dest.getContext("2d").drawImage(source, left, top, width, height, 0, 0, width, height);
+		return dest;
 	};
 
 	// Todo: See if it would be more efficient to clone the objects to a new canvas instead of baking and loading image data
 	// I've done some testing and this seems to be the slowest part (slower than the flood algorithm even)
 
 	/// Flood fill
-	if (pos.x >= 0 && pos.x <= 800 && pos.y >= 0 && pos.y <= 600) {
+	if (pos.x >= 0 && pos.x <= DRAW.WIDTH && pos.y >= 0 && pos.y <= DRAW.HEIGHT) {
+		// Variables to keep track of flood fill dimensions
+		xMin = xMax = pos.x;
+		yMin = yMax = pos.y;
+
+		// Colour to flood fill with
 		let _source = fabric.Color.fromHex(DRAW.color)._source;
 		let drawColor = { r: _source[0], g: _source[1], b: _source[2] };
 
 		// Create a temporary canvas to calculate flood fill
 		let canvas = document.createElement("canvas");
-		canvas.width = 800;
-		canvas.height = 600;
+		canvas.width = DRAW.WIDTH;
+		canvas.height = DRAW.HEIGHT;
 
 		// Put current canvas data into image
-		let img = new Image(canvas.width, canvas.height);
+		let img = new Image(DRAW.WIDTH, DRAW.HEIGHT);
 		img.src = CANVAS.toDataURL({
 			format: "png",
-			multiplier: canvas.width / CANVAS.getWidth(),
+			multiplier: DRAW.WIDTH / CANVAS.getWidth(),
 		});
 		img.onload = () => {
 			// Draw image on temp canvas
 			let ctx = canvas.getContext("2d");
-			ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-			let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(img, 0, 0, DRAW.WIDTH, DRAW.HEIGHT);
+			let imgData = ctx.getImageData(0, 0, DRAW.WIDTH, DRAW.HEIGHT);
 			let data = imgData.data;
 
-			let startPos = getPos(pos.x, pos.y, canvas.width);
+			// Change all pixels to alpha 0
+			for (let i = 0; i < DRAW.WIDTH * DRAW.HEIGHT; i++) {
+				data[4 * i + 3] = 0;
+			}
+
+			// Get fill start
+			let startPos = getPos(pos.x, pos.y);
 			let startColor = {
 				r: data[startPos],
 				g: data[startPos + 1],
 				b: data[startPos + 2],
 			};
-
-			// Change all pixels to alpha 0
-			for (let i = 0; i < canvas.width * canvas.height; i++) {
-				data[4 * i + 3] = 0;
-			}
 
 			// Run flood fill algorithm on the temp canvas
 			let todo = [[pos.x, pos.y]];
@@ -1619,18 +1650,18 @@ function fill(pos) {
 				let pos = todo.pop();
 				let x = pos[0];
 				let y = pos[1];
-				let currentPos = getPos(x, y, canvas.width);
+				let currentPos = getPos(x, y);
 
 				while (y-- >= 0 && check(data, currentPos, startColor)) {
-					currentPos -= canvas.width * 4;
+					currentPos -= DRAW.WIDTH * 4;
 				}
 
-				currentPos += canvas.width * 4;
+				currentPos += DRAW.WIDTH * 4;
 				++y;
 				let reachLeft = false;
 				let reachRight = false;
 
-				while (y++ < canvas.height - 1 && check(data, currentPos, startColor)) {
+				while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startColor)) {
 					colorPixel(data, currentPos, drawColor);
 
 					if (x > 0) {
@@ -1644,7 +1675,7 @@ function fill(pos) {
 						}
 					}
 
-					if (x < canvas.width - 1) {
+					if (x < DRAW.WIDTH - 1) {
 						if (check(data, currentPos + 4, startColor)) {
 							if (!reachRight) {
 								todo.push([x + 1, y]);
@@ -1655,9 +1686,9 @@ function fill(pos) {
 						}
 					}
 
-					currentPos += canvas.width * 4;
+					currentPos += DRAW.WIDTH * 4;
 
-					if (++n > canvas.width * canvas.height) {
+					if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
 						// Automatically break if the code gets stuck in an infinite loop
 						// THIS SHOULD NEVER HAPPEN
 						console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
@@ -1666,22 +1697,26 @@ function fill(pos) {
 					}
 				}
 			}
-			ctx.putImageData(imgData, 0, 0);
 
 			// Place filled shape back onto the original canvas
-			fabric.Image.fromURL(canvas.toDataURL(), (e) => {
-				CANVAS.add(e);
-				e.bringToFront();
-				CANVAS.renderAll();
+			ctx.putImageData(imgData, 0, 0);
+			fabric.Image.fromURL(
+				cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
+				(e) => {
+					CANVAS.add(e);
+					e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
+					e.bringToFront();
+					CANVAS.renderAll();
 
-				// also add to undo stack
-				record("floodfill:created", e);
+					// also add to undo stack
+					record("floodfill:created", e);
 
-				// delete temp data
-				img = null;
-				imgData = null;
-				canvas.remove();
-			});
+					// delete temp data
+					img = null;
+					imgData = null;
+					canvas.remove();
+				}
+			);
 		};
 	}
 }
