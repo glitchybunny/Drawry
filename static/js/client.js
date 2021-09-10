@@ -1184,6 +1184,7 @@ function show(e) {
 		// Draw with so many beautiful colors
 		CANVAS.freeDrawingBrush.color = DRAW.color;
 		CANVAS.freeDrawingBrush.width = DRAW.width;
+		CANVAS.set({ freeDrawingCursor: "none" });
 		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: DRAW.color, stroke: "black" });
 	});
 
@@ -1198,6 +1199,7 @@ function show(e) {
 		// Erasing is just drawing white
 		CANVAS.freeDrawingBrush.color = "#FFFFFF";
 		CANVAS.freeDrawingBrush.width = DRAW.width;
+		CANVAS.set({ freeDrawingCursor: "none" });
 		MOUSE_CURSOR.set({ radius: DRAW.width / 2, fill: "white", stroke: "grey" });
 	});
 
@@ -1209,10 +1211,11 @@ function show(e) {
 		hide("optionsBrush");
 		show("optionsFill");
 
-		// Disable drawing and instead change to own event listener
+		// Disable drawing and change cursor
 		CANVAS.freeDrawingBrush.color = "rgba(0,0,0,0)";
 		CANVAS.freeDrawingBrush.width = 0;
-		MOUSE_CURSOR.set({ radius: 5, fill: DRAW.color, stroke: "white" });
+		CANVAS.set({ freeDrawingCursor: "crosshair" });
+		MOUSE_CURSOR.set({ radius: 0, fill: "rgba(0,0,0,0)", stroke: "rgba(0,0,0,0)" });
 	});
 
 	// Draw: Undo tool
@@ -1442,7 +1445,7 @@ function download(bookIDs) {
 // Canvas drawing
 const CANVAS = new fabric.Canvas("c", {
 	isDrawingMode: true,
-	freeDrawingCursor: "crosshair",
+	freeDrawingCursor: "none",
 	backgroundColor: "#FFFFFF",
 });
 CANVAS.freeDrawingBrush.width = DRAW.width;
