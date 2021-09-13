@@ -56,7 +56,11 @@ const PALETTES = {
 const ROOM = {};
 const USERS = {};
 const BOOKS = {};
-const ROUND = {};
+const ROUND = {
+	page: 0,
+	timer: undefined,
+	timeLeft: 0,
+};
 const DRAW = {
 	tool: TOOL.PAINT,
 	brush: undefined,
@@ -165,7 +169,6 @@ SOCKET.on("startGame", (data) => {
 	}
 
 	// Set round info
-	ROUND.page = 0;
 	ROUND.book = BOOKS[ID];
 	ROUND.mode = data.start;
 
@@ -223,16 +226,18 @@ SOCKET.on("pageForward", () => {
 	byId("statusTitle").textContent = ROUND.book.title;
 	byId("statusPage").textContent = ROUND.page + 1;
 
-	// Update previous page, input mode, book list
+	// Update previous page, input mode, book list, timer
 	updatePrevious();
 	updateInput();
 	updateBooks();
 
 	// Show how many pages are left
 	byId("waitDisplay").textContent = (Object.keys(USERS).length - 1).toString();
+});
 
-	// Set timer
-	// TODO: timers
+// Timer went off, automatically submit page
+SOCKET.on("timerFinish", () => {
+	console.log("SERVER: TIMER");
 });
 
 /// --- PRESENTING --- ///
@@ -685,6 +690,14 @@ function updateInput() {
 			// Enable/disable timer
 			if (+ROOM.settings.timeWrite) {
 				show("statusTimer");
+				ROUND.timeLeft = parseInt(ROOM.settings.timeWrite * 60);
+				ROUND.timer = setInterval(() => {
+					if (--ROUND.timeLeft === 0) {
+						clearInterval(ROUND.timer);
+						console.log("CLIENT: TIMER");
+					}
+					console.log(ROUND.timeLeft);
+				}, 1000);
 			}
 
 			// Reset writing input
