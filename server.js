@@ -30,12 +30,12 @@ const SETTINGS_CONSTRAINTS = {
 	timeDraw: ["number", [0, 15]],
 };
 const SETTINGS_DEFAULT = {
-	firstPage: "Draw",
-	pageCount: "8",
+	firstPage: "Write",
+	pageCount: "2",
 	pageOrder: "Normal",
 	palette: "No palette",
-	timeWrite: "0",
-	timeDraw: "0",
+	timeWrite: "1",
+	timeDraw: "1",
 };
 const STATE = {
 	LOBBY: 0,
@@ -88,6 +88,7 @@ io.on("connection", (socket) => {
 					page: 0,
 					submitted: 0,
 					books: undefined,
+					timer: undefined,
 				};
 			}
 
@@ -167,6 +168,7 @@ io.on("connection", (socket) => {
 			generateBooks(_room);
 
 			// Start game
+			startTimer(_roomCode, _room.settings.firstPage);
 			io.to(_roomCode).emit("startGame", {
 				books: _room.books,
 				start: _room.settings.firstPage,
@@ -288,6 +290,7 @@ io.on("connection", (socket) => {
 			} else {
 				// Go to next page
 				io.to(_roomCode).emit("pageForward");
+				startTimer(_roomCode, _expected);
 			}
 		}
 	});
@@ -544,6 +547,29 @@ function shuffle(array) {
 		array[i] = t;
 	}
 	return array;
+}
+
+// Room timers
+function startTimer(roomCode, mode) {
+	let room = ROOMS[roomCode];
+	let time;
+	switch (mode) {
+		case "Write":
+			time = room.settings.timeWrite;
+			break;
+		case "Draw":
+			time = room.settings.timeDraw;
+			break;
+		default:
+			time = 0;
+	}
+	// set timer (plus an extra couple of seconds to account for network latency)
+	room.timer = setTimeout(() => {
+		room.timer = undefined;
+
+		// upon timer running out, tell clients to go to next page
+		io.to(roomCode).emit("timerFinish");
+	}, (parseFloat(time) * 60 + 1) * 1000);
 }
 
 ///// ----- HTTP SERVER ----- /////
