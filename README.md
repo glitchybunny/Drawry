@@ -23,3 +23,19 @@ For reference, server.js is the node server, and /static/js/client.js is the mai
 2. Create new heroku instance and connect it to your forked repo.
 3. Heroku should automatically detect and choose a buildpack. If not, add the `heroku/nodejs` buildpack in the settings.
 4. Start the dyno and you should be good to go :)
+
+---
+
+### Environment Variables
+
+**PORT**
+- Changes which port the server runs on
+- Default: 80
+
+**RATE_LIMIT**
+- Defines the max amount of resource requests from an IP address per minute.
+- Default: 50
+
+**VERBOSE**
+- Enables verbose logging in the server console
+- Default: false
