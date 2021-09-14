@@ -687,19 +687,6 @@ function updateInput() {
 			hide("draw");
 			show("write");
 
-			// Enable/disable timer
-			if (+ROOM.settings.timeWrite) {
-				show("statusTimer");
-				ROUND.timeLeft = parseInt(ROOM.settings.timeWrite * 60);
-				ROUND.timer = setInterval(() => {
-					if (--ROUND.timeLeft === 0) {
-						clearInterval(ROUND.timer);
-						console.log("CLIENT: TIMER");
-					}
-					console.log(ROUND.timeLeft);
-				}, 1000);
-			}
-
 			// Reset writing input
 			byId("inputWrite").value = "";
 			break;
@@ -708,11 +695,6 @@ function updateInput() {
 			// Change to drawing mode
 			hide("write");
 			show("draw");
-
-			// Enable/disable timer
-			if (+ROOM.settings.timeDraw) {
-				show("statusTimer");
-			}
 
 			// Reset drawing inputs
 			CANVAS.clear();
@@ -726,8 +708,49 @@ function updateInput() {
 			break;
 	}
 
+	// Round timer
+	if (
+		(ROUND.mode === "Write" && +ROOM.settings.timeWrite) ||
+		(ROUND.mode === "Draw" && +ROOM.settings.timeDraw)
+	) {
+		// Enable the timer
+		show("statusTimer");
+		let time = ROUND.mode === "Write" ? +ROOM.settings.timeWrite : +ROOM.settings.timeDraw;
+		ROUND.timeLeft = parseInt(time * 60);
+		ROUND.timer = setInterval(() => {
+			if (--ROUND.timeLeft >= 0) {
+				updateTimer();
+			} else {
+				clearInterval(ROUND.timer);
+				ROUND.timer = undefined;
+			}
+		}, 1000);
+		updateTimer();
+	} else {
+		hide("statusTimer");
+	}
+
 	// Enable submit button
 	byId("inputSubmit").disabled = false;
+}
+
+function updateTimer() {
+	// Update timer text
+	let min, sec;
+	min = Math.floor(ROUND.timeLeft / 60).toString();
+	sec = Math.floor(ROUND.timeLeft - min * 60).toString();
+	byId("timer").textContent = min + ":" + sec.padStart(2, "0");
+
+	// Need to alternate between two identical animations,
+	// 	since there's no native way to restart it with js
+	byId("timer").style.animationName =
+		byId("timer").style.animationName === "tick-1" ? "tick-2" : "tick-1";
+
+	// Upon timer finishing, alert user and submit page automatically
+	if (ROUND.timeLeft === 0) {
+		byId("timer").textContent = "Time's up!";
+		console.log("CLIENT: TIMER");
+	}
 }
 
 // Update color input/palette

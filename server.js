@@ -563,13 +563,19 @@ function startTimer(roomCode, mode) {
 		default:
 			time = 0;
 	}
+
+	// clear the timer if it already exists
+	if (room.timer) {
+		clearTimeout(room.timer);
+	}
+
 	// set timer (plus an extra couple of seconds to account for network latency)
 	room.timer = setTimeout(() => {
-		room.timer = undefined;
-
-		// upon timer running out, tell clients to go to next page
+		// tell clients when the timer is done
 		io.to(roomCode).emit("timerFinish");
-	}, (parseFloat(time) * 60 + 1) * 1000);
+		clearTimeout(room.timer);
+		room.timer = undefined;
+	}, (parseFloat(time) * 60 + 2) * 1000);
 }
 
 ///// ----- HTTP SERVER ----- /////
