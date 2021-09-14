@@ -1384,7 +1384,7 @@ function download(bookIDs) {
 	// Generate contents for each book
 	let filename = "picturephone_" + Date.now() + ".html";
 	let html =
-		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
 	for (let _id of bookIDs) {
 		// Iterate over each book and generate HTML for it
 		let _book = document.createElement("article");
