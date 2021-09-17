@@ -447,11 +447,24 @@ SOCKET.on("finish", () => {
 });
 
 // Disconnect from the server
+SOCKET.on("kick", (data) => {
+	switch (data) {
+		case "server full":
+			alert("Server full! Can't connect.");
+			break;
+		case "invalid room code":
+			alert("Invalid room code!");
+			break;
+		case "invalid settings":
+			alert("Invalid settings!");
+			break;
+	}
+});
+
 SOCKET.on("disconnect", (data) => {
 	// Determine which disconnect has occurred and display relevant error
 	switch (data) {
 		case "io server disconnect":
-			alert("Kicked from server!");
 			window.location.reload(true);
 			break;
 		case "ping timeout":
@@ -461,9 +474,6 @@ SOCKET.on("disconnect", (data) => {
 		case "transport close":
 			alert("Lost connection to server.");
 			window.location.reload(true);
-			break;
-		case "server full":
-			alert("Server full! Can't connect.");
 			break;
 		default:
 			alert("Disconnected due to an unknown error.");
