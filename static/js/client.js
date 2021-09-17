@@ -56,7 +56,11 @@ const PALETTES = {
 const ROOM = {};
 const USERS = {};
 const BOOKS = {};
-const ROUND = {};
+const ROUND = {
+	page: 0,
+	timer: undefined,
+	timeLeft: 0,
+};
 const DRAW = {
 	tool: TOOL.PAINT,
 	brush: undefined,
@@ -165,7 +169,6 @@ SOCKET.on("startGame", (data) => {
 	}
 
 	// Set round info
-	ROUND.page = 0;
 	ROUND.book = BOOKS[ID];
 	ROUND.mode = data.start;
 
@@ -210,6 +213,10 @@ SOCKET.on("page", (data) => {
 SOCKET.on("pageForward", () => {
 	byId("wait").close();
 
+	// Play ping sound
+	let audio = new Audio("/sound/ping.mp3");
+	audio.play();
+
 	// Determine round information
 	ROUND.page += 1;
 	ROUND.mode = ROUND.mode === "Write" ? "Draw" : "Write";
@@ -223,16 +230,18 @@ SOCKET.on("pageForward", () => {
 	byId("statusTitle").textContent = ROUND.book.title;
 	byId("statusPage").textContent = ROUND.page + 1;
 
-	// Update previous page, input mode, book list
+	// Update previous page, input mode, book list, timer
 	updatePrevious();
 	updateInput();
 	updateBooks();
 
 	// Show how many pages are left
 	byId("waitDisplay").textContent = (Object.keys(USERS).length - 1).toString();
+});
 
-	// Set timer
-	// TODO: timers
+// Timer went off, automatically submit page
+SOCKET.on("timerFinish", () => {
+	endTimer(true);
 });
 
 /// --- PRESENTING --- ///
@@ -683,11 +692,6 @@ function updateInput() {
 			hide("draw");
 			show("write");
 
-			// Enable/disable timer
-			if (+ROOM.settings.timeWrite) {
-				show("statusTimer");
-			}
-
 			// Reset writing input
 			byId("inputWrite").value = "";
 			break;
@@ -696,11 +700,6 @@ function updateInput() {
 			// Change to drawing mode
 			hide("write");
 			show("draw");
-
-			// Enable/disable timer
-			if (+ROOM.settings.timeDraw) {
-				show("statusTimer");
-			}
 
 			// Reset drawing inputs
 			CANVAS.clear();
@@ -714,8 +713,64 @@ function updateInput() {
 			break;
 	}
 
+	// Round timer
+	if (
+		(ROUND.mode === "Write" && +ROOM.settings.timeWrite) ||
+		(ROUND.mode === "Draw" && +ROOM.settings.timeDraw)
+	) {
+		// If timer is already enabled, reset it
+		if (ROUND.timer) {
+			clearInterval(ROUND.timer);
+			ROUND.timer = undefined;
+		}
+
+		// Enable the timer
+		show("statusTimer");
+		let time = ROUND.mode === "Write" ? +ROOM.settings.timeWrite : +ROOM.settings.timeDraw;
+		ROUND.timeLeft = parseInt(time * 60);
+		ROUND.timer = setInterval(() => {
+			if (--ROUND.timeLeft >= 0) {
+				updateTimer();
+			} else {
+				endTimer(true);
+			}
+		}, 1000);
+		updateTimer();
+	} else {
+		hide("statusTimer");
+	}
+
 	// Enable submit button
 	byId("inputSubmit").disabled = false;
+}
+
+function updateTimer() {
+	// Update timer text
+	let min, sec;
+	min = Math.floor(ROUND.timeLeft / 60).toString();
+	sec = Math.floor(ROUND.timeLeft - min * 60).toString();
+	byId("timer").textContent = min + ":" + sec.padStart(2, "0");
+
+	// Need to alternate between two identical animations,
+	// 	since there's no native way to restart it with js
+	byId("timer").style.animationName =
+		byId("timer").style.animationName === "tick-1" ? "tick-2" : "tick-1";
+
+	// Upon timer finishing, alert user and submit page automatically
+	if (ROUND.timeLeft === 0) {
+		byId("timer").textContent = "Time's up!";
+	}
+}
+
+function endTimer(submit) {
+	if (ROUND.timer) {
+		// Reset timer
+		clearInterval(ROUND.timer);
+		ROUND.timer = undefined;
+
+		// Submit page
+		byId("inputSubmit").click();
+	}
 }
 
 // Update color input/palette
@@ -1128,46 +1183,33 @@ function show(e) {
 
 	// Game: Submit page
 	byId("inputSubmit").addEventListener("click", (e) => {
-		let _valid = false;
+		// Get round data
+		let _value = undefined;
 		switch (ROUND.mode) {
 			case "Write":
 				// Writing round
-				let _inputWrite = byId("inputWrite");
-				if (_inputWrite.reportValidity()) {
-					_valid = true;
-
-					// Send page to the server
-					let _value = _inputWrite.value.substr(0, 140);
-					SOCKET.emit("submitPage", {
-						mode: ROUND.mode,
-						value: _value,
-						key: SESSION_KEY,
-					});
-				}
+				_value = byId("inputWrite").value.substr(0, 140);
 				break;
 
 			case "Draw":
-				// Drawing round
-				_valid = true;
-
-				// Export canvas to base64 and send to server
-				let _value = CANVAS.toDataURL({
+				// Drawing round - Export canvas to base64
+				_value = CANVAS.toDataURL({
 					format: "png",
 					multiplier: DRAW.WIDTH / CANVAS.getWidth(),
-				});
-				SOCKET.emit("submitPage", {
-					mode: ROUND.mode,
-					value: _value,
-					key: SESSION_KEY,
 				});
 				break;
 		}
 
-		if (_valid) {
-			// Put client in waiting state
-			e.target.disabled = true;
-			byId("wait").showModal();
-		}
+		// Send data to server
+		SOCKET.emit("submitPage", {
+			mode: ROUND.mode,
+			value: _value,
+			key: SESSION_KEY,
+		});
+
+		// Put client in waiting state
+		e.target.disabled = true;
+		byId("wait").showModal();
 	});
 
 	// Game: Waiting dialog

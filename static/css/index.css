@@ -386,6 +386,13 @@ ul {
 	padding: .5em .5em 0;
 }
 
+#timer {
+	display: inline-block;
+	animation-duration: .1s;
+	animation-name: tick-1;
+	animation-iteration-count: 1;
+}
+
 #you {
 	font-weight: bold;
 }
@@ -402,7 +409,6 @@ ul {
 	outline: none;
 	background: #6789AB url(/img/tools.png) no-repeat top left;
 	background-size: 10em 6em;
-	/*box-shadow: 0 0 .15em #6789AB inset;*/
 }
 
 .colorSmall {
@@ -545,6 +551,24 @@ ul {
 	}
 	to {
 		transform: rotate(359deg);
+	}
+}
+
+@keyframes tick-1 {
+	0% {
+		transform: scale(1.1);
+	}
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes tick-2 {
+	0% {
+		transform: scale(1.1);
+	}
+	100% {
+		transform: scale(1);
 	}
 }
 

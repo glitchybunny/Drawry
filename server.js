@@ -30,7 +30,7 @@ const SETTINGS_CONSTRAINTS = {
 	timeDraw: ["number", [0, 15]],
 };
 const SETTINGS_DEFAULT = {
-	firstPage: "Draw",
+	firstPage: "Write",
 	pageCount: "8",
 	pageOrder: "Normal",
 	palette: "No palette",
@@ -88,6 +88,7 @@ io.on("connection", (socket) => {
 					page: 0,
 					submitted: 0,
 					books: undefined,
+					timer: undefined,
 				};
 			}
 
@@ -171,6 +172,7 @@ io.on("connection", (socket) => {
 				books: _room.books,
 				start: _room.settings.firstPage,
 			});
+			startTimer(_roomCode, _room.settings.firstPage);
 		} else {
 			// Invalid request, kick from game
 			socket.disconnect();
@@ -288,6 +290,7 @@ io.on("connection", (socket) => {
 			} else {
 				// Go to next page
 				io.to(_roomCode).emit("pageForward");
+				startTimer(_roomCode, _expected);
 			}
 		}
 	});
@@ -491,7 +494,7 @@ function generateBooks(room) {
 	let _players = Object.keys(room.books);
 
 	// assign pages
-	if (room.settings.pageOrder === "Normal") {
+	if (room.settings.pageOrder === "Normal" || _players.length <= 3) {
 		// normal order (cyclical)
 		for (let i = 1; i < room.settings.pageCount; i++) {
 			for (let j = 0; j < _players.length; j++) {
@@ -544,6 +547,36 @@ function shuffle(array) {
 		array[i] = t;
 	}
 	return array;
+}
+
+// Room timers
+function startTimer(roomCode, mode) {
+	let room = ROOMS[roomCode];
+	let time;
+	switch (mode) {
+		case "Write":
+			time = room.settings.timeWrite;
+			break;
+		case "Draw":
+			time = room.settings.timeDraw;
+			break;
+		default:
+			time = 0;
+	}
+
+	// clear the timer if it already exists
+	if (room.timer) {
+		clearTimeout(room.timer);
+		room.timer = undefined;
+	}
+
+	// set timer (plus an extra couple of seconds to account for network latency)
+	room.timer = setTimeout(() => {
+		// tell clients when the timer is done
+		io.to(roomCode).emit("timerFinish");
+		clearTimeout(room.timer);
+		room.timer = undefined;
+	}, (parseFloat(time) * 60 + 2) * 1000);
 }
 
 ///// ----- HTTP SERVER ----- /////
