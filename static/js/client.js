@@ -213,6 +213,10 @@ SOCKET.on("page", (data) => {
 SOCKET.on("pageForward", () => {
 	byId("wait").close();
 
+	// Play ping sound
+	let audio = new Audio("/sound/ping.mp3");
+	audio.play();
+
 	// Determine round information
 	ROUND.page += 1;
 	ROUND.mode = ROUND.mode === "Write" ? "Draw" : "Write";
@@ -237,7 +241,7 @@ SOCKET.on("pageForward", () => {
 
 // Timer went off, automatically submit page
 SOCKET.on("timerFinish", () => {
-	console.log("SERVER: TIMER");
+	endTimer(true);
 });
 
 /// --- PRESENTING --- ///
@@ -713,6 +717,12 @@ function updateInput() {
 		(ROUND.mode === "Write" && +ROOM.settings.timeWrite) ||
 		(ROUND.mode === "Draw" && +ROOM.settings.timeDraw)
 	) {
+		// If timer is already enabled, reset it
+		if (ROUND.timer) {
+			clearInterval(ROUND.timer);
+			ROUND.timer = undefined;
+		}
+
 		// Enable the timer
 		show("statusTimer");
 		let time = ROUND.mode === "Write" ? +ROOM.settings.timeWrite : +ROOM.settings.timeDraw;
@@ -721,8 +731,7 @@ function updateInput() {
 			if (--ROUND.timeLeft >= 0) {
 				updateTimer();
 			} else {
-				clearInterval(ROUND.timer);
-				ROUND.timer = undefined;
+				endTimer(true);
 			}
 		}, 1000);
 		updateTimer();
@@ -749,7 +758,17 @@ function updateTimer() {
 	// Upon timer finishing, alert user and submit page automatically
 	if (ROUND.timeLeft === 0) {
 		byId("timer").textContent = "Time's up!";
-		console.log("CLIENT: TIMER");
+	}
+}
+
+function endTimer(submit) {
+	if (ROUND.timer) {
+		// Reset timer
+		clearInterval(ROUND.timer);
+		ROUND.timer = undefined;
+
+		// Submit page
+		byId("inputSubmit").click();
 	}
 }
 
@@ -1163,46 +1182,33 @@ function show(e) {
 
 	// Game: Submit page
 	byId("inputSubmit").addEventListener("click", (e) => {
-		let _valid = false;
+		// Get round data
+		let _value = undefined;
 		switch (ROUND.mode) {
 			case "Write":
 				// Writing round
-				let _inputWrite = byId("inputWrite");
-				if (_inputWrite.reportValidity()) {
-					_valid = true;
-
-					// Send page to the server
-					let _value = _inputWrite.value.substr(0, 140);
-					SOCKET.emit("submitPage", {
-						mode: ROUND.mode,
-						value: _value,
-						key: SESSION_KEY,
-					});
-				}
+				_value = byId("inputWrite").value.substr(0, 140);
 				break;
 
 			case "Draw":
-				// Drawing round
-				_valid = true;
-
-				// Export canvas to base64 and send to server
-				let _value = CANVAS.toDataURL({
+				// Drawing round - Export canvas to base64
+				_value = CANVAS.toDataURL({
 					format: "png",
 					multiplier: DRAW.WIDTH / CANVAS.getWidth(),
-				});
-				SOCKET.emit("submitPage", {
-					mode: ROUND.mode,
-					value: _value,
-					key: SESSION_KEY,
 				});
 				break;
 		}
 
-		if (_valid) {
-			// Put client in waiting state
-			e.target.disabled = true;
-			byId("wait").showModal();
-		}
+		// Send data to server
+		SOCKET.emit("submitPage", {
+			mode: ROUND.mode,
+			value: _value,
+			key: SESSION_KEY,
+		});
+
+		// Put client in waiting state
+		e.target.disabled = true;
+		byId("wait").showModal();
 	});
 
 	// Game: Waiting dialog
