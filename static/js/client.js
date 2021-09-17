@@ -20,7 +20,7 @@ const TOOL = {
 	STICKER: 3,
 };
 const PALETTES = {
-	"Bluescale": ["#000123", "#012345", "#234567", "#456789", "#6789AB", "#89ABCD", "#ABCDEF"],
+	"Blues": ["#000123", "#012345", "#234567", "#456789", "#6789AB", "#89ABCD", "#ABCDEF"],
 	"Rainbow": [
 		"#FF0000",
 		"#FFAA00",

@@ -25,7 +25,7 @@ const SETTINGS_CONSTRAINTS = {
 	firstPage: ["string", ["Write", "Draw"]],
 	pageCount: ["number", [2, 20]],
 	pageOrder: ["string", ["Normal", "Random"]],
-	palette: ["string", ["No palette", "Bluescale", "Rainbow", "PICO-8" /*, "Random"*/]],
+	palette: ["string", ["No palette", "Blues", "Rainbow", "PICO-8" /*, "Random"*/]],
 	timeWrite: ["number", [0, 15]],
 	timeDraw: ["number", [0, 15]],
 };
