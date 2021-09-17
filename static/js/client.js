@@ -1,7 +1,7 @@
 /*
 	picturephone
 	client.js
-	a multiplayer art experiment by Riley Taylor (rtay.io)
+	a multiplayer art experiment by Glitch Taylor (rtay.io)
 */
 "use strict";
 
@@ -567,6 +567,7 @@ function updatePlayers() {
 		nameElem.textContent = getName(_id);
 		if (_id === ID) {
 			nameElem.title = "You!";
+			nameElem.style.fontWeight = "bold";
 		}
 		_playerList.appendChild(nameElem);
 	}
