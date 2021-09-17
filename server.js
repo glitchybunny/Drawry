@@ -31,11 +31,11 @@ const SETTINGS_CONSTRAINTS = {
 };
 const SETTINGS_DEFAULT = {
 	firstPage: "Write",
-	pageCount: "2",
+	pageCount: "8",
 	pageOrder: "Normal",
 	palette: "No palette",
-	timeWrite: "1",
-	timeDraw: "1",
+	timeWrite: "0",
+	timeDraw: "0",
 };
 const STATE = {
 	LOBBY: 0,
