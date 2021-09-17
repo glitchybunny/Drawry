@@ -299,10 +299,7 @@ io.on("connection", (socket) => {
 	// Begin presenting a book
 	socket.on("presentBook", (data) => {
 		if (process.env.VERBOSE) {
-			console.log("presentBook", CLIENTS[socket.id].id, {
-				book: data.book,
-				host: data.host,
-			});
+			console.log("presentBook", CLIENTS[socket.id].id, { book: data.book });
 		}
 		let _id = CLIENTS[socket.id].id;
 		let _roomCode = CLIENTS[socket.id].roomCode;
@@ -314,11 +311,7 @@ io.on("connection", (socket) => {
 			if (_book in ROOMS[_roomCode].books) {
 				// Begin presenting book
 				ROOMS[_roomCode].page = -1;
-				if (data.host) {
-					ROOMS[_roomCode].presenter = _id;
-				} else {
-					ROOMS[_roomCode].presenter = _book;
-				}
+				ROOMS[_roomCode].presenter = _book;
 
 				// Tell all clients that a book is being presented
 				io.to(_roomCode).emit("presentBook", {

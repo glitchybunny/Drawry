@@ -177,7 +177,7 @@ SOCKET.on("startGame", (data) => {
 	show(["gameplay", "status"]);
 
 	// Update round status
-	byId("statusTitle").textContent = byId("inputTitle").value = BOOKS[ID].title;
+	byId("statusTitle").textContent = BOOKS[ID].title;
 	byId("statusPage").textContent = "1";
 	byId("statusPageMax").textContent = ROOM.settings.pageCount;
 	byId("waitDisplay").textContent = (Object.keys(USERS).length - 1).toString();
@@ -185,6 +185,7 @@ SOCKET.on("startGame", (data) => {
 	// Show first round input
 	updateInput();
 	updateBooks();
+	byId("inputTitle").focus();
 });
 
 // Update book title
@@ -215,7 +216,7 @@ SOCKET.on("pageForward", () => {
 
 	// Play ping sound
 	let audio = new Audio("/sound/ping.mp3");
-	audio.play();
+	audio.play().then();
 
 	// Determine round information
 	ROUND.page += 1;
@@ -241,7 +242,7 @@ SOCKET.on("pageForward", () => {
 
 // Timer went off, automatically submit page
 SOCKET.on("timerFinish", () => {
-	endTimer(true);
+	endTimer();
 });
 
 /// --- PRESENTING --- ///
@@ -300,7 +301,9 @@ SOCKET.on("presentBook", (data) => {
 	}
 
 	// Cross out book into present menu
-	byId("p" + data.book.toString()).style.textDecoration = "line-through";
+	let _row = byId("p" + data.book.toString());
+	_row.style.textDecoration = "line-through";
+	_row.style.opacity = "60%";
 });
 
 SOCKET.on("presentForward", () => {
@@ -694,6 +697,7 @@ function updateInput() {
 
 			// Reset writing input
 			byId("inputWrite").value = "";
+			byId("inputWrite").focus();
 			break;
 
 		case "Draw":
@@ -732,7 +736,7 @@ function updateInput() {
 			if (--ROUND.timeLeft >= 0) {
 				updateTimer();
 			} else {
-				endTimer(true);
+				endTimer();
 			}
 		}, 1000);
 		updateTimer();
@@ -762,7 +766,7 @@ function updateTimer() {
 	}
 }
 
-function endTimer(submit) {
+function endTimer() {
 	if (ROUND.timer) {
 		// Reset timer
 		clearInterval(ROUND.timer);
@@ -782,12 +786,13 @@ function updatePalette() {
 	// Change which drawing inputs are available depending on the palette
 	if (ROOM.settings.palette in PALETTES) {
 		// Give the player a specific palette
-		hide("toolColor");
+		hide(["colorContainer", "colorHistory"]);
+		show("colorRadio");
 
 		// Generate palette buttons
 		for (let _color of PALETTES[ROOM.settings.palette]) {
 			let _elem = document.createElement("input");
-			_elem.classList.add("colorBig");
+			_elem.classList.add("color");
 			_elem.style.backgroundColor = _color;
 			_elem.type = "radio";
 			_elem.name = "palette";
@@ -801,15 +806,20 @@ function updatePalette() {
 		}
 	} else if (ROOM.settings.palette === "Random") {
 		// Give the player a random selection of colors
-		hide("toolColor");
+		hide(["colorContainer", "colorHistory"]);
+		show("colorRadio");
 	} else {
 		// No palette, let users select whatever colors they want
-		show("toolColor");
+		hide("colorRadio");
+		show(["colorContainer"]);
 
 		// Keep track of color history
-		for (let i = 0; i < 16; i++) {
+		if (DRAW.colorHistory[0]) {
+			show(["colorHistory"]);
+		}
+		for (let i = 0; i < 12; i++) {
 			let _elem = document.createElement("input");
-			_elem.classList.add("colorSmall");
+			_elem.classList.add("color");
 			_elem.type = "button";
 			if (DRAW.colorHistory[i]) {
 				_elem.style.backgroundColor = DRAW.colorHistory[i];
@@ -819,7 +829,7 @@ function updatePalette() {
 					});
 				})(DRAW.colorHistory[i]);
 			} else {
-				_elem.disabled = true;
+				hide(_elem);
 			}
 			byId("colorHistory").appendChild(_elem);
 		}
@@ -842,51 +852,34 @@ function updatePresentList() {
 		let _tr = document.createElement("tr");
 		_tr.id = "p" + _id;
 
-		// Create book title
-		let _titleTD = document.createElement("td");
-		_titleTD.textContent = BOOKS[_id].title;
+		// Create book title + author
+		let _bookTD = document.createElement("td");
+		let _titleElem = document.createElement("span");
+		let _authorElem = document.createElement("span");
+		_titleElem.textContent = BOOKS[_id].title;
+		_authorElem.textContent = "by " + getName(_id);
+		_authorElem.className = "author";
+		_bookTD.appendChild(_titleElem);
+		_bookTD.appendChild(_authorElem);
 
-		// Create button to let the host present
-		let _hostTD = document.createElement("td");
-		let _hostInput = document.createElement("input");
-		_hostInput.value = "Present";
-		_hostInput.type = "button";
-		_hostInput.addEventListener(
+		// Create present button
+		let _presentTD = document.createElement("td");
+		let _presentInput = document.createElement("input");
+		_presentInput.value = "Present";
+		_presentInput.type = "button";
+		_presentInput.addEventListener(
 			"click",
 			_presentBook.bind(this, {
 				book: _id,
-				host: true,
 				key: SESSION_KEY,
 			})
 		);
-		_hostTD.appendChild(_hostInput);
-
-		// Create button to let the original author present
-		let _userTD = document.createElement("td");
-		if (ID !== _id) {
-			let _userInput = document.createElement("input");
-			let _name = getName(_id);
-			if (_name.length > 12) {
-				_name = _name.substr(0, 12) + "…";
-			}
-			_userInput.value = "Let " + _name + " present";
-			_userInput.type = "button";
-			_userInput.addEventListener(
-				"click",
-				_presentBook.bind(this, {
-					book: _id,
-					host: false,
-					key: SESSION_KEY,
-				})
-			);
-			_userTD.appendChild(_userInput);
-		}
+		_presentTD.appendChild(_presentInput);
 
 		// Append elements to DOM
 		_presentTable.appendChild(_tr);
-		_tr.appendChild(_titleTD);
-		_tr.appendChild(_userTD);
-		_tr.appendChild(_hostTD);
+		_tr.appendChild(_bookTD);
+		_tr.appendChild(_presentTD);
 	}
 }
 
@@ -920,8 +913,15 @@ function changeColor(color) {
 		// If there's no palette, keep track of history
 		DRAW.colorHistory.unshift(_oldColor); // add previous color to history
 		DRAW.colorHistory = DRAW.colorHistory.filter((i) => i !== color); // remove new color (if in history)
-		DRAW.colorHistory.slice(0, 16); // limit length
+		DRAW.colorHistory.slice(0, 12); // limit length
 		updatePalette();
+
+		// Also invert overlay if color is black
+		if (color === "#000000") {
+			byId("colorContainer").classList.add("alt");
+		} else {
+			byId("colorContainer").classList.remove("alt");
+		}
 	} else {
 		// Otherwise, ensure input element button is selected
 		byId(color).checked = true;
@@ -1164,10 +1164,17 @@ function show(e) {
 	/// GAME
 	// Game: Let player change their title
 	byId("inputTitle").addEventListener("input", (e) => {
-		byId("statusTitle").textContent = e.target.value.substr(0, 40);
+		let _title = e.target.value.substr(0, 40);
+		if (_title.length === 0) {
+			_title = getName(ID) + "'s book";
+		}
+		byId("statusTitle").textContent = _title;
 	});
 	byId("inputTitle").addEventListener("change", (e) => {
 		let _title = e.target.value.substr(0, 40);
+		if (_title.length === 0) {
+			_title = getName(ID) + "'s book";
+		}
 		SOCKET.emit("updateTitle", { title: _title, key: SESSION_KEY });
 	});
 
