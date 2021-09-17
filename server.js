@@ -168,11 +168,11 @@ io.on("connection", (socket) => {
 			generateBooks(_room);
 
 			// Start game
-			startTimer(_roomCode, _room.settings.firstPage);
 			io.to(_roomCode).emit("startGame", {
 				books: _room.books,
 				start: _room.settings.firstPage,
 			});
+			startTimer(_roomCode, _room.settings.firstPage);
 		} else {
 			// Invalid request, kick from game
 			socket.disconnect();
@@ -494,7 +494,7 @@ function generateBooks(room) {
 	let _players = Object.keys(room.books);
 
 	// assign pages
-	if (room.settings.pageOrder === "Normal") {
+	if (room.settings.pageOrder === "Normal" || _players.length <= 3) {
 		// normal order (cyclical)
 		for (let i = 1; i < room.settings.pageCount; i++) {
 			for (let j = 0; j < _players.length; j++) {
@@ -567,6 +567,7 @@ function startTimer(roomCode, mode) {
 	// clear the timer if it already exists
 	if (room.timer) {
 		clearTimeout(room.timer);
+		room.timer = undefined;
 	}
 
 	// set timer (plus an extra couple of seconds to account for network latency)
