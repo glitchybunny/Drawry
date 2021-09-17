@@ -112,11 +112,13 @@ io.on("connection", (socket) => {
 				socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
 			} else {
 				// room is full, boot client
-				io.to(socket.id).emit("disconnect", "server full");
+				io.to(socket.id).emit("kick", "server full");
+				socket.disconnect();
 			}
 		} else {
 			// ID or roomCode is invalid, boot client
-			io.to(socket.id).emit("disconnect");
+			io.to(socket.id).emit("kick", "invalid room code");
+			socket.disconnect();
 		}
 	});
 
@@ -138,6 +140,7 @@ io.on("connection", (socket) => {
 			socket.to(_roomCode).emit("settings", _room.settings);
 		} else {
 			// Invalid request, kick from game
+			io.to(socket.id).emit("kick", "invalid settings");
 			socket.disconnect();
 		}
 	});
