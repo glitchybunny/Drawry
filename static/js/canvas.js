@@ -128,7 +128,7 @@ resizeCanvas();
 CANVAS_1.on("path:created", (obj) => {
 	// add Path to CANVAS_1 (implicit)
 
-	// make duplicate ShaderPath
+	// make duplicate ShaderPath on CANVAS_2
 	let path = toShaderPath(obj.path);
 	CANVAS_2.add(path);
 });
@@ -136,10 +136,10 @@ CANVAS_2.on("path:created", (obj) => {
 	// add Path to CANVAS_1
 	CANVAS_1.add(obj.path);
 
-	// make duplicate ShaderPath
+	// make duplicate ShaderPath on CANVAS_2
 	let path = toShaderPath(obj.path);
 	CANVAS_2.add(path);
 
-	// delete path
+	// delete invisible path
 	CANVAS_2.remove(obj.path);
 });
