@@ -1,10 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>Title</title>
+	<meta charset="utf-8">
+	<title>Open Picturephone</title>
+	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
+	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
+
+	<style>
+	  p {
+		  padding: .2em 1em;
+	  }
+
+	  .canvas-container, #canvasBase {
+		  margin: 1em;
+		  margin-top: 0;
+	  }
+
+	  div {
+		  position: relative;
+	  }
+	</style>
 </head>
 <body>
+	<div class="flex" style="width:50%;">
+		<p>Original renderer:</p>
+		<div class="flex">
+			<img alt="" id="canvasBase" src="img/base.png">
+			<canvas height="600" id="c" width="800"></canvas>
+		</div>
+	</div>
+	<div class="flex" style="width:50%;">
+		<p>Custom shader:</p>
+		<div>
+			<canvas height="600" id="c2" width="800"></canvas>
+		</div>
+	</div>
 
+	<script src="/js/fabric.min.js"></script>
+	<script src="/js/canvas.js"></script>
 </body>
-</html>

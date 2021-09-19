@@ -602,6 +602,11 @@ app.get("/js/fabric.min.js", (req, res) => {
 app.get("/js/dialog-polyfill.js", (req, res) => {
 	res.sendFile(path.join(__dirname + "/node_modules/dialog-polyfill/dist/dialog-polyfill.js"));
 });
+
+app.get("/test", (req, res) => {
+	res.sendFile(path.join(__dirname + "/canvas_test.html"));
+});
+
 app.use(express.static("static"));
 
 // Open server to manage server things
