@@ -140,6 +140,14 @@ CANVAS_2.on("path:created", (obj) => {
 	let path = toShaderPath(obj.path);
 	CANVAS_2.add(path);
 
+	let test = [];
+	for (let i of obj.path.path) {
+		if (i[0] === "Q") {
+			test.push(i[1], i[2], 0, i[3], i[4], 0);
+		}
+	}
+	console.log(test.slice(0, 600));
+
 	// delete invisible path
 	CANVAS_2.remove(obj.path);
 });

@@ -87,9 +87,13 @@ const buffer = {
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 
 const canvas = document.createElement("canvas");
-const regl = wrapREGL(canvas);
-regl.attributes.antialias = false;
-regl.attributes.preserveDrawingBuffer = true;
+canvas.width = 800;
+canvas.height = 600;
+const regl = wrapREGL({
+	canvas: canvas,
+	pixelRatio: 1,
+	attributes: { antialias: false, preserveDrawingBuffer: true },
+});
 
 console.log(regl._gl);
 
@@ -102,11 +106,10 @@ buffer.mapElement(positions, 2, 3, (v, a, i) => (i / POINTS - 0.5) * 20);
 buffer.pushElement(positions, 0, 3);
 buffer.unshiftElement(positions, POINTS - 1, 3);
 
-const offset = new Array(POINTS).fill(1).map((v, i) => (i + 1) / POINTS);
+const offset = new Array(POINTS * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
 
 const positionsDupSource = new Float32Array(buffer.duplicate(positions, 3));
 const positionsDup = new Float32Array(positionsDupSource);
-const offsetDup = buffer.duplicate(offset, 1, -1);
 const indices = links.lineMesh([], POINTS, 0);
 
 const positionBuffer = regl.buffer({
@@ -118,7 +121,7 @@ const offsetBuffer = regl.buffer({
 	usage: "static",
 	type: "float",
 	length: POINTS_TOTAL * 2 * FLOAT_BYTES,
-	data: offsetDup,
+	data: offset,
 });
 
 const attributes = {
@@ -137,13 +140,13 @@ const attributes = {
 		offset: FLOAT_BYTES * 3 * 4,
 		stride: FLOAT_BYTES * 3,
 	},
-	offsetScale: offsetBuffer,
+	offset: offsetBuffer,
 };
 
 const uniforms = {
 	aspect: ({ viewportWidth, viewportHeight }) => viewportWidth / viewportHeight,
 	color: [0.8, 0.5, 0, 1],
-	thickness: 1,
+	thickness: 0.1,
 	miter: 0,
 };
 
@@ -163,7 +166,7 @@ uniform int miter;
 attribute vec3 prevPosition;
 attribute vec3 currPosition;
 attribute vec3 nextPosition;
-attribute float offsetScale;
+attribute float offset;
 void main() {
   // get 2D screen space with W divide and aspect correction
   vec2 prevScreen = prevPosition.xy;
@@ -197,7 +200,7 @@ void main() {
   }
   vec2 normal = vec2(-dir.y, dir.x) * thickness;
   normal.x /= aspect;
-  gl_Position = vec4(normal * offsetScale, 0.0, 1.0);
+  gl_Position = vec4(currScreen + (normal * offset), 0.0, 1.0);
 }`;
 
 const frag = `
