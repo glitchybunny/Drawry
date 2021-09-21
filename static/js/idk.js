@@ -18,7 +18,7 @@ const geometry = {
 			const radius = polarFn(theta, i);
 			const x = Math.cos(theta) * radius;
 			const y = Math.sin(theta) * radius;
-			buffer.push(x, y, 0);
+			buffer.push(x, y);
 		}
 		return buffer;
 	},
@@ -100,13 +100,13 @@ const POINTS_TOTAL = POINTS + 2;
 const curve = geometry.polarCurve([], POINTS, (t) => Math.sin(2.5 * t) * 20);
 
 const positions = curve.slice();
-buffer.pushElement(positions, 0, 3);
-buffer.unshiftElement(positions, POINTS - 1, 3);
-const positionsDup = new Float32Array(buffer.duplicate(positions, 3));
+buffer.pushElement(positions, 0, 2);
+buffer.unshiftElement(positions, POINTS - 1, 2);
+const positionsDup = new Float32Array(buffer.duplicate(positions, 2));
 const positionBuffer = regl.buffer({
 	usage: "static",
 	type: "float",
-	length: POINTS_TOTAL * 6 * FLOAT_BYTES,
+	length: POINTS_TOTAL * 4 * FLOAT_BYTES,
 	data: positionsDup,
 });
 
@@ -121,20 +121,20 @@ const offsetBuffer = regl.buffer({
 const indices = links.lineMesh([], POINTS, 0);
 
 const attributes = {
-	prevPosition: {
+	prevPos: {
 		buffer: positionBuffer,
 		offset: 0,
-		stride: FLOAT_BYTES * 3,
+		stride: FLOAT_BYTES * 2,
 	},
-	currPosition: {
+	currPos: {
 		buffer: positionBuffer,
-		offset: FLOAT_BYTES * 3 * 2,
-		stride: FLOAT_BYTES * 3,
+		offset: FLOAT_BYTES * 2 * 2,
+		stride: FLOAT_BYTES * 2,
 	},
-	nextPosition: {
+	nextPos: {
 		buffer: positionBuffer,
-		offset: FLOAT_BYTES * 3 * 4,
-		stride: FLOAT_BYTES * 3,
+		offset: FLOAT_BYTES * 2 * 4,
+		stride: FLOAT_BYTES * 2,
 	},
 	offset: offsetBuffer,
 };
@@ -143,7 +143,6 @@ const uniforms = {
 	aspect: ({ viewportWidth, viewportHeight }) => viewportWidth / viewportHeight,
 	color: [0.8, 0.5, 0, 1],
 	thickness: 0.05,
-	miter: 0,
 };
 
 const elements = regl.elements({
@@ -158,41 +157,21 @@ const elements = regl.elements({
 const vert = `
 uniform float aspect;
 uniform float thickness;
-uniform int miter;
-attribute vec2 prevPosition;
-attribute vec2 currPosition;
-attribute vec2 nextPosition;
+attribute vec2 prevPos;
+attribute vec2 currPos;
+attribute vec2 nextPos;
 attribute float offset;
 void main() {
   // starting point uses (next - current)
-  float len = thickness;
-  vec2 dir = vec2(0.0);
-  if (currPosition == prevPosition) {
-    dir = normalize(nextPosition - currPosition);
-  }
-  // ending point uses (current - previous)
-  else if (currPosition == nextPosition) {
-    dir = normalize(currPosition - prevPosition);
-  }
-  // somewhere in middle, needs a join
-  else {
-    // get directions from (C - B) and (B - A)
-    vec2 dirA = normalize((currPosition - prevPosition));
-    if (miter == 1) {
-      vec2 dirB = normalize((nextPosition - currPosition));
-      // now compute the miter join normal and length
-      vec2 tangent = normalize(dirA + dirB);
-      vec2 perp = vec2(-dirA.y, dirA.x);
-      vec2 miter = vec2(-tangent.y, tangent.x);
-      dir = tangent;
-      len = thickness / dot(miter, perp);
-    } else {
-      dir = dirA;
-    }
+  vec2 dir = vec2(0.);
+  if (currPos == prevPos) {
+    dir = normalize(nextPos - currPos);
+  } else {
+    dir = normalize(currPos - prevPos);
   }
   vec2 normal = vec2(-dir.y, dir.x) * thickness;
   normal.x /= aspect;
-  gl_Position = vec4(currPosition + (normal * offset), 0.0, 1.0);
+  gl_Position = vec4((currPos + (normal * offset)), 0., 1.);
 }`;
 
 const frag = `
