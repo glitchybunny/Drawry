@@ -95,8 +95,6 @@ const regl = wrapREGL({
 	attributes: { antialias: false, preserveDrawingBuffer: true },
 });
 
-console.log(regl._gl);
-
 const POINTS = 200;
 const POINTS_TOTAL = POINTS + 2;
 const curve = geometry.polarCurve([], POINTS, (t) => Math.sin(2.5 * t) * 20);
@@ -105,23 +103,23 @@ const positions = curve.slice();
 buffer.mapElement(positions, 2, 3, (v, a, i) => (i / POINTS - 0.5) * 20);
 buffer.pushElement(positions, 0, 3);
 buffer.unshiftElement(positions, POINTS - 1, 3);
-
-const offset = new Array(POINTS * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
-
 const positionsDupSource = new Float32Array(buffer.duplicate(positions, 3));
 const positionsDup = new Float32Array(positionsDupSource);
+
+const offset = new Array(POINTS * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
+const offsetBuffer = regl.buffer({
+	usage: "static",
+	type: "float",
+	length: POINTS_TOTAL * 2 * FLOAT_BYTES,
+	data: offset,
+});
+
 const indices = links.lineMesh([], POINTS, 0);
 
 const positionBuffer = regl.buffer({
 	usage: "dynamic",
 	type: "float",
 	length: POINTS_TOTAL * 6 * FLOAT_BYTES,
-});
-const offsetBuffer = regl.buffer({
-	usage: "static",
-	type: "float",
-	length: POINTS_TOTAL * 2 * FLOAT_BYTES,
-	data: offset,
 });
 
 const attributes = {
@@ -163,31 +161,27 @@ const vert = `
 uniform float aspect;
 uniform float thickness;
 uniform int miter;
-attribute vec3 prevPosition;
-attribute vec3 currPosition;
-attribute vec3 nextPosition;
+attribute vec2 prevPosition;
+attribute vec2 currPosition;
+attribute vec2 nextPosition;
 attribute float offset;
 void main() {
-  // get 2D screen space with W divide and aspect correction
-  vec2 prevScreen = prevPosition.xy;
-  vec2 currScreen = currPosition.xy;
-  vec2 nextScreen = nextPosition.xy;
-  float len = thickness;
   // starting point uses (next - current)
+  float len = thickness;
   vec2 dir = vec2(0.0);
-  if (currScreen == prevScreen) {
-    dir = normalize(nextScreen - currScreen);
+  if (currPosition == prevPosition) {
+    dir = normalize(nextPosition - currPosition);
   }
   // ending point uses (current - previous)
-  else if (currScreen == nextScreen) {
-    dir = normalize(currScreen - prevScreen);
+  else if (currPosition == nextPosition) {
+    dir = normalize(currPosition - prevPosition);
   }
   // somewhere in middle, needs a join
   else {
     // get directions from (C - B) and (B - A)
-    vec2 dirA = normalize((currScreen - prevScreen));
+    vec2 dirA = normalize((currPosition - prevPosition));
     if (miter == 1) {
-      vec2 dirB = normalize((nextScreen - currScreen));
+      vec2 dirB = normalize((nextPosition - currPosition));
       // now compute the miter join normal and length
       vec2 tangent = normalize(dirA + dirB);
       vec2 perp = vec2(-dirA.y, dirA.x);
@@ -200,14 +194,14 @@ void main() {
   }
   vec2 normal = vec2(-dir.y, dir.x) * thickness;
   normal.x /= aspect;
-  gl_Position = vec4(currScreen + (normal * offset), 0.0, 1.0);
+  gl_Position = vec4(currPosition + (normal * offset), 0.0, 1.0);
 }`;
 
 const frag = `
 precision mediump float;
 uniform vec4 color;
 void main() {
-  gl_FragColor = color * float(color.a == 1.);
+  gl_FragColor = vec4(color.rgb, float(color.a > 0.));
 }`;
 
 const draw = regl({
@@ -224,9 +218,7 @@ regl.frame(({ tick }) => {
 		depth: 1,
 	});
 	buffer.mapElement(positionsDup, 1, 3, (v, a, i) => {
-		const start = positionsDupSource[a];
-		const offset = Math.sin(tick * 0.05 + Math.floor(i / 2) * 0.1) * 5;
-		return start + offset;
+		return positionsDupSource[a];
 	});
 	positionBuffer.subdata(positionsDup, 0);
 	draw();
@@ -234,11 +226,12 @@ regl.frame(({ tick }) => {
 
 document.body.appendChild(canvas);
 
+/*
 function resizeCanvas() {
 	canvas.width = document.body.clientWidth;
 	canvas.height = document.body.clientHeight;
-	console.log(regl);
 }
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
+*/
