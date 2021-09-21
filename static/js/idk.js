@@ -100,11 +100,15 @@ const POINTS_TOTAL = POINTS + 2;
 const curve = geometry.polarCurve([], POINTS, (t) => Math.sin(2.5 * t) * 20);
 
 const positions = curve.slice();
-buffer.mapElement(positions, 2, 3, (v, a, i) => (i / POINTS - 0.5) * 20);
 buffer.pushElement(positions, 0, 3);
 buffer.unshiftElement(positions, POINTS - 1, 3);
-const positionsDupSource = new Float32Array(buffer.duplicate(positions, 3));
-const positionsDup = new Float32Array(positionsDupSource);
+const positionsDup = new Float32Array(buffer.duplicate(positions, 3));
+const positionBuffer = regl.buffer({
+	usage: "static",
+	type: "float",
+	length: POINTS_TOTAL * 6 * FLOAT_BYTES,
+	data: positionsDup,
+});
 
 const offset = new Array(POINTS * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
 const offsetBuffer = regl.buffer({
@@ -115,12 +119,6 @@ const offsetBuffer = regl.buffer({
 });
 
 const indices = links.lineMesh([], POINTS, 0);
-
-const positionBuffer = regl.buffer({
-	usage: "dynamic",
-	type: "float",
-	length: POINTS_TOTAL * 6 * FLOAT_BYTES,
-});
 
 const attributes = {
 	prevPosition: {
@@ -144,7 +142,7 @@ const attributes = {
 const uniforms = {
 	aspect: ({ viewportWidth, viewportHeight }) => viewportWidth / viewportHeight,
 	color: [0.8, 0.5, 0, 1],
-	thickness: 0.1,
+	thickness: 0.05,
 	miter: 0,
 };
 
@@ -198,7 +196,7 @@ void main() {
 }`;
 
 const frag = `
-precision mediump float;
+precision lowp float;
 uniform vec4 color;
 void main() {
   gl_FragColor = vec4(color.rgb, float(color.a > 0.));
@@ -217,10 +215,6 @@ regl.frame(({ tick }) => {
 		color: [0.1, 0.1, 0.1, 1],
 		depth: 1,
 	});
-	buffer.mapElement(positionsDup, 1, 3, (v, a, i) => {
-		return positionsDupSource[a];
-	});
-	positionBuffer.subdata(positionsDup, 0);
 	draw();
 });
 
