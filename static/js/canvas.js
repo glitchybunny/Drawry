@@ -5,13 +5,40 @@
 	this file is responsible for all the custom drawing/canvas logic
 */
 "use strict";
-
-const byId = function (id) {
+const { push, unshift } = Array.prototype;
+const byId = (id) => {
 	return document.getElementById(id);
 };
+const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+
+function duplicateBuffer(buffer, stride, dupScale) {
+	if (stride == null) stride = 1;
+	if (dupScale == null) dupScale = 1;
+	const out = [];
+	const component = new Array(stride * 2);
+	for (let i = 0, il = buffer.length / stride; i < il; i++) {
+		const index = i * stride;
+		for (let j = 0; j < stride; j++) {
+			const value = buffer[index + j];
+			component[j] = value;
+			component[j + stride] = value * dupScale;
+		}
+		push.apply(out, component);
+	}
+	return out;
+}
+
+function lineMesh(num) {
+	let buffer = [];
+	for (let i = 0; i < (num - 1) * 2; i += 2) {
+		buffer.push(i, i + 1, i + 2, i + 2, i + 1, i + 3);
+	}
+	return buffer;
+}
 
 class ShaderPath extends fabric.Path {
 	_renderPathCommands(ctx) {
+		/*
 		let current, subPathStartX, subPathStartY, x, y, controlX, controlY, l, t;
 		subPathStartX = 0;
 		subPathStartY = 0;
@@ -72,7 +99,95 @@ class ShaderPath extends fabric.Path {
 					ctx.closePath();
 					break;
 			}
+		}*/
+		// get positions of path
+		let positions = [];
+		for (let i of this.path) {
+			switch (i[0]) {
+				case "M":
+				case "L":
+					positions.push(i[1], i[2], i[1], i[2]); // push first and last twice
+					break;
+				case "Q":
+					positions.push(i[3], i[4]);
+					break;
+			}
 		}
+		let points = positions.length / 2 - 2;
+
+		// create buffers
+		let positionsDup = new Float32Array(duplicateBuffer(positions, 2));
+		let positionBuffer = regl.buffer({
+			usage: "static",
+			type: "float",
+			length: (points + 2) * 4 * FLOAT_BYTES,
+			data: positionsDup,
+		});
+
+		let offset = new Array(points * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
+		let offsetBuffer = regl.buffer({
+			usage: "static",
+			type: "float",
+			length: (points + 2) * 2 * FLOAT_BYTES,
+			data: offset,
+		});
+
+		let _color = fabric.Color.fromHex(this.stroke)._source;
+
+		window.requestAnimationFrame(
+			regl({
+				attributes: {
+					prevPos: {
+						buffer: positionBuffer,
+						offset: 0,
+						stride: FLOAT_BYTES * 2,
+					},
+					currPos: {
+						buffer: positionBuffer,
+						offset: FLOAT_BYTES * 2 * 2,
+						stride: FLOAT_BYTES * 2,
+					},
+					nextPos: {
+						buffer: positionBuffer,
+						offset: FLOAT_BYTES * 2 * 4,
+						stride: FLOAT_BYTES * 2,
+					},
+					offset: offsetBuffer,
+				},
+				uniforms: {
+					color: [_color[0] / 255, _color[1] / 255, _color[2] / 255, 1],
+					thickness: this.strokeWidth / 2 + 0.5,
+				},
+				elements: regl.elements({
+					primitive: "triangles",
+					usage: "static",
+					type: "uint16",
+					data: lineMesh(points),
+				}),
+				vert: `
+uniform float thickness;
+attribute vec2 prevPos;
+attribute vec2 currPos;
+attribute vec2 nextPos;
+attribute float offset;
+void main() {
+  vec2 dir = normalize(nextPos - prevPos);
+  vec2 normal = vec2(-dir.y, dir.x) * thickness;
+  normal.x *= 3./4.;
+  vec2 line = currPos + normal*offset;
+  line /= vec2(400., 300.); // scale to screen
+  line.y *= -1.; // flip vertically
+  line += vec2(-1., 1); // move into position
+  gl_Position = vec4(line, 0., 1.);
+}`,
+				frag: `
+precision highp float;
+uniform vec4 color;
+void main() {
+  gl_FragColor = color;
+}`,
+			})
+		);
 	}
 }
 
@@ -94,6 +209,16 @@ const CANVAS_2 = new fabric.Canvas("c2", {
 	backgroundColor: "#FFFFFF",
 });
 CANVAS_1.freeDrawingBrush.width = CANVAS_2.freeDrawingBrush.width = 5;
+CANVAS_1.freeDrawingBrush.color = CANVAS_2.freeDrawingBrush.color = "#123456";
+
+// fabric doesn't let us use a webgl context on the canvas so we have to make another layer
+// todo: see if you can just draw on that layer
+const CANVAS_3 = byId("c3");
+const regl = wrapREGL({
+	canvas: CANVAS_3,
+	pixelRatio: 1,
+	attributes: { antialias: false, preserveDrawingBuffer: true },
+});
 
 // auto resize canvas
 function resizeCanvas() {
@@ -139,24 +264,6 @@ CANVAS_2.on("path:created", (obj) => {
 	// make duplicate ShaderPath on CANVAS_2
 	let path = toShaderPath(obj.path);
 	CANVAS_2.add(path);
-
-	let positions = [];
-	for (let i of obj.path.path) {
-		console.log(i[0]);
-		switch (i[0]) {
-			case "M":
-				positions.push(i[1], i[2]);
-				break;
-			case "Q":
-				positions.push(i[3], i[4]);
-				break;
-			case "L":
-				positions.push(i[1], i[2]);
-				break;
-		}
-	}
-	console.log(obj.path.path);
-	console.log(positions);
 
 	// delete invisible path
 	CANVAS_2.remove(obj.path);
