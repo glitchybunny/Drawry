@@ -8,8 +8,6 @@
   this example utilizes attribute byte offsets to share a single position buffer for all three
   of these attributes.</p>
 */
-const { push, unshift } = Array.prototype;
-
 function lineMesh(num) {
 	let buffer = [];
 	for (let i = 0; i < (num - 1) * 2; i += 2) {
@@ -19,19 +17,16 @@ function lineMesh(num) {
 }
 
 const buffer = {
-	duplicate(buffer, stride, dupScale) {
-		if (stride == null) stride = 1;
-		if (dupScale == null) dupScale = 1;
+	duplicate(buffer, stride) {
 		const out = [];
 		const component = new Array(stride * 2);
 		for (let i = 0, il = buffer.length / stride; i < il; i++) {
-			const index = i * stride;
 			for (let j = 0; j < stride; j++) {
-				const value = buffer[index + j];
+				const value = buffer[i * stride + j];
 				component[j] = value;
-				component[j + stride] = value * dupScale;
+				component[j + stride] = value;
 			}
-			push.apply(out, component);
+			out.push(...component);
 		}
 		return out;
 	},
@@ -42,7 +37,7 @@ const buffer = {
 		for (let i = 0; i < stride; i++) {
 			component[i] = buffer[ai + i];
 		}
-		push.apply(buffer, component);
+		buffer.push(...component);
 		return buffer;
 	},
 
@@ -52,7 +47,7 @@ const buffer = {
 		for (let i = 0; i < stride; i++) {
 			component[i] = buffer[ai + i];
 		}
-		unshift.apply(buffer, component);
+		buffer.unshift(...component);
 		return buffer;
 	},
 };
@@ -99,6 +94,7 @@ const positions = [
 const POINTS = positions.length / 2;
 buffer.pushElement(positions, POINTS - 1, 2);
 buffer.unshiftElement(positions, 0, 2);
+
 const positionsDup = new Float32Array(buffer.duplicate(positions, 2));
 const positionBuffer = regl.buffer({
 	usage: "static",
@@ -115,38 +111,39 @@ const offsetBuffer = regl.buffer({
 	data: offset,
 });
 
-// render single frame
-window.requestAnimationFrame(
-	regl({
-		attributes: {
-			prevPos: {
-				buffer: positionBuffer,
-				offset: 0,
-				stride: FLOAT_BYTES * 2,
-			},
-			currPos: {
-				buffer: positionBuffer,
-				offset: FLOAT_BYTES * 2 * 2,
-				stride: FLOAT_BYTES * 2,
-			},
-			nextPos: {
-				buffer: positionBuffer,
-				offset: FLOAT_BYTES * 2 * 4,
-				stride: FLOAT_BYTES * 2,
-			},
-			offset: offsetBuffer,
-		},
-		uniforms: {
-			color: [0.5, 0, 0.5, 1],
-			thickness: 2.5,
-		},
-		elements: regl.elements({
-			primitive: "triangles",
-			usage: "static",
-			type: "uint16",
-			data: lineMesh(POINTS),
-		}),
-		vert: `
+// regl inputs
+const attributes = {
+	prevPos: {
+		buffer: positionBuffer,
+		offset: 0,
+		stride: FLOAT_BYTES * 2,
+	},
+	currPos: {
+		buffer: positionBuffer,
+		offset: FLOAT_BYTES * 2 * 2,
+		stride: FLOAT_BYTES * 2,
+	},
+	nextPos: {
+		buffer: positionBuffer,
+		offset: FLOAT_BYTES * 2 * 4,
+		stride: FLOAT_BYTES * 2,
+	},
+	offset: offsetBuffer,
+};
+
+const uniforms = {
+	color: [0.5, 0, 0.5, 1],
+	thickness: 2.5,
+};
+
+const elements = regl.elements({
+	primitive: "triangles",
+	usage: "static",
+	type: "uint16",
+	data: lineMesh(POINTS),
+});
+
+const vert = `
 uniform float thickness;
 attribute vec2 prevPos;
 attribute vec2 currPos;
@@ -157,12 +154,22 @@ void main() {
   vec2 normal = vec2(-dir.y, dir.x) * thickness;
   normal.x *= 3./4.;
   gl_Position = vec4((currPos + normal*offset) / vec2(400., -300.) + vec2(-1., 1.), 0., 1.);
-}`,
-		frag: `
+}`;
+
+const frag = `
 precision mediump float;
 uniform vec4 color;
 void main() {
   gl_FragColor = color;
-}`,
+}`;
+
+// render single frame
+window.requestAnimationFrame(
+	regl({
+		attributes,
+		uniforms,
+		elements,
+		vert,
+		frag,
 	})
 );
