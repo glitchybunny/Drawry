@@ -74,63 +74,91 @@ class ShaderPath extends fabric.Path {
 					break;
 			}
 		}*/
-		// get positions of path
-		let positions = [];
+
+		// get path
+		let prev = [],
+			positions = [];
 		for (let i of this.path) {
 			switch (i[0]) {
 				case "M":
 				case "L":
 					positions.push(i[1], i[2], i[1], i[2]); // push first and last twice
+					prev = [i[1], i[2]];
 					break;
 				case "Q":
+					// approximate midpoints using quadratic bezier (for smoother lines)
+					positions.push(
+						prev[0] * 0.25 + i[1] * 0.5 + i[3] * 0.25,
+						prev[1] * 0.25 + i[2] * 0.5 + i[4] * 0.25
+					);
+
+					// add positions
 					positions.push(i[3], i[4]);
-					// todo: calculate quadratic bezier curve here using i[1], i[2],
-					//  and possibly add more points to smooth out the line
+					prev = [i[3], i[4]];
 					break;
 			}
 		}
 
 		// create buffers
-		let points = positions.length / 2 - 2;
-		let color = fabric.Color.fromHex(this.stroke)._source;
-		let width = this.strokeWidth / 2 + 0.5;
-		let positionBuffer = createPositionBuffer(positions, points);
-		let offsetBuffer = createOffsetBuffer(points);
+		let points, color, thickness, positionBuffer, offsetBuffer, lineMesh, w, h;
+		points = positions.length / 2 - 2;
+		color = fabric.Color.fromHex(this.stroke)._source;
+		thickness = this.strokeWidth / 2;
+		positionBuffer = createPositionBuffer(positions, points);
+		offsetBuffer = createOffsetBuffer(points);
+		lineMesh = createLineMesh(points);
+		w = CANVAS_3.width;
+		h = CANVAS_3.height;
 
-		window.requestAnimationFrame(
-			regl({
-				attributes: {
-					prevPos: {
-						buffer: positionBuffer,
-						offset: 0,
-						stride: FLOAT_BYTES * 2,
-					},
-					currPos: {
-						buffer: positionBuffer,
-						offset: FLOAT_BYTES * 2 * 2,
-						stride: FLOAT_BYTES * 2,
-					},
-					nextPos: {
-						buffer: positionBuffer,
-						offset: FLOAT_BYTES * 2 * 4,
-						stride: FLOAT_BYTES * 2,
-					},
-					offset: offsetBuffer,
+		// render the line
+		let render = regl({
+			attributes: {
+				prevPos: {
+					buffer: positionBuffer,
+					offset: 0,
+					stride: FLOAT_BYTES * 2,
 				},
-				uniforms: {
-					color: [color[0] / 255, color[1] / 255, color[2] / 255, 1],
-					thickness: width,
+				currPos: {
+					buffer: positionBuffer,
+					offset: FLOAT_BYTES * 2 * 2,
+					stride: FLOAT_BYTES * 2,
 				},
-				elements: regl.elements({
-					primitive: "triangles",
-					usage: "static",
-					type: "uint16",
-					data: lineMesh(points),
-				}),
-				vert: SHD_LINE_VERT,
-				frag: SHD_LINE_FRAG,
-			})
-		);
+				nextPos: {
+					buffer: positionBuffer,
+					offset: FLOAT_BYTES * 2 * 4,
+					stride: FLOAT_BYTES * 2,
+				},
+				offset: offsetBuffer,
+			},
+			uniforms: {
+				color: [color[0] / 255, color[1] / 255, color[2] / 255, 1],
+				thickness: thickness,
+				width: w,
+				height: h,
+				scale: w / 800,
+			},
+			elements: regl.elements({
+				primitive: "triangles",
+				usage: "static",
+				type: "uint16",
+				data: lineMesh,
+			}),
+			vert: SHD_LINE_VERT,
+			frag: SHD_LINE_FRAG,
+			viewport: {
+				x: 0,
+				y: 0,
+				width: w,
+				height: h,
+			},
+		});
+		render();
+
+		// clean up objects to free memory
+		render.destroy();
+		positionBuffer.destroy();
+		offsetBuffer.destroy();
+		render = positionBuffer = offsetBuffer = lineMesh = null;
 	}
 }
 
@@ -157,11 +185,15 @@ CANVAS_1.freeDrawingBrush.color = CANVAS_2.freeDrawingBrush.color = "#123456";
 // fabric doesn't let us use a webgl context on the canvas so we have to make another layer
 // todo: see if you can just draw on that layer
 const CANVAS_3 = byId("c3");
+
+byId("c2").after(CANVAS_3);
 const regl = wrapREGL({
 	canvas: CANVAS_3,
 	pixelRatio: 1,
 	attributes: { antialias: false, preserveDrawingBuffer: true },
 });
+
+console.log(regl);
 
 // auto resize canvas
 function resizeCanvas() {
@@ -175,7 +207,7 @@ function resizeCanvas() {
 	let _ratio = ((_h / _w) * 3) / 4;
 	if (_ratio <= 0.99 || _ratio >= 1.01) {
 		// disproportionate, change height to compensate
-		_h = (_w * 3) / 4;
+		_h = Math.floor((_w * 3) / 4);
 	}
 
 	// Resize canvas
@@ -186,6 +218,9 @@ function resizeCanvas() {
 		CANVAS_1.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
 		CANVAS_2.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
 		_base.style.height = _h + "px";
+
+		CANVAS_3.width = _w;
+		CANVAS_3.height = _h;
 	}
 }
 
