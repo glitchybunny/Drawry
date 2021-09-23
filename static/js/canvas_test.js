@@ -2,7 +2,7 @@
 	picturephone
 	canvas_test.js
 	a multiplayer art experiment by Glitch Taylor (rtay.io)
-	this file is responsible for all the custom drawing/canvas logic
+	this file is for testing custom drawing/canvas logic
 */
 "use strict";
 
