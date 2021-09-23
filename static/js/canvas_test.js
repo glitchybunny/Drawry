@@ -13,6 +13,7 @@ const byId = (id) => {
 class ShaderPath extends fabric.Path {
 	_renderPathCommands(ctx) {
 		// get path
+		// todo: cache this calculated path to prevent having to recalculate it on every redraw
 		let prev = [],
 			positions = [];
 		for (let i of this.path) {
@@ -23,10 +24,14 @@ class ShaderPath extends fabric.Path {
 					prev = [i[1], i[2]];
 					break;
 				case "Q": // quadraticCurveTo
-					// approximate midpoint using quadratic bezier (for smoother lines)
+					// generate midpoints approximating the quadratic bezier (for smoother lines)
 					positions.push(
+						prev[0] * 0.5625 + i[1] * 0.375 + i[3] * 0.0625,
+						prev[1] * 0.5625 + i[2] * 0.375 + i[4] * 0.0625,
 						prev[0] * 0.25 + i[1] * 0.5 + i[3] * 0.25,
-						prev[1] * 0.25 + i[2] * 0.5 + i[4] * 0.25
+						prev[1] * 0.25 + i[2] * 0.5 + i[4] * 0.25,
+						prev[0] * 0.0625 + i[1] * 0.375 + i[3] * 0.5625,
+						prev[1] * 0.0625 + i[2] * 0.375 + i[4] * 0.5625
 					);
 
 					// add positions
@@ -129,8 +134,6 @@ const regl = wrapREGL({
 	pixelRatio: 1,
 	attributes: { antialias: false, preserveDrawingBuffer: true },
 });
-
-console.log(regl);
 
 // auto resize canvas
 function resizeCanvas() {
