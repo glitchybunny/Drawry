@@ -9,15 +9,23 @@
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 const SHD_LINE_VERT = `
 uniform float thickness;
+uniform float width;
+uniform float height;
+uniform float scale;
 attribute vec2 prevPos;
 attribute vec2 currPos;
 attribute vec2 nextPos;
 attribute float offset;
 void main() {
+	// calculate normals
   vec2 dir = normalize(nextPos - prevPos);
   vec2 normal = vec2(-dir.y, dir.x) * thickness;
-  normal.x *= 3./4.;
-  gl_Position = vec4((currPos + normal*offset) / vec2(400., -300.) + vec2(-1., 1.), 0., 1.);
+  
+  // calculate and render line
+  vec2 line = currPos + (normal * offset);
+  line *= 2. * scale / vec2(width, -height); // scale to screen size
+  line += vec2(-1., 1.); // correct offset
+  gl_Position = vec4(line, 0., 1.);
 }`;
 const SHD_LINE_FRAG = `
 precision mediump float;
@@ -26,13 +34,13 @@ void main() {
   gl_FragColor = color;
 }`;
 
-function lineMesh(num) {
+const createLineMesh = (points) => {
 	let buffer = [];
-	for (let i = 0; i < (num - 1) * 2; i += 2) {
+	for (let i = 0; i < (points - 1) * 2; i += 2) {
 		buffer.push(i, i + 1, i + 2, i + 2, i + 1, i + 3);
 	}
 	return buffer;
-}
+};
 
 const buffer = {
 	duplicate(buffer, stride) {
