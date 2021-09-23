@@ -5,36 +5,10 @@
 	this file is responsible for all the custom drawing/canvas logic
 */
 "use strict";
-const { push, unshift } = Array.prototype;
+
 const byId = (id) => {
 	return document.getElementById(id);
 };
-const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
-
-function duplicateBuffer(buffer, stride, dupScale) {
-	if (stride == null) stride = 1;
-	if (dupScale == null) dupScale = 1;
-	const out = [];
-	const component = new Array(stride * 2);
-	for (let i = 0, il = buffer.length / stride; i < il; i++) {
-		const index = i * stride;
-		for (let j = 0; j < stride; j++) {
-			const value = buffer[index + j];
-			component[j] = value;
-			component[j + stride] = value * dupScale;
-		}
-		push.apply(out, component);
-	}
-	return out;
-}
-
-function lineMesh(num) {
-	let buffer = [];
-	for (let i = 0; i < (num - 1) * 2; i += 2) {
-		buffer.push(i, i + 1, i + 2, i + 2, i + 1, i + 3);
-	}
-	return buffer;
-}
 
 class ShaderPath extends fabric.Path {
 	_renderPathCommands(ctx) {
@@ -110,29 +84,18 @@ class ShaderPath extends fabric.Path {
 					break;
 				case "Q":
 					positions.push(i[3], i[4]);
+					// todo: calculate quadratic bezier curve here using i[1], i[2],
+					//  and possibly add more points to smooth out the line
 					break;
 			}
 		}
-		let points = positions.length / 2 - 2;
 
 		// create buffers
-		let positionsDup = new Float32Array(duplicateBuffer(positions, 2));
-		let positionBuffer = regl.buffer({
-			usage: "static",
-			type: "float",
-			length: (points + 2) * 4 * FLOAT_BYTES,
-			data: positionsDup,
-		});
-
-		let offset = new Array(points * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
-		let offsetBuffer = regl.buffer({
-			usage: "static",
-			type: "float",
-			length: (points + 2) * 2 * FLOAT_BYTES,
-			data: offset,
-		});
-
-		let _color = fabric.Color.fromHex(this.stroke)._source;
+		let points = positions.length / 2 - 2;
+		let color = fabric.Color.fromHex(this.stroke)._source;
+		let width = this.strokeWidth / 2 + 0.5;
+		let positionBuffer = createPositionBuffer(positions, points);
+		let offsetBuffer = createOffsetBuffer(points);
 
 		window.requestAnimationFrame(
 			regl({
@@ -155,8 +118,8 @@ class ShaderPath extends fabric.Path {
 					offset: offsetBuffer,
 				},
 				uniforms: {
-					color: [_color[0] / 255, _color[1] / 255, _color[2] / 255, 1],
-					thickness: this.strokeWidth / 2 + 0.5,
+					color: [color[0] / 255, color[1] / 255, color[2] / 255, 1],
+					thickness: width,
 				},
 				elements: regl.elements({
 					primitive: "triangles",
@@ -164,28 +127,8 @@ class ShaderPath extends fabric.Path {
 					type: "uint16",
 					data: lineMesh(points),
 				}),
-				vert: `
-uniform float thickness;
-attribute vec2 prevPos;
-attribute vec2 currPos;
-attribute vec2 nextPos;
-attribute float offset;
-void main() {
-  vec2 dir = normalize(nextPos - prevPos);
-  vec2 normal = vec2(-dir.y, dir.x) * thickness;
-  normal.x *= 3./4.;
-  vec2 line = currPos + normal*offset;
-  line /= vec2(400., 300.); // scale to screen
-  line.y *= -1.; // flip vertically
-  line += vec2(-1., 1); // move into position
-  gl_Position = vec4(line, 0., 1.);
-}`,
-				frag: `
-precision highp float;
-uniform vec4 color;
-void main() {
-  gl_FragColor = color;
-}`,
+				vert: SHD_LINE_VERT,
+				frag: SHD_LINE_FRAG,
 			})
 		);
 	}
