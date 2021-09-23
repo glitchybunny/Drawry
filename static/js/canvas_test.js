@@ -12,81 +12,18 @@ const byId = (id) => {
 
 class ShaderPath extends fabric.Path {
 	_renderPathCommands(ctx) {
-		/*
-		let current, subPathStartX, subPathStartY, x, y, controlX, controlY, l, t;
-		subPathStartX = 0;
-		subPathStartY = 0;
-		x = 0;
-		y = 0;
-		controlX = 0;
-		controlY = 0;
-		l = -this.pathOffset.x;
-		t = -this.pathOffset.y;
-
-		ctx.beginPath();
-
-		for (var i = 0, len = this.path.length; i < len; ++i) {
-			current = this.path[i];
-
-			switch (current[0]) {
-				case "L": // lineto, absolute
-					x = current[1];
-					y = current[2];
-					ctx.lineTo(x + l, y + t);
-					break;
-
-				case "M": // moveTo, absolute
-					x = current[1];
-					y = current[2];
-					subPathStartX = x;
-					subPathStartY = y;
-					ctx.moveTo(x + l, y + t);
-					break;
-
-				case "C": // bezierCurveTo, absolute
-					x = current[5];
-					y = current[6];
-					controlX = current[3];
-					controlY = current[4];
-					ctx.bezierCurveTo(
-						current[1] + l,
-						current[2] + t,
-						controlX + l,
-						controlY + t,
-						x + l,
-						y + t
-					);
-					break;
-
-				case "Q": // quadraticCurveTo, absolute
-					ctx.quadraticCurveTo(current[1] + l, current[2] + t, current[3] + l, current[4] + t);
-					x = current[3];
-					y = current[4];
-					controlX = current[1];
-					controlY = current[2];
-					break;
-
-				case "z":
-				case "Z":
-					x = subPathStartX;
-					y = subPathStartY;
-					ctx.closePath();
-					break;
-			}
-		}*/
-
 		// get path
 		let prev = [],
 			positions = [];
 		for (let i of this.path) {
 			switch (i[0]) {
-				case "M":
-				case "L":
+				case "M": // moveTo
+				case "L": // lineto
 					positions.push(i[1], i[2], i[1], i[2]); // push first and last twice
 					prev = [i[1], i[2]];
 					break;
-				case "Q":
-					// approximate midpoints using quadratic bezier (for smoother lines)
+				case "Q": // quadraticCurveTo
+					// approximate midpoint using quadratic bezier (for smoother lines)
 					positions.push(
 						prev[0] * 0.25 + i[1] * 0.5 + i[3] * 0.25,
 						prev[1] * 0.25 + i[2] * 0.5 + i[4] * 0.25
