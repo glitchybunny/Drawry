@@ -1,13 +1,31 @@
 /*
-  tags: advanced
-
-  <p>This example demonstrates rendering screen space projected lines
-  from a technique described <a href="https://mattdesl.svbtle.com/drawing-lines-is-hard">here</a>.</p>
-
-  <p>This technique requires each vertex to reference the previous and next vertex in the line;
-  this example utilizes attribute byte offsets to share a single position buffer for all three
-  of these attributes.</p>
+	picturephone
+	canvas_regl.js
+	a multiplayer art experiment by Glitch Taylor (rtay.io)
+	this file provides functionality to extend upon fabric.js, and provide a webgl rendering layer
 */
+"use strict";
+
+const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+const SHD_LINE_VERT = `
+uniform float thickness;
+attribute vec2 prevPos;
+attribute vec2 currPos;
+attribute vec2 nextPos;
+attribute float offset;
+void main() {
+  vec2 dir = normalize(nextPos - prevPos);
+  vec2 normal = vec2(-dir.y, dir.x) * thickness;
+  normal.x *= 3./4.;
+  gl_Position = vec4((currPos + normal*offset) / vec2(400., -300.) + vec2(-1., 1.), 0., 1.);
+}`;
+const SHD_LINE_FRAG = `
+precision mediump float;
+uniform vec4 color;
+void main() {
+  gl_FragColor = color;
+}`;
+
 function lineMesh(num) {
 	let buffer = [];
 	for (let i = 0; i < (num - 1) * 2; i += 2) {
@@ -30,30 +48,29 @@ const buffer = {
 		}
 		return out;
 	},
-
-	pushElement(buffer, elementIndex, stride) {
-		const component = new Array(stride);
-		const ai = elementIndex * stride;
-		for (let i = 0; i < stride; i++) {
-			component[i] = buffer[ai + i];
-		}
-		buffer.push(...component);
-		return buffer;
-	},
-
-	unshiftElement(buffer, elementIndex, stride) {
-		const component = new Array(stride);
-		const ai = elementIndex * stride;
-		for (let i = 0; i < stride; i++) {
-			component[i] = buffer[ai + i];
-		}
-		buffer.unshift(...component);
-		return buffer;
-	},
 };
 
-const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+const createPositionBuffer = (positions, points) => {
+	let positionDup = new Float32Array(buffer.duplicate(positions, 2));
+	return regl.buffer({
+		usage: "static",
+		type: "float",
+		length: (points + 2) * 4 * FLOAT_BYTES,
+		data: positionDup,
+	});
+};
 
+const createOffsetBuffer = (points) => {
+	let offset = new Array(points * 2).fill().map((v, i) => 1 - (i % 2) * 2); // alternating [1, -1, 1, -1, etc]
+	return regl.buffer({
+		usage: "static",
+		type: "float",
+		length: (points + 2) * 2 * FLOAT_BYTES,
+		data: offset,
+	});
+};
+
+/*
 // make canvas
 const canvas = document.createElement("canvas");
 canvas.width = 800;
@@ -111,6 +128,8 @@ const offsetBuffer = regl.buffer({
 	data: offset,
 });
 
+const mesh = lineMesh(POINTS);
+
 // regl inputs
 const attributes = {
 	prevPos: {
@@ -140,28 +159,8 @@ const elements = regl.elements({
 	primitive: "triangles",
 	usage: "static",
 	type: "uint16",
-	data: lineMesh(POINTS),
+	data: mesh,
 });
-
-const vert = `
-uniform float thickness;
-attribute vec2 prevPos;
-attribute vec2 currPos;
-attribute vec2 nextPos;
-attribute float offset;
-void main() {
-  vec2 dir = normalize(nextPos - prevPos);
-  vec2 normal = vec2(-dir.y, dir.x) * thickness;
-  normal.x *= 3./4.;
-  gl_Position = vec4((currPos + normal*offset) / vec2(400., -300.) + vec2(-1., 1.), 0., 1.);
-}`;
-
-const frag = `
-precision mediump float;
-uniform vec4 color;
-void main() {
-  gl_FragColor = color;
-}`;
 
 // render single frame
 window.requestAnimationFrame(
@@ -173,3 +172,4 @@ window.requestAnimationFrame(
 		frag,
 	})
 );
+*/
