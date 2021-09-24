@@ -717,6 +717,7 @@ function updateInput() {
 
 			// Reset drawing inputs
 			CANVAS.clear();
+			//console.log(CANVAS.getObjects());  todo: consider cleaning up/destroying objects at end of each round?
 			CANVAS.setBackgroundColor("#FFFFFF");
 			DRAW.undo = [];
 			byId("toolUndo").disabled = true;
