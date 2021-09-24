@@ -19,8 +19,8 @@ const CANVAS_2 = new fabric.Canvas("c2", {
 	isDrawingMode: true,
 	backgroundColor: "#FFFFFF",
 });
-CANVAS_1.freeDrawingBrush.width = CANVAS_2.freeDrawingBrush.width = 5;
-CANVAS_1.freeDrawingBrush.color = CANVAS_2.freeDrawingBrush.color = "#123456";
+CANVAS_1.freeDrawingBrush.width = CANVAS_2.freeDrawingBrush.width = 25;
+CANVAS_1.freeDrawingBrush.color = CANVAS_2.freeDrawingBrush.color = "#f94f18";
 
 // fabric doesn't let us use a webgl context on the canvas so we have to make another layer
 const CANVAS_3 = byId("c3");
@@ -48,15 +48,17 @@ function resizeCanvas() {
 
 	// Resize canvas
 	if (_w) {
+		VIEWPORT.width = _w;
+		VIEWPORT.height = _h;
+
 		let zoom = CANVAS_1.getZoom() * (_w / CANVAS_1.getWidth());
-		CANVAS_1.setDimensions({ width: _w, height: _h });
-		CANVAS_2.setDimensions({ width: _w, height: _h });
+		CANVAS_1.setDimensions(VIEWPORT);
+		CANVAS_2.setDimensions(VIEWPORT);
 		CANVAS_1.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
 		CANVAS_2.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+		CANVAS_3.width = VIEWPORT.width;
+		CANVAS_3.height = VIEWPORT.height;
 		_base.style.height = _h + "px";
-
-		CANVAS_3.width = _w;
-		CANVAS_3.height = _h;
 	}
 }
 
