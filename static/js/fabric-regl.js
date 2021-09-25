@@ -53,21 +53,21 @@ const path = {
 	positions(p) {
 		/// Gets array of positions to draw lines between
 		const prev = [undefined, undefined];
-		const out = [];
+		const pos = [];
 
 		// iterate over path and generate array of positions
 		for (let i of p) {
 			switch (i[0]) {
 				case "M": // moveTo
 				case "L": // lineto
-					// add first and last positions twice
-					out.push(i[1], i[2], i[1], i[2]);
+					// add current position
+					pos.push(i[1], i[2]);
 					prev[0] = i[1];
 					prev[1] = i[2];
 					break;
 				case "Q": // quadraticCurveTo
 					// generate approximate midpoints along quadratic bezier (for smoother lines)
-					out.push(
+					pos.push(
 						prev[0] * 0.5625 + i[1] * 0.375 + i[3] * 0.0625,
 						prev[1] * 0.5625 + i[2] * 0.375 + i[4] * 0.0625,
 						prev[0] * 0.25 + i[1] * 0.5 + i[3] * 0.25,
@@ -76,13 +76,33 @@ const path = {
 						prev[1] * 0.0625 + i[2] * 0.375 + i[4] * 0.5625
 					);
 
-					// add position
-					out.push(i[3], i[4]);
+					// also add current position
+					pos.push(i[3], i[4]);
 					prev[0] = i[3];
 					prev[1] = i[4];
 					break;
 			}
 		}
+
+		// round all values to nearest pixel
+		for (let i in pos) {
+			pos[i] = Math.round(pos[i]);
+		}
+
+		// optimise line by removing close sequential points
+		const out = [];
+		out.push(pos[0], pos[1], pos[0], pos[1]);
+		prev[0] = out[0];
+		prev[1] = out[1];
+		for (let i = 2; i < pos.length; i += 2) {
+			let dx = Math.abs(out[out.length - 2] - pos[i]);
+			let dy = Math.abs(out[out.length - 1] - pos[i + 1]);
+			if (dx > 2 || dy > 2) {
+				out.push(pos[i], pos[i + 1]);
+			}
+		}
+		out.push(pos[pos.length - 2], pos[pos.length - 1], pos[pos.length - 2], pos[pos.length - 1]);
+
 		return out;
 	},
 	corners(pos) {
