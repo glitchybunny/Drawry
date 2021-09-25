@@ -19,7 +19,7 @@ const CANVAS_2 = new fabric.Canvas("c2", {
 	isDrawingMode: true,
 	backgroundColor: "#FFFFFF",
 });
-CANVAS_1.freeDrawingBrush.width = CANVAS_2.freeDrawingBrush.width = 25;
+CANVAS_1.freeDrawingBrush.width = CANVAS_2.freeDrawingBrush.width = 30;
 CANVAS_1.freeDrawingBrush.color = CANVAS_2.freeDrawingBrush.color = "#f94f18";
 
 // fabric doesn't let us use a webgl context on the canvas so we have to make another layer
