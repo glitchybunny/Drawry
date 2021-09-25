@@ -14,6 +14,10 @@ const VIEWPORT = {
 	height: 600,
 };
 
+const mod = (a, n) => {
+	return a - Math.floor(a / n) * n;
+};
+
 /// ANGLES
 const angle = {
 	direction(cx, cy, ex, ey) {
@@ -23,13 +27,7 @@ const angle = {
 	},
 	difference(a, b) {
 		let diff = a - b;
-		if (diff > 180) {
-			diff -= 360;
-		}
-		if (diff < -180) {
-			diff += 360;
-		}
-		return diff;
+		return mod(diff + 180, 360) - 180;
 	},
 };
 
@@ -96,7 +94,7 @@ const path = {
 		for (let i = 0; i < pos.length - 2; i += 2) {
 			// calculate angle
 			dir = angle.direction(pos[i], pos[i + 1], pos[i + 2], pos[i + 3]);
-			if (dirPrev) {
+			if (dirPrev !== undefined) {
 				// determine difference between last two angles
 				let diff = Math.abs(angle.difference(dir, dirPrev));
 				if (diff > 60) {
