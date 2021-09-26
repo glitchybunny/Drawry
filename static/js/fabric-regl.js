@@ -52,8 +52,9 @@ const buffer = {
 const path = {
 	positions(p) {
 		/// Gets array of positions to draw lines between
-		const prev = [undefined, undefined];
-		const pos = [];
+		let out, prev, pos;
+		out = [];
+		pos = [];
 
 		// iterate over path and generate array of positions
 		for (let i of p) {
@@ -61,39 +62,29 @@ const path = {
 				case "M": // moveTo
 				case "L": // lineto
 					// add current position
-					pos.push(i[1], i[2]);
-					prev[0] = i[1];
-					prev[1] = i[2];
+					prev = [Math.round(i[1]), Math.round(i[2])];
+					pos.push(...prev);
 					break;
 				case "Q": // quadraticCurveTo
 					// generate approximate midpoints along quadratic bezier (for smoother lines)
 					pos.push(
-						prev[0] * 0.5625 + i[1] * 0.375 + i[3] * 0.0625,
-						prev[1] * 0.5625 + i[2] * 0.375 + i[4] * 0.0625,
-						prev[0] * 0.25 + i[1] * 0.5 + i[3] * 0.25,
-						prev[1] * 0.25 + i[2] * 0.5 + i[4] * 0.25,
-						prev[0] * 0.0625 + i[1] * 0.375 + i[3] * 0.5625,
-						prev[1] * 0.0625 + i[2] * 0.375 + i[4] * 0.5625
+						//prev[0] * 0.5625 + i[1] * 0.375 + i[3] * 0.0625,
+						//prev[1] * 0.5625 + i[2] * 0.375 + i[4] * 0.0625,
+						Math.round(prev[0] * 0.25 + i[1] * 0.5 + i[3] * 0.25),
+						Math.round(prev[1] * 0.25 + i[2] * 0.5 + i[4] * 0.25)
+						//prev[0] * 0.0625 + i[1] * 0.375 + i[3] * 0.5625,
+						//prev[1] * 0.0625 + i[2] * 0.375 + i[4] * 0.5625
 					);
 
 					// also add current position
-					pos.push(i[3], i[4]);
-					prev[0] = i[3];
-					prev[1] = i[4];
+					prev = [Math.round(i[3]), Math.round(i[4])];
+					pos.push(...prev);
 					break;
 			}
 		}
 
-		// round all values to nearest pixel
-		for (let i in pos) {
-			pos[i] = Math.round(pos[i]);
-		}
-
 		// optimise line by removing close sequential points
-		const out = [];
 		out.push(pos[0], pos[1], pos[0], pos[1]);
-		prev[0] = out[0];
-		prev[1] = out[1];
 		for (let i = 2; i < pos.length; i += 2) {
 			let dx = Math.abs(out[out.length - 2] - pos[i]);
 			let dy = Math.abs(out[out.length - 1] - pos[i + 1]);
@@ -107,7 +98,7 @@ const path = {
 	},
 	corners(pos) {
 		/// Finds sharp corners of a positions array
-		const out = [{ offset: pos.slice(0, 2) }, { offset: pos.slice(pos.length - 2, pos.length) }];
+		let out = [{ offset: pos.slice(0, 2) }, { offset: pos.slice(pos.length - 2, pos.length) }];
 		let dir, dirPrev;
 
 		// loop through all positions in the path and find big angle changes
@@ -164,7 +155,7 @@ class ShaderPath extends fabric.Path {
 
 		// precalculate everything for rendering
 		this._calculatePath();
-		this.circle = circle.mesh(this.strokeWidth / 2, 16);
+		this.circle = circle.mesh(this.strokeWidth / 2, this.strokeWidth > 10 ? 16 : 8);
 		let colorSrc = fabric.Color.fromHex(this.stroke)._source;
 		this.color = [colorSrc[0] / 255, colorSrc[1] / 255, colorSrc[2] / 255, 1];
 	}
