@@ -194,7 +194,7 @@ class ShaderPath extends fabric.Path {
 		});
 	}
 
-	_renderPathCommands(ctx) {
+	render(ctx) {
 		// draw line
 		const draw = REGL({
 			attributes: this.attributes,
@@ -210,7 +210,6 @@ class ShaderPath extends fabric.Path {
 			depth: { func: "always" },
 		});
 		draw();
-		draw.destroy();
 
 		// draw circles at sharp corners
 		circle.batchRender(this.circle, this.color, this.corners);
@@ -313,3 +312,21 @@ void main () {
 	pos += vec2(-1., 1.); // correct offset
   gl_Position = vec4(pos, 0, 1);
 }`;
+
+/// OVERRIDES
+// extends fabric.Canvas.renderAll(); to instead clear and render the WebGL canvas
+const extendRenderAll = (fabricCanvas) => {
+	fabricCanvas.renderAll = (function (_super) {
+		return function () {
+			// Clear context
+			REGL.clear({ color: [0, 0, 0, 0], depth: 1, stencil: 0 });
+
+			// Render *all* objects
+			// Note: This is inefficient, perhaps there's a better approach
+			this.renderCanvas(this.contextContainer, this._objects);
+
+			// Call origin render
+			return _super.apply(this, arguments);
+		};
+	})(fabricCanvas.renderAll);
+};
