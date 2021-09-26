@@ -25,7 +25,7 @@ CANVAS_1.freeDrawingBrush.color = CANVAS_2.freeDrawingBrush.color = "#f94f18";
 // fabric doesn't let us use a webgl context on the canvas so we have to make another layer
 const CANVAS_3 = byId("c3");
 byId("c2").after(CANVAS_3);
-const regl = wrapREGL({
+const REGL = wrapREGL({
 	canvas: CANVAS_3,
 	pixelRatio: 1,
 	attributes: { antialias: false, preserveDrawingBuffer: true },

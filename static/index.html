@@ -222,8 +222,9 @@
 						</div>
 						<div id="canvas">
 							<img alt="" id="canvasBase" src="img/base.png">
-							<canvas height="600" id="c" width="800"></canvas>
-							<canvas height="600" id="cursor" width="800"></canvas>
+							<canvas height="600" id="cBase" width="800"></canvas>
+							<canvas height="600" id="cRegl" width="800"></canvas>
+							<canvas height="600" id="cCursor" width="800"></canvas>
 						</div>
 						<div id="stuff">
 							<!-- Tools -->
@@ -325,9 +326,11 @@
 
 	<script src="/js/socket.io.min.js"></script>
 	<script src="/js/cookies.min.js"></script>
-	<script src="/js/fabric.min.js"></script>
 	<script src="/js/dialog-polyfill.js"></script>
-	<script src="/js/client.js" type="module"></script>
+	<script src="/js/fabric.min.js"></script>
+	<script src="/js/regl.js"></script>
+	<script src="/js/fabric-regl.js"></script>
+	<script src="/js/client.js"></script>
 	<script>
 		function enterSubmit(e, id) {
 			if (e.keyCode === 13) {
