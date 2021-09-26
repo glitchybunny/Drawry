@@ -923,6 +923,9 @@ function changeColor(color) {
 		if (DRAW.tool !== TOOL.FILL) {
 			CANVAS.freeDrawingBrush.color = color;
 		}
+	} else {
+		// Automatically switch to brush if using eraser
+		byId("toolPaint").click();
 	}
 
 	// History/selection
@@ -1513,7 +1516,7 @@ function download(bookIDs) {
 }
 
 /// --- CANVAS --- ///
-// Canvas drawing
+// Canvas
 const CANVAS = new fabric.Canvas("cBase", {
 	isDrawingMode: true,
 	freeDrawingCursor: "none",
@@ -1522,7 +1525,7 @@ const CANVAS = new fabric.Canvas("cBase", {
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
 
-// Add WebGL layer for custom rendering
+// REGL canvas for WebGL rendering
 const CANVAS_REGL = byId("cRegl");
 const REGL = wrapREGL({
 	canvas: CANVAS_REGL,
@@ -1530,8 +1533,9 @@ const REGL = wrapREGL({
 	attributes: { antialias: false, preserveDrawingBuffer: true },
 });
 byId("cBase").after(CANVAS_REGL);
+extendRenderAll(CANVAS);
 
-// Add a cursor layer (to show the current brush/tool)
+// Cursor canvas for custom drawing cursors
 const CANVAS_CURSOR = new fabric.StaticCanvas("cCursor");
 const MOUSE_CURSOR = new fabric.Circle({
 	left: -100,
@@ -1602,28 +1606,22 @@ function record(type, object) {
 
 	// Ensure commands aren't doubled up
 	if (_last === undefined || type !== _last.type || object !== _last.object) {
-		if (type === "path:created" && DRAW.tool === TOOL.FILL) {
-			// If using the fill tool, remove the invisible path that was created when clicking
-			if (CANVAS.contains(object)) {
-				CANVAS.remove(object);
-			}
-		} else {
-			// Otherwise, record event properly
-			// Add to undo stack
-			DRAW.undo.push({ type: type, object: object });
-			byId("toolUndo").disabled = false;
+		// Add to undo stack
+		DRAW.undo.push({ type: type, object: object });
+		byId("toolUndo").disabled = false;
 
-			// Clear redo stack
-			DRAW.redo = [];
-			byId("toolRedo").disabled = true;
-		}
+		// Clear redo stack
+		DRAW.redo = [];
+		byId("toolRedo").disabled = true;
 	}
 }
 
 CANVAS.on("path:created", (obj) => {
-	record("path:created", obj.path);
-
-	CANVAS.add(new ShaderPath(obj.path));
+	if (DRAW.tool !== TOOL.FILL) {
+		let path = new ShaderPath(obj.path);
+		record("path:created", path);
+		CANVAS.add(path);
+	}
 	CANVAS.remove(obj.path);
 });
 
@@ -1639,7 +1637,6 @@ CANVAS.on("mouse:up", (obj) => {
 
 function fill(pos) {
 	/// FLOOD FILL ALGORITHM
-	// This code is so ugly and messy :(
 	let xMin, yMin, xMax, yMax;
 
 	// Get position from coords (and vice versa)
