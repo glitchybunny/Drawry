@@ -210,7 +210,7 @@ ul {
 	text-align: start;
 }
 
-.canvas-container, #cursor {
+.canvas-container, #cCursor {
 	position: absolute !important;
 	top: 0;
 }
@@ -288,7 +288,8 @@ ul {
 	min-height: 15em;
 }
 
-#cursor {
+#cCursor, #cRegl {
+	position: relative;
 	pointer-events: none !important;
 }
 
@@ -459,6 +460,10 @@ ul {
 	min-height: 2em;
 	background-color: #345678;
 	background-image: none;
+}
+
+#colorContainer {
+	margin-top: .15em;
 }
 
 #colorContainer::after {
