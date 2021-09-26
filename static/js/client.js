@@ -73,6 +73,12 @@ const DRAW = {
 	WIDTH: 800,
 	HEIGHT: 600,
 };
+const VIEWPORT = {
+	x: 0,
+	y: 0,
+	width: 800,
+	height: 600,
+};
 
 // Ensure browser compatibility
 if (!("getContext" in document.createElement("canvas"))) {
@@ -1508,7 +1514,7 @@ function download(bookIDs) {
 
 /// --- CANVAS --- ///
 // Canvas drawing
-const CANVAS = new fabric.Canvas("c", {
+const CANVAS = new fabric.Canvas("cBase", {
 	isDrawingMode: true,
 	freeDrawingCursor: "none",
 	backgroundColor: "#FFFFFF",
@@ -1516,8 +1522,17 @@ const CANVAS = new fabric.Canvas("c", {
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
 
+// Add WebGL layer for custom rendering
+const CANVAS_REGL = byId("cRegl");
+const REGL = wrapREGL({
+	canvas: CANVAS_REGL,
+	pixelRatio: 1,
+	attributes: { antialias: false, preserveDrawingBuffer: true },
+});
+byId("cBase").after(CANVAS_REGL);
+
 // Add a cursor layer (to show the current brush/tool)
-const CURSOR = new fabric.StaticCanvas("cursor");
+const CANVAS_CURSOR = new fabric.StaticCanvas("cCursor");
 const MOUSE_CURSOR = new fabric.Circle({
 	left: -100,
 	top: -100,
@@ -1527,7 +1542,7 @@ const MOUSE_CURSOR = new fabric.Circle({
 	originX: "center",
 	originY: "center",
 });
-CURSOR.add(MOUSE_CURSOR);
+CANVAS_CURSOR.add(MOUSE_CURSOR);
 CANVAS.on("mouse:move", (obj) => {
 	let mouse = obj.absolutePointer;
 	MOUSE_CURSOR.set({ top: mouse.y, left: mouse.x }).setCoords().canvas.renderAll();
@@ -1550,18 +1565,30 @@ function resizeCanvas() {
 	let _ratio = ((_h / _w) * 3) / 4;
 	if (_ratio <= 0.99 || _ratio >= 1.01) {
 		// disproportionate, change height to compensate
-		_h = (_w * 3) / 4;
+		_h = Math.floor((_w * 3) / 4);
 	}
 
 	// Resize canvas
 	if (_w) {
 		let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
-		CANVAS.setDimensions({ width: _w, height: _h });
+
+		// Update viewport
+		VIEWPORT.width = _w;
+		VIEWPORT.height = _h;
+
+		// Resize canvases
+		CANVAS.setDimensions(VIEWPORT);
+		CANVAS_CURSOR.setDimensions(VIEWPORT);
+		CANVAS_REGL.width = VIEWPORT.width;
+		CANVAS_REGL.height = VIEWPORT.height;
+
+		// Update canvas zoom
 		CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-		CURSOR.setDimensions({ width: _w, height: _h });
-		CURSOR.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+		CANVAS_CURSOR.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+
+		// Reheight html elements
 		_base.style.height = _h + "px";
-		byId("previousWrite").style.maxWidth = _w + "px"; //"calc(" + _w + "px + 10em)";
+		byId("previousWrite").style.maxWidth = _w + "px";
 	}
 }
 
@@ -1595,6 +1622,9 @@ function record(type, object) {
 
 CANVAS.on("path:created", (obj) => {
 	record("path:created", obj.path);
+
+	CANVAS.add(new ShaderPath(obj.path));
+	CANVAS.remove(obj.path);
 });
 
 // Flood fill function

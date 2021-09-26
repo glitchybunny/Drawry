@@ -7,12 +7,6 @@
 "use strict";
 
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
-const VIEWPORT = {
-	x: 0,
-	y: 0,
-	width: 800,
-	height: 600,
-};
 
 const mod = (a, n) => {
 	return a - Math.floor(a / n) * n;
@@ -118,7 +112,7 @@ const path = {
 	},
 	positionBuffer(pos, n) {
 		/// Creates a buffer containing line positions
-		return regl.buffer({
+		return REGL.buffer({
 			usage: "static",
 			type: "float",
 			length: (n + 2) * 4 * FLOAT_BYTES,
@@ -127,7 +121,7 @@ const path = {
 	},
 	offsetBuffer(n) {
 		// Creates a buffer containing alternating values [1, -1, 1, -1, etc]
-		return regl.buffer({
+		return REGL.buffer({
 			usage: "static",
 			type: "float",
 			length: (n + 2) * 2 * FLOAT_BYTES,
@@ -192,7 +186,7 @@ class ShaderPath extends fabric.Path {
 			},
 			offset: offsetBuffer,
 		};
-		this.elements = regl.elements({
+		this.elements = REGL.elements({
 			primitive: "triangles",
 			usage: "static",
 			type: "uint16",
@@ -202,7 +196,7 @@ class ShaderPath extends fabric.Path {
 
 	_renderPathCommands(ctx) {
 		// draw line
-		const draw = regl({
+		const draw = REGL({
 			attributes: this.attributes,
 			uniforms: {
 				color: this.color,
@@ -235,7 +229,7 @@ const circle = {
 
 	render(mesh, color, pos) {
 		// draw circle
-		regl({
+		REGL({
 			attributes: {
 				position: mesh,
 			},
@@ -254,13 +248,13 @@ const circle = {
 
 	batchRender(mesh, color, posList) {
 		// create circle
-		const draw = regl({
+		const draw = REGL({
 			attributes: {
 				position: mesh,
 			},
 			uniforms: {
 				color: color,
-				offset: regl.prop("offset"),
+				offset: REGL.prop("offset"),
 				display: [VIEWPORT.width, VIEWPORT.height, VIEWPORT.width / 800], // width, height, scale
 			},
 			vert: SHD_CIRCLE_VERT,
