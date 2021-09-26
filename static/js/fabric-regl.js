@@ -207,6 +207,7 @@ class ShaderPath extends fabric.Path {
 			vert: SHD_LINE_VERT,
 			frag: SHD_FRAG,
 			viewport: VIEWPORT,
+			depth: { func: "always" },
 		});
 		draw();
 		draw.destroy();
@@ -243,6 +244,7 @@ const circle = {
 			viewport: VIEWPORT,
 			primitive: "triangle fan",
 			count: mesh.length,
+			depth: { func: "always" },
 		})();
 	},
 
@@ -262,6 +264,7 @@ const circle = {
 			viewport: VIEWPORT,
 			primitive: "triangle fan",
 			count: mesh.length,
+			depth: { func: "always" },
 		});
 		draw(posList);
 		draw.destroy();
