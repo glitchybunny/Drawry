@@ -4,6 +4,7 @@
 	a multiplayer art experiment by Glitch Taylor (rtay.io)
 */
 "use strict";
+const DEBUG = true;
 
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
@@ -66,6 +67,7 @@ const DRAW = {
 	brush: undefined,
 	color: "#000000",
 	colorHistory: [],
+	backgroundColor: [1, 1, 1, 1],
 	width: 6,
 	flow: 50,
 	undo: [],
@@ -604,7 +606,7 @@ function updatePlayers() {
 	byId("playersCount").textContent = "(" + Object.keys(USERS).length.toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
-	if (Object.keys(USERS).length > 1) {
+	if (Object.keys(USERS).length > 1 || DEBUG) {
 		show("inputStart");
 		hide("inputStartWarning");
 	} else {
@@ -724,7 +726,6 @@ function updateInput() {
 			// Reset drawing inputs
 			CANVAS.clear();
 			//console.log(CANVAS.getObjects());  todo: consider cleaning up/destroying objects at end of each round?
-			CANVAS.setBackgroundColor("#FFFFFF");
 			DRAW.undo = [];
 			byId("toolUndo").disabled = true;
 			byId("toolRedo").disabled = true;
@@ -1520,7 +1521,6 @@ function download(bookIDs) {
 const CANVAS = new fabric.Canvas("cBase", {
 	isDrawingMode: true,
 	freeDrawingCursor: "none",
-	backgroundColor: "#FFFFFF",
 });
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
@@ -1533,7 +1533,7 @@ const REGL = wrapREGL({
 	attributes: { antialias: false, preserveDrawingBuffer: true },
 });
 byId("cBase").after(CANVAS_REGL);
-extendRenderAll(CANVAS);
+hookREGL(CANVAS);
 
 // Cursor canvas for custom drawing cursors
 const CANVAS_CURSOR = new fabric.StaticCanvas("cCursor");
@@ -1693,9 +1693,6 @@ function fill(pos) {
 		dest.getContext("2d").drawImage(source, left, top, width, height, 0, 0, width, height);
 		return dest;
 	};
-
-	// Todo: See if it would be more efficient to clone the objects to a new canvas instead of baking and loading image data
-	// I've done some testing and this seems to be the slowest part (slower than the flood algorithm even)
 
 	/// Flood fill
 	if (pos.x >= 0 && pos.x <= DRAW.WIDTH && pos.y >= 0 && pos.y <= DRAW.HEIGHT) {
