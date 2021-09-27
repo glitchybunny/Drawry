@@ -14,13 +14,10 @@ const xss = require("xss");
 const path = require("path");
 const sizeOf = require("image-size");
 
-// Server side variables (to keep track of games)
+// Server constants
 const CLIENTS = [];
 const SOCKETS = [];
 const ROOMS = {};
-
-// Other constants
-const MAX_ROOM_SIZE = 10;
 const SETTINGS_CONSTRAINTS = {
 	firstPage: ["string", ["Write", "Draw"]],
 	pageCount: ["number", [2, 20]],
@@ -42,6 +39,8 @@ const STATE = {
 	PLAYING: 1,
 	PRESENTING: 2,
 };
+const MAX_ROOM_SIZE = 10;
+const DEBUG = process.env.DEBUG;
 
 ///// ----- ASYNC SERVER FUNCTIONS ----- /////
 // Listen for incoming connections from clients
@@ -157,10 +156,11 @@ io.on("connection", (socket) => {
 
 		// Make sure user is the host, player count is reached, and settings are valid
 		if (
-			socket.id === _room.host &&
-			_room.clients.length >= 2 &&
-			verifySettings(data.settings) &&
-			_room.state === STATE.LOBBY
+			(socket.id === _room.host &&
+				_room.clients.length >= 2 &&
+				verifySettings(data.settings) &&
+				_room.state === STATE.LOBBY) ||
+			DEBUG
 		) {
 			// Update settings, change room state
 			_room.settings = data.settings;
