@@ -311,11 +311,24 @@ void main () {
 /// OVERRIDES
 // hooks into fabric.Canvas to override/extend functions that make integration easier
 const hookREGL = (fabricCanvas) => {
-	fabricCanvas.renderAll = (function (_super) {
-		// extend fabric.Canvas.renderAll(); to clear and render the WebGL canvas
+	// extends fabric.Canvas.clear(); to clear the WebGL canvas too
+	fabricCanvas.clear = (function (_super) {
 		return function () {
 			// Clear context
-			REGL.clear({ color: DRAW.backgroundColor, depth: 1, stencil: 0 });
+			REGL.clear({ color: [0, 0, 0, 0], depth: 1, stencil: 0 });
+
+			// Delete objects
+
+			// Call original function
+			return _super.apply(this, arguments);
+		};
+	})(fabricCanvas.clear);
+
+	// extends fabric.Canvas.renderAll(); to clear and render the WebGL canvas
+	fabricCanvas.renderAll = (function (_super) {
+		return function () {
+			// Clear context
+			REGL.clear({ color: [0, 0, 0, 0], depth: 1, stencil: 0 });
 
 			// Render objects
 			this._renderObjects(this.contextContainer, this._objects);
@@ -323,7 +336,6 @@ const hookREGL = (fabricCanvas) => {
 			// No need to call original renderer AFAIK
 			// But it might be necessary if other tools are added
 			//return _super.apply(this, arguments);
-
 			return this;
 		};
 	})(fabricCanvas.renderAll);

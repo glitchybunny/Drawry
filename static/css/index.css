@@ -286,6 +286,7 @@ ul {
 	height: calc(100vh - 16em);
 	min-width: 20em;
 	min-height: 15em;
+	background-color: #FFFFFF;
 }
 
 #cCursor, #cRegl {
