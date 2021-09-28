@@ -82,13 +82,20 @@ const VIEWPORT = {
 	height: 600,
 };
 
-// Ensure browser compatibility
-if (!("getContext" in document.createElement("canvas"))) {
-	let message =
-		"Sorry, it looks like your browser does not support canvas! This game depends on canvas to be playable.";
-	console.error(message);
-	alert(message);
+/// Ensure browser compatibility
+const supportsCanvas = "getContext" in document.createElement("canvas");
+const supportsWebGL =
+	document.createElement("canvas").getContext("webgl") instanceof WebGLRenderingContext;
+
+if (!supportsCanvas) {
+	console.error("No Canvas support");
+	alert("Your browser does not support Canvas! This game depends on Canvas to be playable.");
 }
+if (!supportsWebGL) {
+	console.error("No WebGL support");
+	alert("Your browser does not support WebGL! This game depends on WebGL to be playable.");
+}
+
 const byId = function (id) {
 	return document.getElementById(id);
 };
