@@ -776,6 +776,7 @@ function updateInput() {
 	byId("inputSubmit").disabled = false;
 }
 
+// Game: Timers
 function updateTimer() {
 	// Update timer text
 	let min, sec;
@@ -1297,10 +1298,11 @@ function download(bookIDs) {
 
 			case "Draw":
 				// Drawing round - Export canvas to base64
-				_value = CANVAS.toDataURL({
-					format: "png",
-					multiplier: DRAW.WIDTH / CANVAS.getWidth(),
-				});
+				// Resize and render canvas
+				VIEWPORT.width = CANVAS_REGL.width = 800;
+				VIEWPORT.height = CANVAS_REGL.height = 600;
+				CANVAS.renderAll();
+				_value = CANVAS_REGL.toDataURL();
 				break;
 		}
 
