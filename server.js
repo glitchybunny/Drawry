@@ -411,7 +411,9 @@ io.on("connection", (socket) => {
 	// Listen for disconnect events
 	socket.on("disconnect", (data) => {
 		if (process.env.VERBOSE) {
-			console.log("disconnect", CLIENTS[socket.id].id, { type: data });
+			if (CLIENTS[socket.id].id !== undefined) {
+				console.log("disconnect", CLIENTS[socket.id].id, { type: data });
+			}
 		}
 
 		if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
