@@ -58,7 +58,6 @@ const ROOM = {};
 const USERS = {};
 const BOOKS = {};
 const ROUND = {
-	page: 0,
 	timer: undefined,
 	timeLeft: 0,
 };
@@ -67,7 +66,6 @@ const DRAW = {
 	brush: undefined,
 	color: "#000000",
 	colorHistory: [],
-	backgroundColor: [1, 1, 1, 1],
 	width: 6,
 	flow: 50,
 	undo: [],
@@ -181,13 +179,14 @@ SOCKET.on("startGame", (data) => {
 			title: getName(_id) + "'s book",
 			author: getName(_id),
 			book: data.books[_id],
-			p: false,
+			presented: false,
 		};
 	}
 
 	// Set round info
 	ROUND.book = BOOKS[ID];
 	ROUND.mode = data.start;
+	ROUND.page = 0;
 
 	// Update DOM
 	hide(["setup", "invite"]);
@@ -426,12 +425,12 @@ SOCKET.on("presentFinish", () => {
 	});
 
 	// Keep track of book being presented
-	ROUND.book.p = true;
+	ROUND.book.presented = true;
 
 	// If all books have been presented, allow host to return to lobby
 	let _done = true;
 	Object.keys(BOOKS).forEach((e) => {
-		_done = _done && BOOKS[e].p;
+		_done = _done && BOOKS[e].presented;
 	});
 	byId("finish").disabled = !_done;
 });
@@ -1021,6 +1020,72 @@ function show(e) {
 	}
 }
 
+// Download books in a simple HTML file
+function download(bookIDs) {
+	// Generate contents for each book
+	let filename = "picturephone_" + Date.now() + ".html";
+	let html =
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
+	for (let _id of bookIDs) {
+		// Iterate over each book and generate HTML for it
+		let _book = document.createElement("article");
+
+		// Book header information
+		let _bookHeader = document.createElement("header");
+		let _title = document.createElement("h1");
+		let _authors = document.createElement("h4");
+		let _names = [];
+		_title.textContent = BOOKS[_id].title;
+		BOOKS[_id].book.forEach((_page) => {
+			let _n = getName(_page.author);
+			if (_names.indexOf(_n) === -1) {
+				_names.push(_n);
+			}
+		});
+		_authors.textContent = "by " + _names.join(", ");
+		_bookHeader.appendChild(_title);
+		_bookHeader.appendChild(_authors);
+
+		// Book content / pages
+		let _pages = document.createElement("ol");
+		BOOKS[_id].book.forEach((_p) => {
+			// Create page
+			let _page = document.createElement("li");
+			switch (_p.mode) {
+				case "Write":
+					_page.textContent = _p.value;
+					_page.classList.add("write");
+					break;
+				case "Draw":
+					let _img = document.createElement("img");
+					_img.src = _p.value;
+					_page.appendChild(_img);
+					_page.classList.add("draw");
+					break;
+			}
+			_pages.appendChild(_page);
+		});
+
+		// Add book to HTML
+		_book.appendChild(_bookHeader);
+		_book.appendChild(_pages);
+		html += _book.outerHTML;
+		html += "<hr>";
+	}
+	html += "</body></html>";
+
+	// Add to hidden dom element in the body
+	let _element = document.createElement("a");
+	_element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
+	_element.setAttribute("download", filename);
+	_element.style.display = "none";
+
+	// Save as file
+	document.body.appendChild(_element);
+	_element.click();
+	document.body.removeChild(_element);
+}
+
 /// --- INPUTS --- ///
 {
 	// Prefill name field with cookie
@@ -1461,72 +1526,6 @@ function show(e) {
 	});
 }
 
-// Download books in a condensed HTML file
-function download(bookIDs) {
-	// Generate contents for each book
-	let filename = "picturephone_" + Date.now() + ".html";
-	let html =
-		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
-	for (let _id of bookIDs) {
-		// Iterate over each book and generate HTML for it
-		let _book = document.createElement("article");
-
-		// Book header information
-		let _bookHeader = document.createElement("header");
-		let _title = document.createElement("h1");
-		let _authors = document.createElement("h4");
-		let _names = [];
-		_title.textContent = BOOKS[_id].title;
-		BOOKS[_id].book.forEach((_page) => {
-			let _n = getName(_page.author);
-			if (_names.indexOf(_n) === -1) {
-				_names.push(_n);
-			}
-		});
-		_authors.textContent = "by " + _names.join(", ");
-		_bookHeader.appendChild(_title);
-		_bookHeader.appendChild(_authors);
-
-		// Book content / pages
-		let _pages = document.createElement("ol");
-		BOOKS[_id].book.forEach((_p) => {
-			// Create page
-			let _page = document.createElement("li");
-			switch (_p.mode) {
-				case "Write":
-					_page.textContent = _p.value;
-					_page.classList.add("write");
-					break;
-				case "Draw":
-					let _img = document.createElement("img");
-					_img.src = _p.value;
-					_page.appendChild(_img);
-					_page.classList.add("draw");
-					break;
-			}
-			_pages.appendChild(_page);
-		});
-
-		// Add book to HTML
-		_book.appendChild(_bookHeader);
-		_book.appendChild(_pages);
-		html += _book.outerHTML;
-		html += "<hr>";
-	}
-	html += "</body></html>";
-
-	// Add to hidden dom element in the body
-	let _element = document.createElement("a");
-	_element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
-	_element.setAttribute("download", filename);
-	_element.style.display = "none";
-
-	// Save as file
-	document.body.appendChild(_element);
-	_element.click();
-	document.body.removeChild(_element);
-}
-
 /// --- CANVAS --- ///
 // Canvas
 const CANVAS = new fabric.Canvas("cBase", {
@@ -1567,8 +1566,6 @@ CANVAS.on("mouse:out", () => {
 });
 
 // Resize the drawing canvas
-window.addEventListener("resize", resizeCanvas);
-
 function resizeCanvas() {
 	// Get base image of canvas
 	let _base = byId("canvasBase");
@@ -1606,6 +1603,8 @@ function resizeCanvas() {
 		byId("previousWrite").style.maxWidth = _w + "px";
 	}
 }
+
+window.addEventListener("resize", resizeCanvas);
 
 // Undo/redo stack
 function record(type, object) {
