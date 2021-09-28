@@ -88,12 +88,14 @@ const supportsWebGL =
 	document.createElement("canvas").getContext("webgl") instanceof WebGLRenderingContext;
 
 if (!supportsCanvas) {
-	console.error("No Canvas support");
-	alert("Your browser does not support Canvas! This game depends on Canvas to be playable.");
+	let m = "Canvas not supported!\n\nThis game requires canvas to run.";
+	alert(m);
+	throw new Error(m);
 }
 if (!supportsWebGL) {
-	console.error("No WebGL support");
-	alert("Your browser does not support WebGL! This game depends on WebGL to be playable.");
+	let m = "WebGL not supported!\n\nMore information available at https://get.webgl.org/";
+	alert(m);
+	throw new Error(m);
 }
 
 const byId = function (id) {
@@ -487,8 +489,10 @@ SOCKET.on("disconnect", (data) => {
 			window.location.reload(true);
 			break;
 		case "transport close":
-			alert("Lost connection to server.");
-			window.location.reload(true);
+			if (ROOM.code) {
+				alert("Lost connection to server.");
+				window.location.reload(true);
+			}
 			break;
 		default:
 			alert("Disconnected due to an unknown error.");
