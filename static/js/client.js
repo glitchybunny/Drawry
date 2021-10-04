@@ -1,7 +1,7 @@
 /*
-	picturephone
+	drawry
 	client.js
-	a multiplayer art experiment by Glitch Taylor (rtay.io)
+	a multiplayer drawing game by Glitch Taylor (rtay.io)
 */
 "use strict";
 
@@ -1442,9 +1442,9 @@ function show(e) {
 // Download books in a condensed HTML file
 function download(bookIDs) {
 	// Generate contents for each book
-	let filename = "picturephone_" + Date.now() + ".html";
+	let filename = "drawry_" + Date.now() + ".html";
 	let html =
-		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Picturephone Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Drawry Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
 	for (let _id of bookIDs) {
 		// Iterate over each book and generate HTML for it
 		let _book = document.createElement("article");
@@ -1758,7 +1758,7 @@ function fill(pos) {
 					if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
 						// Automatically break if the code gets stuck in an infinite loop
 						// THIS SHOULD NEVER HAPPEN
-						console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
+						console.error("DRAWRY ERROR: Infinite loop in flood fill algorithm");
 						todo = [];
 						break;
 					}

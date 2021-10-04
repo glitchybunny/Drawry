@@ -1,4 +1,4 @@
-# open-picturephone
+# drawry
 
 Take turns drawing pictures and writing captions to make fun stories with your friends.
 
