@@ -1,7 +1,7 @@
 /*
-	picturephone
+	drawry
 	server.js
-	a multiplayer art experiment by Glitch Taylor (rtay.io)
+	a multiplayer drawing game by Glitch Taylor (rtay.io)
 */
 "use strict";
 
