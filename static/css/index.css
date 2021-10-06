@@ -529,12 +529,12 @@ ul {
 	align-items: center;
 }
 
-#brushSize, #fillThreshold {
+#brushSize {
 	width: 2.3em;
 	font-size: 1em;
 }
 
-#brushSizeRange, #fillThresholdRange {
+#brushSizeRange {
 	width: 2.3em;
 	height: 6.9em;
 	margin: .15em 0;

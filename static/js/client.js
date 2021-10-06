@@ -67,7 +67,6 @@ const DRAW = {
 	color: "#000000",
 	colorHistory: [],
 	width: 6,
-	flow: 50,
 	undo: [],
 	redo: [],
 	WIDTH: 800,
@@ -1303,6 +1302,7 @@ function download(bookIDs) {
 				VIEWPORT.height = CANVAS_REGL.height = 600;
 				CANVAS.renderAll();
 				_value = CANVAS_REGL.toDataURL();
+				resizeCanvas();
 				break;
 		}
 
@@ -1331,7 +1331,6 @@ function download(bookIDs) {
 		// Change to paint tool
 		DRAW.tool = TOOL.PAINT;
 		changeTool(e.target);
-		hide("optionsFill");
 		show("optionsBrush");
 
 		// Draw with so many beautiful colors
@@ -1346,7 +1345,6 @@ function download(bookIDs) {
 		// Change to erase tool
 		DRAW.tool = TOOL.ERASE;
 		changeTool(e.target);
-		hide("optionsFill");
 		show("optionsBrush");
 
 		// Erasing is just drawing white
@@ -1362,7 +1360,6 @@ function download(bookIDs) {
 		DRAW.tool = TOOL.FILL;
 		changeTool(e.target);
 		hide("optionsBrush");
-		show("optionsFill");
 
 		// Disable drawing and change cursor
 		CANVAS.freeDrawingBrush.color = "rgba(0,0,0,0)";
@@ -1463,18 +1460,6 @@ function download(bookIDs) {
 
 		// Update text input
 		byId("brushSize").value = DRAW.width;
-	});
-
-	// Draw: Fill Threshold
-	byId("fillThreshold").addEventListener("input", (e) => {
-		// Update fill threshold
-		DRAW.flow = parseInt(e.target.value);
-		byId("fillThresholdRange").value = DRAW.flow;
-	});
-	byId("fillThresholdRange").addEventListener("input", (e) => {
-		// Update fill threshold
-		DRAW.flow = parseInt(e.target.value);
-		byId("fillThreshold").value = DRAW.flow;
 	});
 
 	/// PRESENT
@@ -1662,23 +1647,13 @@ function fill(pos) {
 		return { x: x, y: y };
 	};
 
-	// Get difference between two colors
-	const diff = (data, pos, col) => {
-		// comparison algorithm from here https://www.compuphase.com/cmetric.htm
-		let rAvg = (data[pos] + col.r) / 2;
-		let r = data[pos] - col.r;
-		let g = data[pos + 1] - col.g;
-		let b = data[pos + 2] - col.b;
+	// Check if color matches start color
+	const check = (data, currPos, startCol) => {
 		return (
-			Math.sqrt((((512 + rAvg) * r * r) >> 8) + 4 * g * g + (((767 - rAvg) * b * b) >> 8)) >> 3
-		); // between 0 and ~95.5
-	};
-
-	const check = (data, pos, col) => {
-		// Check if pos hasn't been visited (alpha = 0) and has similar color
-		if (data[pos + 3] === 0 && diff(data, pos, col) <= DRAW.flow) {
-			return true;
-		}
+			data[currPos] === startCol[0] &&
+			data[currPos + 1] === startCol[1] &&
+			data[currPos + 2] === startCol[2]
+		);
 	};
 
 	// Change color of pixel
@@ -1718,34 +1693,32 @@ function fill(pos) {
 
 		// Create a temporary canvas to calculate flood fill
 		let canvas = document.createElement("canvas");
-		canvas.width = DRAW.WIDTH;
-		canvas.height = DRAW.HEIGHT;
+
+		// Resize all layers to (800,600) for consistent fill calculations
+		canvas.width = VIEWPORT.width = CANVAS_REGL.width = 800;
+		canvas.height = VIEWPORT.height = CANVAS_REGL.height = 600;
 
 		// Put current canvas data into image
-		let img = new Image(DRAW.WIDTH, DRAW.HEIGHT);
-		img.src = CANVAS.toDataURL({
-			format: "png",
-			multiplier: DRAW.WIDTH / CANVAS.getWidth(),
-		});
+		let img = new Image(canvas.width, canvas.height);
+		CANVAS.renderAll();
+		img.src = CANVAS_REGL.toDataURL();
+		resizeCanvas();
+
 		img.onload = () => {
-			// Draw image on temp canvas
+			// Draw current canvas onto a temporary canvas
 			let ctx = canvas.getContext("2d");
-			ctx.drawImage(img, 0, 0, DRAW.WIDTH, DRAW.HEIGHT);
-			let imgData = ctx.getImageData(0, 0, DRAW.WIDTH, DRAW.HEIGHT);
+			ctx.drawImage(img, 0, 0, 800, 600);
+			let imgData = ctx.getImageData(0, 0, 800, 600);
 			let data = imgData.data;
+
+			// Get fill start
+			let startPos = getPos(pos.x, pos.y);
+			let startCol = data.slice(startPos, startPos + 3);
 
 			// Change all pixels to alpha 0
 			for (let i = 0; i < DRAW.WIDTH * DRAW.HEIGHT; i++) {
 				data[4 * i + 3] = 0;
 			}
-
-			// Get fill start
-			let startPos = getPos(pos.x, pos.y);
-			let startColor = {
-				r: data[startPos],
-				g: data[startPos + 1],
-				b: data[startPos + 2],
-			};
 
 			// Run flood fill algorithm on the temp canvas
 			let todo = [[pos.x, pos.y]];
@@ -1756,7 +1729,7 @@ function fill(pos) {
 				let y = pos[1];
 				let currentPos = getPos(x, y);
 
-				while (y-- >= 0 && check(data, currentPos, startColor)) {
+				while (y-- >= 0 && check(data, currentPos, startCol)) {
 					currentPos -= DRAW.WIDTH * 4;
 				}
 
@@ -1765,11 +1738,11 @@ function fill(pos) {
 				let reachLeft = false;
 				let reachRight = false;
 
-				while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startColor)) {
+				while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startCol)) {
 					colorPixel(data, currentPos, drawColor);
 
 					if (x > 0) {
-						if (check(data, currentPos - 4, startColor)) {
+						if (check(data, currentPos - 4, startCol)) {
 							if (!reachLeft) {
 								todo.push([x - 1, y]);
 								reachLeft = true;
@@ -1780,7 +1753,7 @@ function fill(pos) {
 					}
 
 					if (x < DRAW.WIDTH - 1) {
-						if (check(data, currentPos + 4, startColor)) {
+						if (check(data, currentPos + 4, startCol)) {
 							if (!reachRight) {
 								todo.push([x + 1, y]);
 								reachRight = true;
