@@ -315,7 +315,7 @@ const hookREGL = (fabricCanvas) => {
 	fabricCanvas.clear = (function (_super) {
 		return function () {
 			// Clear context
-			REGL.clear({ color: [0, 0, 0, 0], depth: 1, stencil: 0 });
+			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
 
 			// Delete objects
 
@@ -328,7 +328,7 @@ const hookREGL = (fabricCanvas) => {
 	fabricCanvas.renderAll = (function (_super) {
 		return function () {
 			// Clear context
-			REGL.clear({ color: [0, 0, 0, 0], depth: 1, stencil: 0 });
+			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
 
 			// Render objects
 			this._renderObjects(this.contextContainer, this._objects);
