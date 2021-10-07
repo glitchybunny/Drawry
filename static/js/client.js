@@ -1659,9 +1659,9 @@ function fill(pos) {
 	// Change color of pixel
 	const colorPixel = (data, pos, col) => {
 		// color pixels with the draw color
-		data[pos] = col.r;
-		data[pos + 1] = col.g;
-		data[pos + 2] = col.b;
+		data[pos] = col[0];
+		data[pos + 1] = col[1];
+		data[pos + 2] = col[2];
 		data[pos + 3] = 255;
 
 		// track colored pixel bounds
@@ -1672,7 +1672,7 @@ function fill(pos) {
 		yMax = Math.max(yMax, coords.y);
 	};
 
-	// Crop the canvas (for after the flood has been done)
+	// Crop the canvas (after the floodfill)
 	const cropCanvas = (source, left, top, width, height) => {
 		let dest = document.createElement("canvas");
 		dest.width = width;
@@ -1688,8 +1688,7 @@ function fill(pos) {
 		yMin = yMax = pos.y;
 
 		// Colour to flood fill with
-		let _source = fabric.Color.fromHex(DRAW.color)._source;
-		let drawColor = { r: _source[0], g: _source[1], b: _source[2] };
+		let drawCol = fabric.Color.fromHex(DRAW.color)._source.slice(0, 3);
 
 		// Create a temporary canvas to calculate flood fill
 		let canvas = document.createElement("canvas");
@@ -1720,80 +1719,81 @@ function fill(pos) {
 				data[4 * i + 3] = 0;
 			}
 
-			// Run flood fill algorithm on the temp canvas
-			let todo = [[pos.x, pos.y]];
-			let n = 0;
-			while (todo.length) {
-				let pos = todo.pop();
-				let x = pos[0];
-				let y = pos[1];
-				let currentPos = getPos(x, y);
+			// Don't fill if startCol and drawCol are the same
+			if (startCol[0] !== drawCol[0] || startCol[1] !== drawCol[1] || startCol[2] !== drawCol[2]) {
+				// Run flood fill algorithm on the temp canvas
+				let todo = [[pos.x, pos.y]];
+				let n = 0;
+				while (todo.length) {
+					let pos = todo.pop();
+					let x = pos[0];
+					let y = pos[1];
+					let currentPos = getPos(x, y);
 
-				while (y-- >= 0 && check(data, currentPos, startCol)) {
-					currentPos -= DRAW.WIDTH * 4;
-				}
-
-				currentPos += DRAW.WIDTH * 4;
-				++y;
-				let reachLeft = false;
-				let reachRight = false;
-
-				while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startCol)) {
-					colorPixel(data, currentPos, drawColor);
-
-					if (x > 0) {
-						if (check(data, currentPos - 4, startCol)) {
-							if (!reachLeft) {
-								todo.push([x - 1, y]);
-								reachLeft = true;
-							}
-						} else if (reachLeft) {
-							reachLeft = false;
-						}
-					}
-
-					if (x < DRAW.WIDTH - 1) {
-						if (check(data, currentPos + 4, startCol)) {
-							if (!reachRight) {
-								todo.push([x + 1, y]);
-								reachRight = true;
-							}
-						} else if (reachRight) {
-							reachRight = false;
-						}
+					while (y-- >= 0 && check(data, currentPos, startCol)) {
+						currentPos -= DRAW.WIDTH * 4;
 					}
 
 					currentPos += DRAW.WIDTH * 4;
+					++y;
+					let reachLeft = false;
+					let reachRight = false;
 
-					if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
-						// Automatically break if the code gets stuck in an infinite loop
-						// THIS SHOULD NEVER HAPPEN
-						console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
-						todo = [];
-						break;
+					while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startCol)) {
+						colorPixel(data, currentPos, drawCol);
+
+						if (x > 0) {
+							if (check(data, currentPos - 4, startCol)) {
+								if (!reachLeft) {
+									todo.push([x - 1, y]);
+									reachLeft = true;
+								}
+							} else if (reachLeft) {
+								reachLeft = false;
+							}
+						}
+
+						if (x < DRAW.WIDTH - 1) {
+							if (check(data, currentPos + 4, startCol)) {
+								if (!reachRight) {
+									todo.push([x + 1, y]);
+									reachRight = true;
+								}
+							} else if (reachRight) {
+								reachRight = false;
+							}
+						}
+
+						currentPos += DRAW.WIDTH * 4;
+
+						if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
+							// Automatically break if the code gets stuck in an infinite loop
+							// THIS SHOULD NEVER HAPPEN
+							console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
+							todo = [];
+							break;
+						}
 					}
 				}
+
+				// Place filled shape back onto the original canvas
+				ctx.putImageData(imgData, 0, 0);
+				ShaderImage.fromURL(
+					cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
+					(e) => {
+						CANVAS.add(e);
+						e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
+
+						// also add to undo stack
+						record("floodfill:created", e);
+
+						// delete temp data
+						img = null;
+						imgData = null;
+						canvas.remove();
+					}
+				);
 			}
-
-			// Place filled shape back onto the original canvas
-			ctx.putImageData(imgData, 0, 0);
-			fabric.Image.fromURL(
-				cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
-				(e) => {
-					CANVAS.add(e);
-					e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
-					e.bringToFront();
-					CANVAS.renderAll();
-
-					// also add to undo stack
-					record("floodfill:created", e);
-
-					// delete temp data
-					img = null;
-					imgData = null;
-					canvas.remove();
-				}
-			);
 		};
 	}
 }

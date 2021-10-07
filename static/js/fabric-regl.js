@@ -265,8 +265,26 @@ const Circle = {
 	},
 };
 
+/// IMAGES
+class ShaderImage extends fabric.Image {
+	render() {
+		console.log(this._element.src);
+	}
+
+	static fromURL(url, callback, imgOptions) {
+		fabric.util.loadImage(
+			url,
+			function (img, isError) {
+				callback && callback(new ShaderImage(img, imgOptions), isError);
+			},
+			null,
+			imgOptions && imgOptions.crossOrigin
+		);
+	}
+}
+
 /// SHADERS
-// Default shaders (accounting for screen space)
+// Default fragment shader
 const SHD_FRAG = `
 precision mediump float;
 uniform vec4 color;
@@ -274,7 +292,7 @@ void main() {
   gl_FragColor = color;
 }`;
 
-// Line shader
+// Line vertex shader
 const SHD_LINE_VERT = `
 precision mediump float;
 uniform float thickness;
@@ -295,7 +313,7 @@ void main() {
   gl_Position = vec4(line, 0., 1.);
 }`;
 
-// Circle shader
+// Circle vertex shader
 const SHD_CIRCLE_VERT = `
 precision mediump float;
 uniform vec2 offset;
@@ -309,7 +327,7 @@ void main () {
 }`;
 
 /// OVERRIDES
-// hooks into fabric.Canvas to override/extend functions that make integration easier
+// hooks into fabric.Canvas to override/extend functionality for shaders
 const hookREGL = (fabricCanvas) => {
 	// extends fabric.Canvas.clear(); to clear the WebGL canvas too
 	fabricCanvas.clear = (function (_super) {
@@ -331,7 +349,9 @@ const hookREGL = (fabricCanvas) => {
 			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
 
 			// Render objects
-			this._renderObjects(this.contextContainer, this._objects);
+			this._objects.forEach((o) => {
+				o && o.render(this.contextContainer);
+			});
 
 			// No need to call original renderer AFAIK
 			// But it might be necessary if other tools are added
