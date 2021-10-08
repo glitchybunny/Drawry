@@ -267,8 +267,31 @@ const Circle = {
 
 /// IMAGES
 class ShaderImage extends fabric.Image {
+	constructor(element, options) {
+		super(element, options);
+		this._texture = REGL.texture(this._element);
+		this._drawImage = this.prerender();
+	}
+
+	prerender() {
+		// prerender/compile image and shaders
+		return REGL({
+			frag: SHD_IMAGE_FRAG,
+			vert: SHD_IMAGE_VERT,
+			attributes: {
+				position: [-2, 0, 0, -2, 2, 2],
+			},
+			uniforms: {
+				texture: this._texture,
+				scale: VIEWPORT.width / 800,
+			},
+			count: 3,
+		});
+	}
+
 	render() {
-		console.log(this._element.src);
+		// draw the image
+		this._drawImage();
 	}
 
 	static fromURL(url, callback, imgOptions) {
@@ -324,6 +347,36 @@ void main () {
 	pos *= 2. * (display.x/800.) / vec2(display.x, -display.y); // scale to screen size
 	pos += vec2(-1., 1.); // correct offset
   gl_Position = vec4(pos, 0, 1);
+}`;
+
+// Image fragment shader
+const SHD_IMAGE_FRAG = `
+precision mediump float;
+uniform sampler2D texture;
+varying vec2 uv;
+void main() {
+	gl_FragColor = texture2D(texture, uv);
+}`;
+
+// Image vertex shader
+const SHD_IMAGE_VERT = `
+precision mediump float;
+attribute vec2 position;
+uniform float scale;
+varying vec2 uv;
+void main() {
+	uv = position;
+	vec2 pos = position;
+	
+	// x = -1 + 2*pos;
+	// y = 1 + -2*pos
+	
+	//pos.x = -1. + 2.*pos.x;
+	//pos.y = 1. - 2.*pos.y;
+	
+	pos *= 2. * vec2(1., -1.) * scale; // scale to screen size
+	pos += vec2(-1., 1.); // correct offset
+	gl_Position = vec4(pos, 0., 1.);
 }`;
 
 /// OVERRIDES
