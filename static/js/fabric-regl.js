@@ -269,7 +269,12 @@ const Circle = {
 class ShaderImage extends fabric.Image {
 	constructor(element, options) {
 		super(element, options);
-		this._texture = REGL.texture(this._element);
+		this._texture = REGL.texture({
+			data: this._element,
+			width: this._element.width,
+			height: this._element.height,
+			flipY: true,
+		});
 		this._drawImage = this.prerender();
 	}
 
@@ -279,19 +284,20 @@ class ShaderImage extends fabric.Image {
 			frag: SHD_IMAGE_FRAG,
 			vert: SHD_IMAGE_VERT,
 			attributes: {
-				position: [-2, 0, 0, -2, 2, 2],
+				position: [-1, 1, 1, -1, 1, 1],
 			},
 			uniforms: {
 				texture: this._texture,
-				scale: VIEWPORT.width / 800,
+				scale: REGL.prop("scale"),
 			},
 			count: 3,
+			depth: { func: "always" },
 		});
 	}
 
 	render() {
 		// draw the image
-		this._drawImage();
+		this._drawImage({ scale: [VIEWPORT.width / 800, VIEWPORT.height / 600] });
 	}
 
 	static fromURL(url, callback, imgOptions) {
@@ -355,14 +361,18 @@ precision mediump float;
 uniform sampler2D texture;
 varying vec2 uv;
 void main() {
-	gl_FragColor = texture2D(texture, uv);
+	vec4 texColor = texture2D(texture, uv);
+	if (texColor.a < 0.1) {
+		discard;
+	}
+	gl_FragColor = texColor;
 }`;
 
 // Image vertex shader
 const SHD_IMAGE_VERT = `
 precision mediump float;
 attribute vec2 position;
-uniform float scale;
+uniform vec2 scale;
 varying vec2 uv;
 void main() {
 	uv = position;
@@ -374,8 +384,8 @@ void main() {
 	//pos.x = -1. + 2.*pos.x;
 	//pos.y = 1. - 2.*pos.y;
 	
-	pos *= 2. * vec2(1., -1.) * scale; // scale to screen size
-	pos += vec2(-1., 1.); // correct offset
+	pos *= 2. * scale; // scale to screen size
+	pos -= 1.; // correct offset
 	gl_Position = vec4(pos, 0., 1.);
 }`;
 
