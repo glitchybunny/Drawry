@@ -1569,23 +1569,24 @@ function resizeCanvas() {
 
 	// Resize canvas
 	if (_w) {
-		let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
-
-		// Update viewport
-		VIEWPORT.width = _w;
-		VIEWPORT.height = _h;
+		let _elems = [
+			document.querySelector(".canvas-container"),
+			CANVAS.lowerCanvasEl,
+			CANVAS.upperCanvasEl,
+			CANVAS_CURSOR.lowerCanvasEl,
+			CANVAS_CURSOR.upperCanvasEl,
+			CANVAS_REGL,
+		];
 
 		// Resize canvases
-		CANVAS.setDimensions(VIEWPORT);
-		CANVAS_CURSOR.setDimensions(VIEWPORT);
-		CANVAS_REGL.width = VIEWPORT.width;
-		CANVAS_REGL.height = VIEWPORT.height;
+		_elems.forEach((_e) => {
+			if (_e !== undefined) {
+				_e.style.width = _w + "px";
+				_e.style.height = _h + "px";
+			}
+		});
 
-		// Update canvas zoom
-		CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-		CANVAS_CURSOR.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-
-		// Reheight html elements
+		// Resize other html elements
 		_base.style.height = _h + "px";
 		byId("previousWrite").style.maxWidth = _w + "px";
 	}
