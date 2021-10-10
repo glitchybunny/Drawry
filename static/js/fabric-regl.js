@@ -389,7 +389,7 @@ void main() {
 	
 	vec2 pos = position;
 	pos *= vec2(bounds.y - bounds.x, bounds.w - bounds.z); // resize
-	pos += vec2(bounds.x, 1.-bounds.w); // reposition
+	pos += vec2(bounds.x, 1. - bounds.w); // reposition
 	pos = pos * 2. - 1.; // adjust coords to screen space
 	
 	gl_Position = vec4(pos, 0, 1);
@@ -406,8 +406,8 @@ const hookREGL = (fabricCanvas) => {
 
 			// Delete objects
 
-			// Call original function
-			return _super.apply(this, arguments);
+			// Return
+			return this; // _super.apply(this, arguments);
 		};
 	})(fabricCanvas.clear);
 
@@ -422,10 +422,8 @@ const hookREGL = (fabricCanvas) => {
 				o && o.render(this.contextContainer);
 			});
 
-			// No need to call original renderer AFAIK
-			// But it might be necessary if other tools are added
-			//return _super.apply(this, arguments);
-			return this;
+			// Return
+			return this; // _super.apply(this, arguments);
 		};
 	})(fabricCanvas.renderAll);
 };
