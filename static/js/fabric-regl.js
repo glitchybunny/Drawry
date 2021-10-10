@@ -279,17 +279,18 @@ class ShaderImage extends fabric.Image {
 	}
 
 	prerender() {
-		console.log(this.left, this.right, this.top, this.bottom);
-
 		// prerender/compile image and shaders
 		return REGL({
 			frag: SHD_IMAGE_FRAG,
 			vert: SHD_IMAGE_VERT,
 			attributes: {
 				position: [
-					[-1, 1],
-					[1, -1],
+					[0, 0],
+					[0, 1],
 					[1, 1],
+					[0, 0],
+					[1, 1],
+					[1, 0],
 				],
 			},
 			uniforms: {
@@ -298,7 +299,7 @@ class ShaderImage extends fabric.Image {
 			},
 			viewport: REGL.prop("viewport"),
 			depth: { func: "always" },
-			count: 3,
+			count: 6,
 		});
 	}
 
@@ -371,7 +372,7 @@ uniform sampler2D texture;
 varying vec2 uv;
 void main() {
 	vec4 texColor = texture2D(texture, uv);
-	if (texColor.a < 0.1) {
+	if (texColor.a == 0.) {
 		discard;
 	}
 	gl_FragColor = texColor;
@@ -387,8 +388,9 @@ void main() {
 	uv = position;
 	
 	vec2 pos = position;
-	pos *= 2.; // scale to screen size
-	pos -= 1.; // correct offset
+	pos *= vec2(bounds.y - bounds.x, bounds.w - bounds.z); // resize
+	pos += vec2(bounds.x, 1.-bounds.w); // reposition
+	pos = pos * 2. - 1.; // adjust coords to screen space
 	
 	gl_Position = vec4(pos, 0, 1);
 }`;

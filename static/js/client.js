@@ -1779,8 +1779,7 @@ function fill(pos) {
 				// Place filled shape back onto the original canvas
 				ctx.putImageData(imgData, 0, 0);
 				ShaderImage.fromURL(
-					"http://localhost:3000/img/aaaaaa.png",
-					//cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
+					cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
 					(e) => {
 						e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
 						CANVAS.add(e);
