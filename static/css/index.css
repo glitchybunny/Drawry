@@ -279,6 +279,8 @@ ul {
 	position: relative;
 	height: min-content;
 	border: .15em solid #234567;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
 }
 
 #canvasBase, #previousDraw {
@@ -287,11 +289,15 @@ ul {
 	min-width: 20em;
 	min-height: 15em;
 	background-color: #FFFFFF;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
 }
 
 #cCursor, #cRegl {
 	position: relative;
 	pointer-events: none !important;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
 }
 
 #draw, #write {
