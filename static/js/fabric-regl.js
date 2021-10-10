@@ -269,35 +269,44 @@ const Circle = {
 class ShaderImage extends fabric.Image {
 	constructor(element, options) {
 		super(element, options);
+
 		this._texture = REGL.texture({
 			data: this._element,
-			width: this._element.width,
-			height: this._element.height,
 			flipY: true,
 		});
+
 		this._drawImage = this.prerender();
 	}
 
 	prerender() {
+		console.log(this.left, this.right, this.top, this.bottom);
+
 		// prerender/compile image and shaders
 		return REGL({
 			frag: SHD_IMAGE_FRAG,
 			vert: SHD_IMAGE_VERT,
 			attributes: {
-				position: [-1, 1, 1, -1, 1, 1],
+				position: [
+					[-1, 1],
+					[1, -1],
+					[1, 1],
+				],
 			},
 			uniforms: {
 				texture: this._texture,
-				scale: REGL.prop("scale"),
+				bounds: [this.left / 800, this.right / 800, this.top / 600, this.bottom / 600],
 			},
-			count: 3,
+			viewport: REGL.prop("viewport"),
 			depth: { func: "always" },
+			count: 3,
 		});
 	}
 
 	render() {
 		// draw the image
-		this._drawImage({ scale: [VIEWPORT.width / 800, VIEWPORT.height / 600] });
+		this._drawImage({
+			viewport: VIEWPORT,
+		});
 	}
 
 	static fromURL(url, callback, imgOptions) {
@@ -351,11 +360,11 @@ attribute vec2 position;
 void main () {
 	vec2 pos = position + offset;
 	pos *= 2. * (display.x/800.) / vec2(display.x, -display.y); // scale to screen size
-	pos += vec2(-1., 1.); // correct offset
+	pos -= vec2(1., -1.); // correct offset
   gl_Position = vec4(pos, 0, 1);
 }`;
 
-// Image fragment shader
+// Image fragment shaderhttps://twitter.com/roxiqt/status/1318619730752700419
 const SHD_IMAGE_FRAG = `
 precision mediump float;
 uniform sampler2D texture;
@@ -372,21 +381,16 @@ void main() {
 const SHD_IMAGE_VERT = `
 precision mediump float;
 attribute vec2 position;
-uniform vec2 scale;
+uniform vec4 bounds;
 varying vec2 uv;
 void main() {
 	uv = position;
+	
 	vec2 pos = position;
-	
-	// x = -1 + 2*pos;
-	// y = 1 + -2*pos
-	
-	//pos.x = -1. + 2.*pos.x;
-	//pos.y = 1. - 2.*pos.y;
-	
-	pos *= 2. * scale; // scale to screen size
+	pos *= 2.; // scale to screen size
 	pos -= 1.; // correct offset
-	gl_Position = vec4(pos, 0., 1.);
+	
+	gl_Position = vec4(pos, 0, 1);
 }`;
 
 /// OVERRIDES
