@@ -1779,10 +1779,11 @@ function fill(pos) {
 				// Place filled shape back onto the original canvas
 				ctx.putImageData(imgData, 0, 0);
 				ShaderImage.fromURL(
-					cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
+					"http://localhost:3000/img/aaaaaa.png",
+					//cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
 					(e) => {
-						CANVAS.add(e);
 						e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
+						CANVAS.add(e);
 
 						// also add to undo stack
 						record("floodfill:created", e);
@@ -1791,7 +1792,8 @@ function fill(pos) {
 						img = null;
 						imgData = null;
 						canvas.remove();
-					}
+					},
+					{ left: xMin, right: xMax + 1, top: yMin, bottom: yMax + 1 }
 				);
 			}
 		};
