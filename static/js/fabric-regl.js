@@ -295,7 +295,12 @@ class ShaderImage extends fabric.Image {
 			},
 			uniforms: {
 				texture: this._texture,
-				bounds: [this.left / 800, this.right / 800, this.top / 600, this.bottom / 600],
+				bounds: [
+					this.left / VIEWPORT.width,
+					this.right / VIEWPORT.width,
+					this.top / VIEWPORT.height,
+					this.bottom / VIEWPORT.height,
+				],
 			},
 			viewport: REGL.prop("viewport"),
 			depth: { func: "always" },
@@ -365,7 +370,7 @@ void main () {
   gl_Position = vec4(pos, 0, 1);
 }`;
 
-// Image fragment shaderhttps://twitter.com/roxiqt/status/1318619730752700419
+// Image fragment shader
 const SHD_IMAGE_FRAG = `
 precision mediump float;
 uniform sampler2D texture;
