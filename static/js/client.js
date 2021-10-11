@@ -13,7 +13,7 @@ const ID = Cookies.get("id") ? Cookies.get("id") : (array[0].valueOf() + 1).toSt
 const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 
-/// --- CONSTS/ENUMS --- ///
+/// --- CONSTANTS/ENUMS --- ///
 const TOOL = {
 	PAINT: 0,
 	ERASE: 1,
@@ -1626,174 +1626,38 @@ CANVAS.on("path:created", (obj) => {
 // Flood fill function
 CANVAS.on("mouse:up", (obj) => {
 	if (DRAW.tool === TOOL.FILL) {
+		CANVAS.renderAll();
 		let mouse = obj.absolutePointer;
-		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < VIEWPORT.width && mouse.y < VIEWPORT.height) {
-			fill({ x: Math.floor(mouse.x), y: Math.floor(mouse.y) });
-		}
+		new Fill({
+			x: mouse.x,
+			y: mouse.y,
+			color: DRAW.color,
+			imageData: CANVAS_REGL.getImageData(0, 0, VIEWPORT.width, VIEWPORT.height),
+		});
+
+		// use https://github.com/regl-project/regl/blob/gh-pages/API.md#reading-pixels instead of getImageData
 	}
 });
 
+/*
 function fill(pos) {
-	/// FLOOD FILL ALGORITHM
-	let xMin, yMin, xMax, yMax;
+	// Place filled shape back onto the original canvas
+	ctx.putImageData(imgData, 0, 0);
+	ShaderImage.fromURL(
+		cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
+		(e) => {
+			e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
+			CANVAS.add(e);
 
-	// Get position from coords (and vice versa)
-	const getPos = (x, y) => {
-		return (y * VIEWPORT.width + x) * 4;
-	};
-	const getCoords = (pos) => {
-		let p = pos / 4;
-		let x = p % VIEWPORT.width;
-		let y = (p - x) / VIEWPORT.width;
-		return { x: x, y: y };
-	};
+			// also add to undo stack
+			record("floodfill:created", e);
 
-	// Check if color matches start color
-	const check = (data, currPos, startCol) => {
-		return (
-			data[currPos] === startCol[0] &&
-			data[currPos + 1] === startCol[1] &&
-			data[currPos + 2] === startCol[2]
-		);
-	};
-
-	// Change color of pixel
-	const colorPixel = (data, pos, col) => {
-		// color pixels with the draw color
-		data[pos] = col[0];
-		data[pos + 1] = col[1];
-		data[pos + 2] = col[2];
-		data[pos + 3] = 255;
-
-		// track colored pixel bounds
-		let coords = getCoords(pos);
-		xMin = Math.min(xMin, coords.x);
-		yMin = Math.min(yMin, coords.y);
-		xMax = Math.max(xMax, coords.x);
-		yMax = Math.max(yMax, coords.y);
-	};
-
-	// Crop the canvas (after the floodfill)
-	const cropCanvas = (source, left, top, width, height) => {
-		let dest = document.createElement("canvas");
-		dest.width = width;
-		dest.height = height;
-		dest.getContext("2d").drawImage(source, left, top, width, height, 0, 0, width, height);
-		return dest;
-	};
-
-	/// Flood fill
-	if (pos.x >= 0 && pos.x <= VIEWPORT.width && pos.y >= 0 && pos.y <= VIEWPORT.height) {
-		// Variables to keep track of flood fill dimensions
-		xMin = xMax = pos.x;
-		yMin = yMax = pos.y;
-
-		// Colour to flood fill with
-		let drawCol = fabric.Color.fromHex(DRAW.color)._source.slice(0, 3);
-
-		// Create a temporary canvas to calculate flood fill
-		let canvas = document.createElement("canvas");
-		canvas.width = VIEWPORT.width;
-		canvas.height = VIEWPORT.height;
-
-		// Put current canvas data into image
-		let img = new Image(VIEWPORT.width, VIEWPORT.height);
-		CANVAS.renderAll();
-		img.src = CANVAS_REGL.toDataURL();
-		resizeCanvas();
-
-		img.onload = () => {
-			// Draw current canvas onto a temporary canvas
-			let ctx = canvas.getContext("2d");
-			ctx.drawImage(img, 0, 0, VIEWPORT.width, VIEWPORT.height);
-			let imgData = ctx.getImageData(0, 0, VIEWPORT.width, VIEWPORT.height);
-			let data = imgData.data;
-
-			// Get fill start
-			let startPos = getPos(pos.x, pos.y);
-			let startCol = data.slice(startPos, startPos + 3);
-
-			// Change all pixels to alpha 0
-			for (let i = 0; i < VIEWPORT.width * VIEWPORT.height; i++) {
-				data[4 * i + 3] = 0;
-			}
-
-			// Don't fill if startCol and drawCol are the same
-			if (startCol[0] !== drawCol[0] || startCol[1] !== drawCol[1] || startCol[2] !== drawCol[2]) {
-				// Run flood fill algorithm on the temp canvas
-				let todo = [[pos.x, pos.y]];
-				let n = 0;
-				while (todo.length) {
-					let pos = todo.pop();
-					let x = pos[0];
-					let y = pos[1];
-					let currentPos = getPos(x, y);
-
-					while (y-- >= 0 && check(data, currentPos, startCol)) {
-						currentPos -= VIEWPORT.width * 4;
-					}
-
-					currentPos += VIEWPORT.width * 4;
-					++y;
-					let reachLeft = false;
-					let reachRight = false;
-
-					while (y++ < VIEWPORT.height - 1 && check(data, currentPos, startCol)) {
-						colorPixel(data, currentPos, drawCol);
-
-						if (x > 0) {
-							if (check(data, currentPos - 4, startCol)) {
-								if (!reachLeft) {
-									todo.push([x - 1, y]);
-									reachLeft = true;
-								}
-							} else if (reachLeft) {
-								reachLeft = false;
-							}
-						}
-
-						if (x < VIEWPORT.width - 1) {
-							if (check(data, currentPos + 4, startCol)) {
-								if (!reachRight) {
-									todo.push([x + 1, y]);
-									reachRight = true;
-								}
-							} else if (reachRight) {
-								reachRight = false;
-							}
-						}
-
-						currentPos += VIEWPORT.width * 4;
-
-						if (++n > VIEWPORT.width * VIEWPORT.height) {
-							// Automatically break if the code gets stuck in an infinite loop
-							// THIS SHOULD NEVER HAPPEN
-							console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
-							todo = [];
-							break;
-						}
-					}
-				}
-
-				// Place filled shape back onto the original canvas
-				ctx.putImageData(imgData, 0, 0);
-				ShaderImage.fromURL(
-					cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
-					(e) => {
-						e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
-						CANVAS.add(e);
-
-						// also add to undo stack
-						record("floodfill:created", e);
-
-						// delete temp data
-						img = null;
-						imgData = null;
-						canvas.remove();
-					},
-					{ left: xMin, right: xMax + 1, top: yMin, bottom: yMax + 1 }
-				);
-			}
-		};
-	}
+			// delete temp data
+			img = null;
+			imgData = null;
+			canvas.remove();
+		},
+		{ left: xMin, right: xMax + 1, top: yMin, bottom: yMax + 1 }
+	);
 }
+*/

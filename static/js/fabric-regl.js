@@ -12,6 +12,42 @@ const mod = (a, n) => {
 	return a - Math.floor(a / n) * n;
 };
 
+/// OVERRIDES
+// hooks into fabric.Canvas to override/extend functionality for shaders
+const hookREGL = (fabricCanvas) => {
+	// extends fabric.Canvas.clear(); to clear the WebGL canvas too
+	fabricCanvas.clear = (function (_super) {
+		return function () {
+			// Clear context
+			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
+
+			// Delete objects to free memory
+			this._objects.forEach((o) => {
+				o.dispose();
+			});
+
+			// Return
+			return this;
+		};
+	})(fabricCanvas.clear);
+
+	// extends fabric.Canvas.renderAll(); to clear and render the WebGL canvas
+	fabricCanvas.renderAll = (function (_super) {
+		return function () {
+			// Clear context
+			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
+
+			// Render objects
+			this._objects.forEach((o) => {
+				o && o.render(this.contextContainer);
+			});
+
+			// Return
+			return this;
+		};
+	})(fabricCanvas.renderAll);
+};
+
 /// ANGLES
 const Angle = {
 	direction(cx, cy, ex, ey) {
@@ -327,6 +363,139 @@ class ShaderImage extends fabric.Image {
 	}
 }
 
+/// FILL
+class Fill {
+	constructor(options) {
+		// Define instance vars
+		this.x = this.minX = this.maxX = Math.floor(options.x);
+		this.y = this.minY = this.maxY = Math.floor(options.y);
+		this.color = fabric.Color.fromHex(options.color)._source.slice(0, 3);
+
+		// Ensure fill is within image bounds
+		if (this.x >= 0 && this.x < VIEWPORT.width && this.y >= 0 && this.y < VIEWPORT.height) {
+			let data = options.imageData.data;
+
+			// Get start position/color
+			let pos = this.coordsToPos({ x: options.x, y: options.y });
+			let color = data.slice(pos, pos + 3);
+
+			// Ensure start color and draw color are different
+			if (this.color[0] !== color[0] || this.color[1] !== color[1] || this.color[2] !== color[2]) {
+				// Change all pixels to alpha 0
+				for (let i = 0; i < VIEWPORT.width * VIEWPORT.height; i++) {
+					data[4 * i + 3] = 0;
+				}
+
+				// Run flood fill algorithm on data
+				let todo = [{ x: this.x, y: this.y }];
+				let n = 0;
+				while (todo.length) {
+					let coords, pos, reachLeft, reachRight;
+					coords = todo.pop();
+					pos = this.coordsToPos(coords);
+					reachLeft = false;
+					reachRight = false;
+
+					while (coords.y-- >= 0 && this.colorCheck(data, pos, this.color)) {
+						pos -= VIEWPORT.width * 4;
+					}
+
+					pos += VIEWPORT.width * 4;
+					++coords.y;
+
+					while (coords.y++ < VIEWPORT.height - 1 && this.colorCheck(data, pos, this.color)) {
+						this.recolorPixel(data, pos, this.color);
+
+						if (coords.x > 0) {
+							if (this.colorCheck(data, pos - 4, this.color)) {
+								if (!reachLeft) {
+									todo.push({
+										x: coords.x - 1,
+										y: coords.y,
+									});
+									reachLeft = true;
+								}
+							} else if (reachLeft) {
+								reachLeft = false;
+							}
+						}
+
+						if (coords.x < VIEWPORT.width - 1) {
+							if (this.colorCheck(data, pos + 4, this.color)) {
+								if (!reachRight) {
+									todo.push({
+										x: coords.x + 1,
+										y: coords.y,
+									});
+									reachRight = true;
+								}
+							} else if (reachRight) {
+								reachRight = false;
+							}
+						}
+
+						pos += VIEWPORT.width * 4;
+
+						if (++n > VIEWPORT.width * VIEWPORT.height) {
+							// Automatically break if the code gets stuck in an infinite loop
+							// THIS SHOULD NEVER HAPPEN
+							console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
+							todo = [];
+							break;
+						}
+					}
+				}
+
+				// Algorithm done!
+				console.log("pog");
+			}
+		}
+	}
+
+	coordsToPos(coords) {
+		// Get buffer position from coordinates
+		return (coords.y * VIEWPORT.width + coords.x) * 4;
+	}
+
+	posToCoords(pos) {
+		// Get coordinates from buffer position
+		let p, x, y;
+		p = pos / 4;
+		x = p % VIEWPORT.width;
+		y = (p - x) / VIEWPORT.width;
+		return { x: x, y: y };
+	}
+
+	colorCheck(data, pos, color) {
+		// Checks for color at position
+		return data[pos] === color[0] && data[pos + 1] === color[1] && data[pos + 2] === color[2];
+	}
+
+	recolorPixel(data, pos, color) {
+		// Recolors pixel at the position
+		data[pos] = color[0];
+		data[pos + 1] = color[1];
+		data[pos + 2] = color[2];
+		data[pos + 3] = 255;
+
+		// Record boundaries of fill
+		let coords = this.posToCoords(pos);
+		this.minX = Math.min(this.minX, coords.x);
+		this.minY = Math.min(this.minY, coords.y);
+		this.maxX = Math.max(this.maxX, coords.x);
+		this.maxY = Math.max(this.maxY, coords.y);
+	}
+
+	crop(source, left, top, width, height) {
+		// Crop the canvas
+		let dest = document.createElement("canvas");
+		dest.width = width;
+		dest.height = height;
+		dest.getContext("2d").drawImage(source, left, top, width, height, 0, 0, width, height);
+		return dest;
+	}
+}
+
 /// SHADERS
 // Default fragment shader
 const SHD_FRAG = `
@@ -399,36 +568,3 @@ void main() {
 	
 	gl_Position = vec4(pos, 0, 1);
 }`;
-
-/// OVERRIDES
-// hooks into fabric.Canvas to override/extend functionality for shaders
-const hookREGL = (fabricCanvas) => {
-	// extends fabric.Canvas.clear(); to clear the WebGL canvas too
-	fabricCanvas.clear = (function (_super) {
-		return function () {
-			// Clear context
-			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
-
-			// Delete objects
-
-			// Return
-			return this; // _super.apply(this, arguments);
-		};
-	})(fabricCanvas.clear);
-
-	// extends fabric.Canvas.renderAll(); to clear and render the WebGL canvas
-	fabricCanvas.renderAll = (function (_super) {
-		return function () {
-			// Clear context
-			REGL.clear({ color: [1, 1, 1, 1], depth: 1, stencil: 0 });
-
-			// Render objects
-			this._objects.forEach((o) => {
-				o && o.render(this.contextContainer);
-			});
-
-			// Return
-			return this; // _super.apply(this, arguments);
-		};
-	})(fabricCanvas.renderAll);
-};
