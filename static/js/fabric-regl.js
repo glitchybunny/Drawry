@@ -308,7 +308,6 @@ class ShaderImage extends fabric.Image {
 
 		this._texture = REGL.texture({
 			data: this._element,
-			flipY: true,
 		});
 
 		this._drawImage = this.prerender();
@@ -368,86 +367,117 @@ class Fill {
 	constructor(options) {
 		// Define instance vars
 		this.x = this.minX = this.maxX = Math.floor(options.x);
-		this.y = this.minY = this.maxY = Math.floor(options.y);
-		this.color = fabric.Color.fromHex(options.color)._source.slice(0, 3);
+		this.y = this.minY = this.maxY = Math.floor(VIEWPORT.height - options.y);
+		this.drawColor = fabric.Color.fromHex(options.color)._source.slice(0, 3);
 
 		// Ensure fill is within image bounds
 		if (this.x >= 0 && this.x < VIEWPORT.width && this.y >= 0 && this.y < VIEWPORT.height) {
-			let data = options.imageData.data;
+			let data = new Uint8ClampedArray(REGL.read());
 
 			// Get start position/color
-			let pos = this.coordsToPos({ x: options.x, y: options.y });
-			let color = data.slice(pos, pos + 3);
+			let startPos = this.coordsToPos({ x: this.x, y: this.y });
+			this.startColor = data.slice(startPos, startPos + 3);
 
 			// Ensure start color and draw color are different
-			if (this.color[0] !== color[0] || this.color[1] !== color[1] || this.color[2] !== color[2]) {
+			if (!this.colorEquals(this.startColor, this.drawColor)) {
 				// Change all pixels to alpha 0
 				for (let i = 0; i < VIEWPORT.width * VIEWPORT.height; i++) {
 					data[4 * i + 3] = 0;
 				}
 
 				// Run flood fill algorithm on data
-				let todo = [{ x: this.x, y: this.y }];
-				let n = 0;
-				while (todo.length) {
-					let coords, pos, reachLeft, reachRight;
-					coords = todo.pop();
-					pos = this.coordsToPos(coords);
-					reachLeft = false;
-					reachRight = false;
+				this._fill(data);
 
-					while (coords.y-- >= 0 && this.colorCheck(data, pos, this.color)) {
-						pos -= VIEWPORT.width * 4;
-					}
+				// Use canvas to bake fill data
+				let imageData = new ImageData(data, 800, 600);
+				let canvas = document.createElement("canvas");
+				canvas.width = VIEWPORT.width;
+				canvas.height = VIEWPORT.height;
+				let ctx = canvas.getContext("2d");
+				ctx.putImageData(imageData, 0, 0);
 
-					pos += VIEWPORT.width * 4;
-					++coords.y;
+				// Create image from fill data
+				ShaderImage.fromURL(
+					this.crop(
+						canvas,
+						this.minX,
+						this.minY,
+						this.maxX - this.minX + 1,
+						this.maxY - this.minY + 1
+					).toDataURL(),
+					(e) => {
+						// Add to canvas
+						CANVAS.add(e);
+						record("floodfill:created", e);
 
-					while (coords.y++ < VIEWPORT.height - 1 && this.colorCheck(data, pos, this.color)) {
-						this.recolorPixel(data, pos, this.color);
+						// Delete temp data
+						canvas.remove();
+					},
+					{ left: this.minX, right: this.maxX + 1, top: this.minY, bottom: this.maxY + 1 }
+				);
+			}
+		}
+	}
 
-						if (coords.x > 0) {
-							if (this.colorCheck(data, pos - 4, this.color)) {
-								if (!reachLeft) {
-									todo.push({
-										x: coords.x - 1,
-										y: coords.y,
-									});
-									reachLeft = true;
-								}
-							} else if (reachLeft) {
-								reachLeft = false;
-							}
+	_fill(data) {
+		let todo = [{ x: this.x, y: this.y }];
+		let n = 0;
+		while (todo.length) {
+			let coords, pos, reachLeft, reachRight;
+			coords = todo.pop();
+			pos = this.coordsToPos(coords);
+			reachLeft = false;
+			reachRight = false;
+
+			while (coords.y-- >= 0 && this.colorEquals(this.startColor, data.slice(pos, pos + 4))) {
+				pos -= VIEWPORT.width * 4;
+			}
+
+			pos += VIEWPORT.width * 4;
+			++coords.y;
+
+			while (
+				coords.y++ < VIEWPORT.height - 1 &&
+				this.colorEquals(this.startColor, data.slice(pos, pos + 4))
+			) {
+				this.recolorPixel(data, pos, this.drawColor);
+
+				if (coords.x > 0) {
+					if (this.colorEquals(this.startColor, data.slice(pos - 4, pos))) {
+						if (!reachLeft) {
+							todo.push({
+								x: coords.x - 1,
+								y: coords.y,
+							});
+							reachLeft = true;
 						}
-
-						if (coords.x < VIEWPORT.width - 1) {
-							if (this.colorCheck(data, pos + 4, this.color)) {
-								if (!reachRight) {
-									todo.push({
-										x: coords.x + 1,
-										y: coords.y,
-									});
-									reachRight = true;
-								}
-							} else if (reachRight) {
-								reachRight = false;
-							}
-						}
-
-						pos += VIEWPORT.width * 4;
-
-						if (++n > VIEWPORT.width * VIEWPORT.height) {
-							// Automatically break if the code gets stuck in an infinite loop
-							// THIS SHOULD NEVER HAPPEN
-							console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
-							todo = [];
-							break;
-						}
+					} else if (reachLeft) {
+						reachLeft = false;
 					}
 				}
 
-				// Algorithm done!
-				console.log("pog");
+				if (coords.x < VIEWPORT.width - 1) {
+					if (this.colorEquals(this.startColor, data.slice(pos + 4, pos + 8))) {
+						if (!reachRight) {
+							todo.push({
+								x: coords.x + 1,
+								y: coords.y,
+							});
+							reachRight = true;
+						}
+					} else if (reachRight) {
+						reachRight = false;
+					}
+				}
+
+				pos += VIEWPORT.width * 4;
+
+				if (++n > VIEWPORT.width * VIEWPORT.height) {
+					// Automatically break from an infinite loop - THIS SHOULD NEVER HAPPEN
+					console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
+					todo = [];
+					break;
+				}
 			}
 		}
 	}
@@ -466,9 +496,9 @@ class Fill {
 		return { x: x, y: y };
 	}
 
-	colorCheck(data, pos, color) {
-		// Checks for color at position
-		return data[pos] === color[0] && data[pos + 1] === color[1] && data[pos + 2] === color[2];
+	colorEquals(c1, c2) {
+		// Checks if two colours are the same
+		return c1[0] === c2[0] && c1[1] === c2[1] && c1[2] === c2[2];
 	}
 
 	recolorPixel(data, pos, color) {
@@ -563,7 +593,7 @@ void main() {
 	
 	vec2 pos = position;
 	pos *= vec2(bounds.y - bounds.x, bounds.w - bounds.z); // resize
-	pos += vec2(bounds.x, 1. - bounds.w); // reposition
+	pos += vec2(bounds.x, bounds.z); // reposition
 	pos = pos * 2. - 1.; // adjust coords to screen space
 	
 	gl_Position = vec4(pos, 0, 1);
