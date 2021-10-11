@@ -69,8 +69,6 @@ const DRAW = {
 	width: 6,
 	undo: [],
 	redo: [],
-	WIDTH: 800,
-	HEIGHT: 600,
 };
 const VIEWPORT = {
 	x: 0,
@@ -1297,9 +1295,6 @@ function download(bookIDs) {
 
 			case "Draw":
 				// Drawing round - Export canvas to base64
-				// Resize and render canvas
-				VIEWPORT.width = CANVAS_REGL.width = 800;
-				VIEWPORT.height = CANVAS_REGL.height = 600;
 				CANVAS.renderAll();
 				_value = CANVAS_REGL.toDataURL();
 				resizeCanvas();
@@ -1518,6 +1513,8 @@ function download(bookIDs) {
 const CANVAS = new fabric.Canvas("cBase", {
 	isDrawingMode: true,
 	freeDrawingCursor: "none",
+	width: VIEWPORT.width,
+	height: VIEWPORT.height,
 });
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
@@ -1527,13 +1524,16 @@ const CANVAS_REGL = byId("cRegl");
 const REGL = wrapREGL({
 	canvas: CANVAS_REGL,
 	pixelRatio: 1,
-	attributes: { antialias: false, preserveDrawingBuffer: true },
+	attributes: { antialias: false, preserveDrawingBuffer: true, viewport: VIEWPORT },
 });
 byId("cBase").after(CANVAS_REGL);
 hookREGL(CANVAS);
 
 // Cursor canvas for custom drawing cursors
-const CANVAS_CURSOR = new fabric.StaticCanvas("cCursor");
+const CANVAS_CURSOR = new fabric.StaticCanvas("cCursor", {
+	width: VIEWPORT.width,
+	height: VIEWPORT.height,
+});
 const MOUSE_CURSOR = new fabric.Circle({
 	left: -100,
 	top: -100,
@@ -1627,7 +1627,7 @@ CANVAS.on("path:created", (obj) => {
 CANVAS.on("mouse:up", (obj) => {
 	if (DRAW.tool === TOOL.FILL) {
 		let mouse = obj.absolutePointer;
-		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < DRAW.WIDTH && mouse.y < DRAW.HEIGHT) {
+		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < VIEWPORT.width && mouse.y < VIEWPORT.height) {
 			fill({ x: Math.floor(mouse.x), y: Math.floor(mouse.y) });
 		}
 	}
@@ -1639,12 +1639,12 @@ function fill(pos) {
 
 	// Get position from coords (and vice versa)
 	const getPos = (x, y) => {
-		return (y * DRAW.WIDTH + x) * 4;
+		return (y * VIEWPORT.width + x) * 4;
 	};
 	const getCoords = (pos) => {
 		let p = pos / 4;
-		let x = p % DRAW.WIDTH;
-		let y = (p - x) / DRAW.WIDTH;
+		let x = p % VIEWPORT.width;
+		let y = (p - x) / VIEWPORT.width;
 		return { x: x, y: y };
 	};
 
@@ -1683,7 +1683,7 @@ function fill(pos) {
 	};
 
 	/// Flood fill
-	if (pos.x >= 0 && pos.x <= DRAW.WIDTH && pos.y >= 0 && pos.y <= DRAW.HEIGHT) {
+	if (pos.x >= 0 && pos.x <= VIEWPORT.width && pos.y >= 0 && pos.y <= VIEWPORT.height) {
 		// Variables to keep track of flood fill dimensions
 		xMin = xMax = pos.x;
 		yMin = yMax = pos.y;
@@ -1693,13 +1693,11 @@ function fill(pos) {
 
 		// Create a temporary canvas to calculate flood fill
 		let canvas = document.createElement("canvas");
-
-		// Resize all layers to (800,600) for consistent fill calculations
-		canvas.width = VIEWPORT.width = CANVAS_REGL.width = 800;
-		canvas.height = VIEWPORT.height = CANVAS_REGL.height = 600;
+		canvas.width = VIEWPORT.width;
+		canvas.height = VIEWPORT.height;
 
 		// Put current canvas data into image
-		let img = new Image(canvas.width, canvas.height);
+		let img = new Image(VIEWPORT.width, VIEWPORT.height);
 		CANVAS.renderAll();
 		img.src = CANVAS_REGL.toDataURL();
 		resizeCanvas();
@@ -1707,8 +1705,8 @@ function fill(pos) {
 		img.onload = () => {
 			// Draw current canvas onto a temporary canvas
 			let ctx = canvas.getContext("2d");
-			ctx.drawImage(img, 0, 0, 800, 600);
-			let imgData = ctx.getImageData(0, 0, 800, 600);
+			ctx.drawImage(img, 0, 0, VIEWPORT.width, VIEWPORT.height);
+			let imgData = ctx.getImageData(0, 0, VIEWPORT.width, VIEWPORT.height);
 			let data = imgData.data;
 
 			// Get fill start
@@ -1716,7 +1714,7 @@ function fill(pos) {
 			let startCol = data.slice(startPos, startPos + 3);
 
 			// Change all pixels to alpha 0
-			for (let i = 0; i < DRAW.WIDTH * DRAW.HEIGHT; i++) {
+			for (let i = 0; i < VIEWPORT.width * VIEWPORT.height; i++) {
 				data[4 * i + 3] = 0;
 			}
 
@@ -1732,15 +1730,15 @@ function fill(pos) {
 					let currentPos = getPos(x, y);
 
 					while (y-- >= 0 && check(data, currentPos, startCol)) {
-						currentPos -= DRAW.WIDTH * 4;
+						currentPos -= VIEWPORT.width * 4;
 					}
 
-					currentPos += DRAW.WIDTH * 4;
+					currentPos += VIEWPORT.width * 4;
 					++y;
 					let reachLeft = false;
 					let reachRight = false;
 
-					while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startCol)) {
+					while (y++ < VIEWPORT.height - 1 && check(data, currentPos, startCol)) {
 						colorPixel(data, currentPos, drawCol);
 
 						if (x > 0) {
@@ -1754,7 +1752,7 @@ function fill(pos) {
 							}
 						}
 
-						if (x < DRAW.WIDTH - 1) {
+						if (x < VIEWPORT.width - 1) {
 							if (check(data, currentPos + 4, startCol)) {
 								if (!reachRight) {
 									todo.push([x + 1, y]);
@@ -1765,9 +1763,9 @@ function fill(pos) {
 							}
 						}
 
-						currentPos += DRAW.WIDTH * 4;
+						currentPos += VIEWPORT.width * 4;
 
-						if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
+						if (++n > VIEWPORT.width * VIEWPORT.height) {
 							// Automatically break if the code gets stuck in an infinite loop
 							// THIS SHOULD NEVER HAPPEN
 							console.error("PICTUREPHONE ERROR: Infinite loop in flood fill algorithm");
