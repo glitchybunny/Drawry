@@ -1555,44 +1555,65 @@ CANVAS.on("mouse:out", () => {
 // Resize the drawing canvas
 function resizeCanvas() {
 	// Get base image of canvas
-	let _base = byId("canvasBase");
-	_base.style.height = "";
+	let base = byId("canvasBase");
+	base.style.height = "";
+	let width = base.scrollWidth;
+	let height = base.scrollHeight;
 
-	// Make dimensions and ensure ratio is correct (sometimes gets weird in chrome)
-	let _w = _base.scrollWidth,
-		_h = _base.scrollHeight;
-	let _ratio = ((_h / _w) * 3) / 4;
-	if (_ratio <= 0.99 || _ratio >= 1.01) {
-		// disproportionate, change height to compensate
-		_h = Math.floor((_w * 3) / 4);
+	// Ensure aspect ratio is correct
+	let ratio = ((height / width) * 3) / 4;
+	if (ratio <= 0.99 || ratio >= 1.01) {
+		// fix proportions
+		height = Math.floor((width * 3) / 4);
 	}
 
 	// Resize canvas
-	if (_w) {
-		let _elems = [
+	if (width !== undefined) {
+		// Resize canvases
+		[
 			document.querySelector(".canvas-container"),
 			CANVAS.lowerCanvasEl,
 			CANVAS.upperCanvasEl,
 			CANVAS_CURSOR.lowerCanvasEl,
 			CANVAS_CURSOR.upperCanvasEl,
 			CANVAS_REGL,
-		];
-
-		// Resize canvases
-		_elems.forEach((_e) => {
-			if (_e !== undefined) {
-				_e.style.width = _w + "px";
-				_e.style.height = _h + "px";
+		].forEach((e) => {
+			if (e !== undefined) {
+				e.style.width = width + "px";
+				e.style.height = height + "px";
 			}
 		});
 
 		// Resize other html elements
-		_base.style.height = _h + "px";
-		byId("previousWrite").style.maxWidth = _w + "px";
+		base.style.height = height + "px";
+		byId("previousWrite").style.maxWidth = width + "px";
 	}
 }
 
 window.addEventListener("resize", resizeCanvas);
+
+// Drawing
+CANVAS.on("path:created", (obj) => {
+	if (DRAW.tool !== TOOL.FILL) {
+		let path = new ShaderPath(obj.path);
+		record("path:created", path);
+		CANVAS.add(path);
+	}
+	CANVAS.remove(obj.path);
+});
+
+// Flood fill
+CANVAS.on("mouse:up", (obj) => {
+	if (DRAW.tool === TOOL.FILL) {
+		CANVAS.renderAll();
+		let mouse = obj.absolutePointer;
+		new Fill({
+			x: mouse.x,
+			y: mouse.y,
+			color: DRAW.color,
+		});
+	}
+});
 
 // Undo/redo stack
 function record(type, object) {
@@ -1613,51 +1634,3 @@ function record(type, object) {
 		byId("toolRedo").disabled = true;
 	}
 }
-
-CANVAS.on("path:created", (obj) => {
-	if (DRAW.tool !== TOOL.FILL) {
-		let path = new ShaderPath(obj.path);
-		record("path:created", path);
-		CANVAS.add(path);
-	}
-	CANVAS.remove(obj.path);
-});
-
-// Flood fill function
-CANVAS.on("mouse:up", (obj) => {
-	if (DRAW.tool === TOOL.FILL) {
-		CANVAS.renderAll();
-		let mouse = obj.absolutePointer;
-		new Fill({
-			x: mouse.x,
-			y: mouse.y,
-			color: DRAW.color,
-			imageData: CANVAS_REGL.getImageData(0, 0, VIEWPORT.width, VIEWPORT.height),
-		});
-
-		// use https://github.com/regl-project/regl/blob/gh-pages/API.md#reading-pixels instead of getImageData
-	}
-});
-
-/*
-function fill(pos) {
-	// Place filled shape back onto the original canvas
-	ctx.putImageData(imgData, 0, 0);
-	ShaderImage.fromURL(
-		cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
-		(e) => {
-			e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
-			CANVAS.add(e);
-
-			// also add to undo stack
-			record("floodfill:created", e);
-
-			// delete temp data
-			img = null;
-			imgData = null;
-			canvas.remove();
-		},
-		{ left: xMin, right: xMax + 1, top: yMin, bottom: yMax + 1 }
-	);
-}
-*/
