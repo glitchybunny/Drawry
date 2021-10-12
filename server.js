@@ -1,7 +1,7 @@
 /*
-	picturephone
+	drawry
 	server.js
-	a multiplayer art experiment by Glitch Taylor (rtay.io)
+	a multiplayer drawing game by Glitch Taylor (rtay.io)
 */
 "use strict";
 
@@ -27,8 +27,8 @@ const SETTINGS_CONSTRAINTS = {
 	timeDraw: ["number", [0, 15]],
 };
 const SETTINGS_DEFAULT = {
-	firstPage: "Draw",
-	pageCount: "2",
+	firstPage: "Write",
+	pageCount: "8",
 	pageOrder: "Normal",
 	palette: "No palette",
 	timeWrite: "0",
