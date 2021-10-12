@@ -210,7 +210,7 @@ ul {
 	text-align: start;
 }
 
-.canvas-container, #cursor {
+.canvas-container, #cCursor {
 	position: absolute !important;
 	top: 0;
 }
@@ -250,7 +250,7 @@ ul {
 }
 
 .presentWrite {
-	font-size: 1.1em;
+	font-size: 1.2em;
 	margin: 0 .5em .5em;
 	padding: .5em;
 	background-color: #fff;
@@ -279,6 +279,8 @@ ul {
 	position: relative;
 	height: min-content;
 	border: .15em solid #234567;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
 }
 
 #canvasBase, #previousDraw {
@@ -286,10 +288,16 @@ ul {
 	height: calc(100vh - 16em);
 	min-width: 20em;
 	min-height: 15em;
+	background-color: #FFFFFF;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
 }
 
-#cursor {
+#cCursor, #cRegl {
+	position: relative;
 	pointer-events: none !important;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: crisp-edges;
 }
 
 #draw, #write {
@@ -424,7 +432,7 @@ ul {
 	width: 2em;
 	background: none;
 	border-width: .1em;
-	line-height:0;
+	line-height: 0;
 }
 
 .color:checked {
@@ -459,6 +467,10 @@ ul {
 	min-height: 2em;
 	background-color: #345678;
 	background-image: none;
+}
+
+#colorContainer {
+	margin-top: .15em;
 }
 
 #colorContainer::after {
@@ -523,12 +535,12 @@ ul {
 	align-items: center;
 }
 
-#brushSize, #fillThreshold {
+#brushSize {
 	width: 2.3em;
 	font-size: 1em;
 }
 
-#brushSizeRange, #fillThresholdRange {
+#brushSizeRange {
 	width: 2.3em;
 	height: 6.9em;
 	margin: .15em 0;
