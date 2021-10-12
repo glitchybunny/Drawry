@@ -4,7 +4,6 @@
 	a multiplayer drawing game by Glitch Taylor (rtay.io)
 */
 "use strict";
-const DEBUG = true;
 
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
