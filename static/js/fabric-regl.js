@@ -517,7 +517,7 @@ class Fill {
 	}
 
 	crop(source, left, top, width, height) {
-		// Crop the canvas
+		// Crop a canvas to the specified dimensions
 		let dest = document.createElement("canvas");
 		dest.width = width;
 		dest.height = height;
@@ -589,12 +589,10 @@ attribute vec2 position;
 uniform vec4 bounds;
 varying vec2 uv;
 void main() {
-	uv = position;
-	
 	vec2 pos = position;
 	pos *= vec2(bounds.y - bounds.x, bounds.w - bounds.z); // resize
 	pos += vec2(bounds.x, bounds.z); // reposition
 	pos = pos * 2. - 1.; // adjust coords to screen space
-	
+	uv = position;
 	gl_Position = vec4(pos, 0, 1);
 }`;
