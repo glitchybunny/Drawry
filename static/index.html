@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
+	<meta content="width=device-width, user-scalable=1" name="viewport" />
 	<title>Drawry</title>
 	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
 	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
@@ -11,10 +12,10 @@
 	<div class="flex center" id="join" style="max-width:20em; margin:auto;">
 		<h1>Drawry</h1>
 		<section class="flex box" style="margin:1em;">
-			<label for="inputName">Name:</label>
+			<label for="inputName">Nickname:</label>
 			<input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
 						 onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
-			<label for="inputRoom">Room Code:</label>
+			<label for="inputRoom">Room:</label>
 			<input aria-required="true" autocomplete="on" id="inputRoom" maxlength="12" minlength="4"
 						 onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
 			<input id="inputJoin" type="button" value="Join">
@@ -221,8 +222,9 @@
 						</div>
 						<div id="canvas">
 							<img alt="" id="canvasBase" src="img/base.png">
-							<canvas height="600" id="c" width="800"></canvas>
-							<canvas height="600" id="cursor" width="800"></canvas>
+							<canvas height="600" id="cBase" width="800"></canvas>
+							<canvas height="600" id="cRegl" width="800"></canvas>
+							<canvas height="600" id="cCursor" width="800"></canvas>
 						</div>
 						<div id="stuff">
 							<!-- Tools -->
@@ -244,12 +246,6 @@
 								<input class="vertical" type="range" min="1" max="10" value="2" step="0.1" orient="vertical"
 											 autocomplete="off" id="brushSizeRange">
 								<input type="number" min="1" max="99" value="4" autocomplete="off" id="brushSize">
-							</div>
-							<div id="optionsFill" hidden class="hidden">
-								<label for="fillThresholdRange">Flow:</labeL>
-								<input class="vertical" type="range" min="0" max="100" value="50" step="1" orient="vertical"
-											 autocomplete="off" id="fillThresholdRange">
-								<input type="text" min="0" max="100" value="50" autocomplete="off" id="fillThreshold">
 							</div>
 						</div>
 					</div>
@@ -324,9 +320,11 @@
 
 	<script src="/js/socket.io.min.js"></script>
 	<script src="/js/cookies.min.js"></script>
-	<script src="/js/fabric.min.js"></script>
 	<script src="/js/dialog-polyfill.js"></script>
-	<script src="/js/client.js" type="module"></script>
+	<script src="/js/fabric.min.js"></script>
+	<script src="/js/regl.js"></script>
+	<script src="/js/fabric-regl.js"></script>
+	<script src="/js/client.js"></script>
 	<script>
 		function enterSubmit(e, id) {
 			if (e.keyCode === 13) {

@@ -14,13 +14,10 @@ const xss = require("xss");
 const path = require("path");
 const sizeOf = require("image-size");
 
-// Server side variables (to keep track of games)
+// Server constants
 const CLIENTS = [];
 const SOCKETS = [];
 const ROOMS = {};
-
-// Other constants
-const MAX_ROOM_SIZE = 10;
 const SETTINGS_CONSTRAINTS = {
 	firstPage: ["string", ["Write", "Draw"]],
 	pageCount: ["number", [2, 20]],
@@ -42,6 +39,8 @@ const STATE = {
 	PLAYING: 1,
 	PRESENTING: 2,
 };
+const MAX_ROOM_SIZE = 10;
+const DEBUG = process.env.DEBUG;
 
 ///// ----- ASYNC SERVER FUNCTIONS ----- /////
 // Listen for incoming connections from clients
@@ -157,10 +156,11 @@ io.on("connection", (socket) => {
 
 		// Make sure user is the host, player count is reached, and settings are valid
 		if (
-			socket.id === _room.host &&
-			_room.clients.length >= 2 &&
-			verifySettings(data.settings) &&
-			_room.state === STATE.LOBBY
+			(socket.id === _room.host &&
+				_room.clients.length >= 2 &&
+				verifySettings(data.settings) &&
+				_room.state === STATE.LOBBY) ||
+			DEBUG
 		) {
 			// Update settings, change room state
 			_room.settings = data.settings;
@@ -411,7 +411,9 @@ io.on("connection", (socket) => {
 	// Listen for disconnect events
 	socket.on("disconnect", (data) => {
 		if (process.env.VERBOSE) {
-			console.log("disconnect", CLIENTS[socket.id].id, { type: data });
+			if (CLIENTS[socket.id].id !== undefined) {
+				console.log("disconnect", CLIENTS[socket.id].id, { type: data });
+			}
 		}
 
 		if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
@@ -587,12 +589,6 @@ let limiter = new RateLimit({
 app.use(limiter);
 
 // handle requests
-app.get("/", (req, res) => {
-	res.sendFile(path.join(__dirname + "/index.html"));
-});
-app.get("/help.html", (req, res) => {
-	res.sendFile(path.join(__dirname + "/help.html"));
-});
 app.get("/js/socket.io.min.js", (req, res) => {
 	res.sendFile(path.join(__dirname + "/node_modules/socket.io/client-dist/socket.io.min.js"));
 });
@@ -602,6 +598,7 @@ app.get("/js/fabric.min.js", (req, res) => {
 app.get("/js/dialog-polyfill.js", (req, res) => {
 	res.sendFile(path.join(__dirname + "/node_modules/dialog-polyfill/dist/dialog-polyfill.js"));
 });
+
 app.use(express.static("static"));
 
 // Open server to manage server things

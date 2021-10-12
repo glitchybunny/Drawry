@@ -4,6 +4,7 @@
 	a multiplayer drawing game by Glitch Taylor (rtay.io)
 */
 "use strict";
+const DEBUG = true;
 
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
@@ -12,7 +13,7 @@ const ID = Cookies.get("id") ? Cookies.get("id") : (array[0].valueOf() + 1).toSt
 const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
 const SOCKET = io.connect(document.documentURI);
 
-/// --- CONSTS/ENUMS --- ///
+/// --- CONSTANTS/ENUMS --- ///
 const TOOL = {
 	PAINT: 0,
 	ERASE: 1,
@@ -57,7 +58,6 @@ const ROOM = {};
 const USERS = {};
 const BOOKS = {};
 const ROUND = {
-	page: 0,
 	timer: undefined,
 	timeLeft: 0,
 };
@@ -67,20 +67,32 @@ const DRAW = {
 	color: "#000000",
 	colorHistory: [],
 	width: 6,
-	flow: 50,
 	undo: [],
 	redo: [],
-	WIDTH: 800,
-	HEIGHT: 600,
+};
+const VIEWPORT = {
+	x: 0,
+	y: 0,
+	width: 800,
+	height: 600,
 };
 
-// Ensure browser compatibility
-if (!("getContext" in document.createElement("canvas"))) {
-	let message =
-		"Sorry, it looks like your browser does not support canvas! This game depends on canvas to be playable.";
-	console.error(message);
-	alert(message);
+/// Ensure browser compatibility
+const supportsCanvas = "getContext" in document.createElement("canvas");
+const supportsWebGL =
+	document.createElement("canvas").getContext("webgl") instanceof WebGLRenderingContext;
+
+if (!supportsCanvas) {
+	let m = "Canvas not supported!\n\nThis game requires canvas to run.";
+	alert(m);
+	throw new Error(m);
 }
+if (!supportsWebGL) {
+	let m = "WebGL not supported!\n\nMore information available at https://get.webgl.org/";
+	alert(m);
+	throw new Error(m);
+}
+
 const byId = function (id) {
 	return document.getElementById(id);
 };
@@ -164,13 +176,14 @@ SOCKET.on("startGame", (data) => {
 			title: getName(_id) + "'s book",
 			author: getName(_id),
 			book: data.books[_id],
-			p: false,
+			presented: false,
 		};
 	}
 
 	// Set round info
 	ROUND.book = BOOKS[ID];
 	ROUND.mode = data.start;
+	ROUND.page = 0;
 
 	// Update DOM
 	hide(["setup", "invite"]);
@@ -409,12 +422,12 @@ SOCKET.on("presentFinish", () => {
 	});
 
 	// Keep track of book being presented
-	ROUND.book.p = true;
+	ROUND.book.presented = true;
 
 	// If all books have been presented, allow host to return to lobby
 	let _done = true;
 	Object.keys(BOOKS).forEach((e) => {
-		_done = _done && BOOKS[e].p;
+		_done = _done && BOOKS[e].presented;
 	});
 	byId("finish").disabled = !_done;
 });
@@ -472,8 +485,10 @@ SOCKET.on("disconnect", (data) => {
 			window.location.reload(true);
 			break;
 		case "transport close":
-			alert("Lost connection to server.");
-			window.location.reload(true);
+			if (ROOM.code) {
+				alert("Lost connection to server.");
+				window.location.reload(true);
+			}
 			break;
 		default:
 			alert("Disconnected due to an unknown error.");
@@ -598,7 +613,7 @@ function updatePlayers() {
 	byId("playersCount").textContent = "(" + Object.keys(USERS).length.toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
-	if (Object.keys(USERS).length > 1) {
+	if (Object.keys(USERS).length > 1 || DEBUG) {
 		show("inputStart");
 		hide("inputStartWarning");
 	} else {
@@ -717,7 +732,6 @@ function updateInput() {
 
 			// Reset drawing inputs
 			CANVAS.clear();
-			CANVAS.setBackgroundColor("#FFFFFF");
 			DRAW.undo = [];
 			byId("toolUndo").disabled = true;
 			byId("toolRedo").disabled = true;
@@ -758,6 +772,7 @@ function updateInput() {
 	byId("inputSubmit").disabled = false;
 }
 
+// Game: Timers
 function updateTimer() {
 	// Update timer text
 	let min, sec;
@@ -916,6 +931,9 @@ function changeColor(color) {
 		if (DRAW.tool !== TOOL.FILL) {
 			CANVAS.freeDrawingBrush.color = color;
 		}
+	} else {
+		// Automatically switch to brush if using eraser
+		byId("toolPaint").click();
 	}
 
 	// History/selection
@@ -997,6 +1015,72 @@ function show(e) {
 		showElem(e);
 		return e;
 	}
+}
+
+// Download books in a simple HTML file
+function download(bookIDs) {
+	// Generate contents for each book
+	let filename = "drawry_" + Date.now() + ".html";
+	let html =
+		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Drawry Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
+	for (let _id of bookIDs) {
+		// Iterate over each book and generate HTML for it
+		let _book = document.createElement("article");
+
+		// Book header information
+		let _bookHeader = document.createElement("header");
+		let _title = document.createElement("h1");
+		let _authors = document.createElement("h4");
+		let _names = [];
+		_title.textContent = BOOKS[_id].title;
+		BOOKS[_id].book.forEach((_page) => {
+			let _n = getName(_page.author);
+			if (_names.indexOf(_n) === -1) {
+				_names.push(_n);
+			}
+		});
+		_authors.textContent = "by " + _names.join(", ");
+		_bookHeader.appendChild(_title);
+		_bookHeader.appendChild(_authors);
+
+		// Book content / pages
+		let _pages = document.createElement("ol");
+		BOOKS[_id].book.forEach((_p) => {
+			// Create page
+			let _page = document.createElement("li");
+			switch (_p.mode) {
+				case "Write":
+					_page.textContent = _p.value;
+					_page.classList.add("write");
+					break;
+				case "Draw":
+					let _img = document.createElement("img");
+					_img.src = _p.value;
+					_page.appendChild(_img);
+					_page.classList.add("draw");
+					break;
+			}
+			_pages.appendChild(_page);
+		});
+
+		// Add book to HTML
+		_book.appendChild(_bookHeader);
+		_book.appendChild(_pages);
+		html += _book.outerHTML;
+		html += "<hr>";
+	}
+	html += "</body></html>";
+
+	// Add to hidden dom element in the body
+	let _element = document.createElement("a");
+	_element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
+	_element.setAttribute("download", filename);
+	_element.style.display = "none";
+
+	// Save as file
+	document.body.appendChild(_element);
+	_element.click();
+	document.body.removeChild(_element);
 }
 
 /// --- INPUTS --- ///
@@ -1210,10 +1294,9 @@ function show(e) {
 
 			case "Draw":
 				// Drawing round - Export canvas to base64
-				_value = CANVAS.toDataURL({
-					format: "png",
-					multiplier: DRAW.WIDTH / CANVAS.getWidth(),
-				});
+				CANVAS.renderAll();
+				_value = CANVAS_REGL.toDataURL();
+				resizeCanvas();
 				break;
 		}
 
@@ -1242,7 +1325,6 @@ function show(e) {
 		// Change to paint tool
 		DRAW.tool = TOOL.PAINT;
 		changeTool(e.target);
-		hide("optionsFill");
 		show("optionsBrush");
 
 		// Draw with so many beautiful colors
@@ -1257,7 +1339,6 @@ function show(e) {
 		// Change to erase tool
 		DRAW.tool = TOOL.ERASE;
 		changeTool(e.target);
-		hide("optionsFill");
 		show("optionsBrush");
 
 		// Erasing is just drawing white
@@ -1273,7 +1354,6 @@ function show(e) {
 		DRAW.tool = TOOL.FILL;
 		changeTool(e.target);
 		hide("optionsBrush");
-		show("optionsFill");
 
 		// Disable drawing and change cursor
 		CANVAS.freeDrawingBrush.color = "rgba(0,0,0,0)";
@@ -1376,18 +1456,6 @@ function show(e) {
 		byId("brushSize").value = DRAW.width;
 	});
 
-	// Draw: Fill Threshold
-	byId("fillThreshold").addEventListener("input", (e) => {
-		// Update fill threshold
-		DRAW.flow = parseInt(e.target.value);
-		byId("fillThresholdRange").value = DRAW.flow;
-	});
-	byId("fillThresholdRange").addEventListener("input", (e) => {
-		// Update fill threshold
-		DRAW.flow = parseInt(e.target.value);
-		byId("fillThreshold").value = DRAW.flow;
-	});
-
 	/// PRESENT
 	// Present: Next page
 	byId("inputPresentForward").addEventListener("click", () => {
@@ -1439,84 +1507,32 @@ function show(e) {
 	});
 }
 
-// Download books in a condensed HTML file
-function download(bookIDs) {
-	// Generate contents for each book
-	let filename = "drawry_" + Date.now() + ".html";
-	let html =
-		'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Drawry Storybooks</title><style>*{font-family:sans-serif;} body{font-size:20px;} li{width:800px;} img{display:block;border:2px ridge;} .write{padding:1em 0;}</style></head><body>';
-	for (let _id of bookIDs) {
-		// Iterate over each book and generate HTML for it
-		let _book = document.createElement("article");
-
-		// Book header information
-		let _bookHeader = document.createElement("header");
-		let _title = document.createElement("h1");
-		let _authors = document.createElement("h4");
-		let _names = [];
-		_title.textContent = BOOKS[_id].title;
-		BOOKS[_id].book.forEach((_page) => {
-			let _n = getName(_page.author);
-			if (_names.indexOf(_n) === -1) {
-				_names.push(_n);
-			}
-		});
-		_authors.textContent = "by " + _names.join(", ");
-		_bookHeader.appendChild(_title);
-		_bookHeader.appendChild(_authors);
-
-		// Book content / pages
-		let _pages = document.createElement("ol");
-		BOOKS[_id].book.forEach((_p) => {
-			// Create page
-			let _page = document.createElement("li");
-			switch (_p.mode) {
-				case "Write":
-					_page.textContent = _p.value;
-					_page.classList.add("write");
-					break;
-				case "Draw":
-					let _img = document.createElement("img");
-					_img.src = _p.value;
-					_page.appendChild(_img);
-					_page.classList.add("draw");
-					break;
-			}
-			_pages.appendChild(_page);
-		});
-
-		// Add book to HTML
-		_book.appendChild(_bookHeader);
-		_book.appendChild(_pages);
-		html += _book.outerHTML;
-		html += "<hr>";
-	}
-	html += "</body></html>";
-
-	// Add to hidden dom element in the body
-	let _element = document.createElement("a");
-	_element.setAttribute("href", "data:text/html;charset=utf-8," + encodeURIComponent(html));
-	_element.setAttribute("download", filename);
-	_element.style.display = "none";
-
-	// Save as file
-	document.body.appendChild(_element);
-	_element.click();
-	document.body.removeChild(_element);
-}
-
 /// --- CANVAS --- ///
-// Canvas drawing
-const CANVAS = new fabric.Canvas("c", {
+// Canvas
+const CANVAS = new fabric.Canvas("cBase", {
 	isDrawingMode: true,
 	freeDrawingCursor: "none",
-	backgroundColor: "#FFFFFF",
+	width: VIEWPORT.width,
+	height: VIEWPORT.height,
 });
 CANVAS.freeDrawingBrush.width = DRAW.width;
 CANVAS.freeDrawingBrush.color = DRAW.color;
 
-// Add a cursor layer (to show the current brush/tool)
-const CURSOR = new fabric.StaticCanvas("cursor");
+// REGL canvas for WebGL rendering
+const CANVAS_REGL = byId("cRegl");
+const REGL = wrapREGL({
+	canvas: CANVAS_REGL,
+	pixelRatio: 1,
+	attributes: { antialias: false, preserveDrawingBuffer: true, viewport: VIEWPORT },
+});
+byId("cBase").after(CANVAS_REGL);
+hookREGL(CANVAS);
+
+// Cursor canvas for custom drawing cursors
+const CANVAS_CURSOR = new fabric.StaticCanvas("cCursor", {
+	width: VIEWPORT.width,
+	height: VIEWPORT.height,
+});
 const MOUSE_CURSOR = new fabric.Circle({
 	left: -100,
 	top: -100,
@@ -1526,7 +1542,7 @@ const MOUSE_CURSOR = new fabric.Circle({
 	originX: "center",
 	originY: "center",
 });
-CURSOR.add(MOUSE_CURSOR);
+CANVAS_CURSOR.add(MOUSE_CURSOR);
 CANVAS.on("mouse:move", (obj) => {
 	let mouse = obj.absolutePointer;
 	MOUSE_CURSOR.set({ top: mouse.y, left: mouse.x }).setCoords().canvas.renderAll();
@@ -1536,33 +1552,67 @@ CANVAS.on("mouse:out", () => {
 });
 
 // Resize the drawing canvas
-window.addEventListener("resize", resizeCanvas);
-
 function resizeCanvas() {
 	// Get base image of canvas
-	let _base = byId("canvasBase");
-	_base.style.height = "";
+	let base = byId("canvasBase");
+	base.style.height = "";
+	let width = base.scrollWidth;
+	let height = base.scrollHeight;
 
-	// Make dimensions and ensure ratio is correct (sometimes gets weird in chrome)
-	let _w = _base.scrollWidth,
-		_h = _base.scrollHeight;
-	let _ratio = ((_h / _w) * 3) / 4;
-	if (_ratio <= 0.99 || _ratio >= 1.01) {
-		// disproportionate, change height to compensate
-		_h = (_w * 3) / 4;
+	// Ensure aspect ratio is correct
+	let ratio = ((height / width) * 3) / 4;
+	if (ratio <= 0.99 || ratio >= 1.01) {
+		// fix proportions
+		height = Math.floor((width * 3) / 4);
 	}
 
 	// Resize canvas
-	if (_w) {
-		let zoom = CANVAS.getZoom() * (_w / CANVAS.getWidth());
-		CANVAS.setDimensions({ width: _w, height: _h });
-		CANVAS.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-		CURSOR.setDimensions({ width: _w, height: _h });
-		CURSOR.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-		_base.style.height = _h + "px";
-		byId("previousWrite").style.maxWidth = _w + "px"; //"calc(" + _w + "px + 10em)";
+	if (width !== undefined) {
+		// Resize canvases
+		[
+			document.querySelector(".canvas-container"),
+			CANVAS.lowerCanvasEl,
+			CANVAS.upperCanvasEl,
+			CANVAS_CURSOR.lowerCanvasEl,
+			CANVAS_CURSOR.upperCanvasEl,
+			CANVAS_REGL,
+		].forEach((e) => {
+			if (e !== undefined) {
+				e.style.width = width + "px";
+				e.style.height = height + "px";
+			}
+		});
+
+		// Resize other html elements
+		base.style.height = height + "px";
+		byId("previousWrite").style.maxWidth = width + "px";
 	}
 }
+
+window.addEventListener("resize", resizeCanvas);
+
+// Drawing
+CANVAS.on("path:created", (obj) => {
+	if (DRAW.tool !== TOOL.FILL) {
+		let path = new ShaderPath(obj.path);
+		record("path:created", path);
+		CANVAS.add(path);
+	}
+	CANVAS.remove(obj.path);
+});
+
+// Flood fill
+CANVAS.on("mouse:up", (obj) => {
+	if (DRAW.tool === TOOL.FILL) {
+		CANVAS.renderAll();
+		let mouse = obj.absolutePointer;
+		new Fill({
+			x: mouse.x,
+			y: mouse.y,
+			color: DRAW.color,
+		});
+	}
+});
 
 // Undo/redo stack
 function record(type, object) {
@@ -1574,216 +1624,12 @@ function record(type, object) {
 
 	// Ensure commands aren't doubled up
 	if (_last === undefined || type !== _last.type || object !== _last.object) {
-		if (type === "path:created" && DRAW.tool === TOOL.FILL) {
-			// If using the fill tool, remove the invisible path that was created when clicking
-			if (CANVAS.contains(object)) {
-				CANVAS.remove(object);
-			}
-		} else {
-			// Otherwise, record event properly
-			// Add to undo stack
-			DRAW.undo.push({ type: type, object: object });
-			byId("toolUndo").disabled = false;
+		// Add to undo stack
+		DRAW.undo.push({ type: type, object: object });
+		byId("toolUndo").disabled = false;
 
-			// Clear redo stack
-			DRAW.redo = [];
-			byId("toolRedo").disabled = true;
-		}
-	}
-}
-
-CANVAS.on("path:created", (obj) => {
-	record("path:created", obj.path);
-});
-
-// Flood fill function
-CANVAS.on("mouse:up", (obj) => {
-	if (DRAW.tool === TOOL.FILL) {
-		let mouse = obj.absolutePointer;
-		if (mouse.x >= 0 && mouse.x >= 0 && mouse.x < DRAW.WIDTH && mouse.y < DRAW.HEIGHT) {
-			fill({ x: Math.floor(mouse.x), y: Math.floor(mouse.y) });
-		}
-	}
-});
-
-function fill(pos) {
-	/// FLOOD FILL ALGORITHM
-	// This code is so ugly and messy :(
-	let xMin, yMin, xMax, yMax;
-
-	// Get position from coords (and vice versa)
-	const getPos = (x, y) => {
-		return (y * DRAW.WIDTH + x) * 4;
-	};
-	const getCoords = (pos) => {
-		let p = pos / 4;
-		let x = p % DRAW.WIDTH;
-		let y = (p - x) / DRAW.WIDTH;
-		return { x: x, y: y };
-	};
-
-	// Get difference between two colors
-	const diff = (data, pos, col) => {
-		// comparison algorithm from here https://www.compuphase.com/cmetric.htm
-		let rAvg = (data[pos] + col.r) / 2;
-		let r = data[pos] - col.r;
-		let g = data[pos + 1] - col.g;
-		let b = data[pos + 2] - col.b;
-		return (
-			Math.sqrt((((512 + rAvg) * r * r) >> 8) + 4 * g * g + (((767 - rAvg) * b * b) >> 8)) >> 3
-		); // between 0 and ~95.5
-	};
-
-	const check = (data, pos, col) => {
-		// Check if pos hasn't been visited (alpha = 0) and has similar color
-		if (data[pos + 3] === 0 && diff(data, pos, col) <= DRAW.flow) {
-			return true;
-		}
-	};
-
-	// Change color of pixel
-	const colorPixel = (data, pos, col) => {
-		// color pixels with the draw color
-		data[pos] = col.r;
-		data[pos + 1] = col.g;
-		data[pos + 2] = col.b;
-		data[pos + 3] = 255;
-
-		// track colored pixel bounds
-		let coords = getCoords(pos);
-		xMin = Math.min(xMin, coords.x);
-		yMin = Math.min(yMin, coords.y);
-		xMax = Math.max(xMax, coords.x);
-		yMax = Math.max(yMax, coords.y);
-	};
-
-	// Crop the canvas (for after the flood has been done)
-	const cropCanvas = (source, left, top, width, height) => {
-		let dest = document.createElement("canvas");
-		dest.width = width;
-		dest.height = height;
-		dest.getContext("2d").drawImage(source, left, top, width, height, 0, 0, width, height);
-		return dest;
-	};
-
-	// Todo: See if it would be more efficient to clone the objects to a new canvas instead of baking and loading image data
-	// I've done some testing and this seems to be the slowest part (slower than the flood algorithm even)
-
-	/// Flood fill
-	if (pos.x >= 0 && pos.x <= DRAW.WIDTH && pos.y >= 0 && pos.y <= DRAW.HEIGHT) {
-		// Variables to keep track of flood fill dimensions
-		xMin = xMax = pos.x;
-		yMin = yMax = pos.y;
-
-		// Colour to flood fill with
-		let _source = fabric.Color.fromHex(DRAW.color)._source;
-		let drawColor = { r: _source[0], g: _source[1], b: _source[2] };
-
-		// Create a temporary canvas to calculate flood fill
-		let canvas = document.createElement("canvas");
-		canvas.width = DRAW.WIDTH;
-		canvas.height = DRAW.HEIGHT;
-
-		// Put current canvas data into image
-		let img = new Image(DRAW.WIDTH, DRAW.HEIGHT);
-		img.src = CANVAS.toDataURL({
-			format: "png",
-			multiplier: DRAW.WIDTH / CANVAS.getWidth(),
-		});
-		img.onload = () => {
-			// Draw image on temp canvas
-			let ctx = canvas.getContext("2d");
-			ctx.drawImage(img, 0, 0, DRAW.WIDTH, DRAW.HEIGHT);
-			let imgData = ctx.getImageData(0, 0, DRAW.WIDTH, DRAW.HEIGHT);
-			let data = imgData.data;
-
-			// Change all pixels to alpha 0
-			for (let i = 0; i < DRAW.WIDTH * DRAW.HEIGHT; i++) {
-				data[4 * i + 3] = 0;
-			}
-
-			// Get fill start
-			let startPos = getPos(pos.x, pos.y);
-			let startColor = {
-				r: data[startPos],
-				g: data[startPos + 1],
-				b: data[startPos + 2],
-			};
-
-			// Run flood fill algorithm on the temp canvas
-			let todo = [[pos.x, pos.y]];
-			let n = 0;
-			while (todo.length) {
-				let pos = todo.pop();
-				let x = pos[0];
-				let y = pos[1];
-				let currentPos = getPos(x, y);
-
-				while (y-- >= 0 && check(data, currentPos, startColor)) {
-					currentPos -= DRAW.WIDTH * 4;
-				}
-
-				currentPos += DRAW.WIDTH * 4;
-				++y;
-				let reachLeft = false;
-				let reachRight = false;
-
-				while (y++ < DRAW.HEIGHT - 1 && check(data, currentPos, startColor)) {
-					colorPixel(data, currentPos, drawColor);
-
-					if (x > 0) {
-						if (check(data, currentPos - 4, startColor)) {
-							if (!reachLeft) {
-								todo.push([x - 1, y]);
-								reachLeft = true;
-							}
-						} else if (reachLeft) {
-							reachLeft = false;
-						}
-					}
-
-					if (x < DRAW.WIDTH - 1) {
-						if (check(data, currentPos + 4, startColor)) {
-							if (!reachRight) {
-								todo.push([x + 1, y]);
-								reachRight = true;
-							}
-						} else if (reachRight) {
-							reachRight = false;
-						}
-					}
-
-					currentPos += DRAW.WIDTH * 4;
-
-					if (++n > DRAW.WIDTH * DRAW.HEIGHT) {
-						// Automatically break if the code gets stuck in an infinite loop
-						// THIS SHOULD NEVER HAPPEN
-						console.error("DRAWRY ERROR: Infinite loop in flood fill algorithm");
-						todo = [];
-						break;
-					}
-				}
-			}
-
-			// Place filled shape back onto the original canvas
-			ctx.putImageData(imgData, 0, 0);
-			fabric.Image.fromURL(
-				cropCanvas(canvas, xMin, yMin, xMax - xMin + 1, yMax - yMin + 1).toDataURL(),
-				(e) => {
-					CANVAS.add(e);
-					e.set({ left: xMin, top: yMin, width: xMax - xMin + 1, height: yMax - yMin + 1 });
-					e.bringToFront();
-					CANVAS.renderAll();
-
-					// also add to undo stack
-					record("floodfill:created", e);
-
-					// delete temp data
-					img = null;
-					imgData = null;
-					canvas.remove();
-				}
-			);
-		};
+		// Clear redo stack
+		DRAW.redo = [];
+		byId("toolRedo").disabled = true;
 	}
 }
