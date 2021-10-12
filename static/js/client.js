@@ -53,6 +53,7 @@ const PALETTES = {
 };
 
 /// --- GAME CONSTANTS --- ///
+const DEBUG = false;
 const ROOM = {};
 const USERS = {};
 const BOOKS = {};
