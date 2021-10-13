@@ -25,6 +25,7 @@ const hookREGL = (fabricCanvas) => {
 			this._objects.forEach((o) => {
 				o.dispose();
 			});
+			this._objects = [];
 
 			// Return
 			return this;
@@ -267,6 +268,10 @@ class ShaderPath extends fabric.Path {
 			display: [VIEWPORT.width, VIEWPORT.height],
 		});
 	}
+
+	dispose() {
+		// Clean up object
+	}
 }
 
 /// CIRCLES
@@ -359,6 +364,11 @@ class ShaderImage extends fabric.Image {
 			null,
 			imgOptions && imgOptions.crossOrigin
 		);
+	}
+
+	dispose() {
+		// Clean up object
+		fabric.Image.prototype.dispose.call(this);
 	}
 }
 
