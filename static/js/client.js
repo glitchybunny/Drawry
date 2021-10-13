@@ -53,11 +53,21 @@ const PALETTES = {
 };
 
 /// --- GAME CONSTANTS --- ///
-const DEBUG = false;
-const ROOM = {};
-const USERS = {};
-const BOOKS = {};
-const ROUND = {
+const DEBUG = true;
+const VIEWPORT = {
+	x: 0,
+	y: 0,
+	width: 800,
+	height: 600,
+};
+const ROOM = {
+	book: undefined,
+	code: undefined,
+	host: undefined,
+	page: undefined,
+	pageMode: undefined,
+	presenter: undefined,
+	settings: undefined,
 	timer: undefined,
 	timeLeft: 0,
 };
@@ -70,12 +80,8 @@ const DRAW = {
 	undo: [],
 	redo: [],
 };
-const VIEWPORT = {
-	x: 0,
-	y: 0,
-	width: 800,
-	height: 600,
-};
+const USERS = {};
+const BOOKS = {};
 
 /// Ensure browser compatibility
 const supportsCanvas = "getContext" in document.createElement("canvas");
@@ -181,9 +187,9 @@ SOCKET.on("startGame", (data) => {
 	}
 
 	// Set round info
-	ROUND.book = BOOKS[ID];
-	ROUND.mode = data.start;
-	ROUND.page = 0;
+	ROOM.book = BOOKS[ID];
+	ROOM.pageMode = data.start;
+	ROOM.page = 0;
 
 	// Update DOM
 	hide(["setup", "invite"]);
@@ -232,17 +238,17 @@ SOCKET.on("pageForward", () => {
 	audio.play().then();
 
 	// Determine round information
-	ROUND.page += 1;
-	ROUND.mode = ROUND.mode === "Write" ? "Draw" : "Write";
+	ROOM.page += 1;
+	ROOM.pageMode = ROOM.pageMode === "Write" ? "Draw" : "Write";
 	for (let i in BOOKS) {
-		if (BOOKS[i].book[ROUND.page] === ID) {
-			ROUND.book = BOOKS[i];
+		if (BOOKS[i].book[ROOM.page] === ID) {
+			ROOM.book = BOOKS[i];
 		}
 	}
 
 	// Update status
-	byId("statusTitle").textContent = ROUND.book.title;
-	byId("statusPage").textContent = ROUND.page + 1;
+	byId("statusTitle").textContent = ROOM.book.title;
+	byId("statusPage").textContent = ROOM.page + 1;
 
 	// Update previous page, input mode, book list, timer
 	updatePrevious();
@@ -267,9 +273,9 @@ SOCKET.on("startPresenting", () => {
 	byId("wait").close();
 
 	// Update round state
-	ROUND.page = undefined;
-	ROUND.book = undefined;
-	ROUND.mode = "Presenting";
+	ROOM.page = undefined;
+	ROOM.book = undefined;
+	ROOM.pageMode = "Presenting";
 
 	// Add books to DOM for presenting
 	updateBooks();
@@ -285,15 +291,15 @@ SOCKET.on("presentBook", (data) => {
 	byId("presentBlurb").style.height = "100%";
 
 	// Keep track of presentation
-	ROUND.book = BOOKS[data.book];
-	ROUND.page = -1;
+	ROOM.book = BOOKS[data.book];
+	ROOM.page = -1;
 	ROOM.presenter = data.presenter;
 
 	// Get book title and authors
-	let _title = ROUND.book.title;
+	let _title = ROOM.book.title;
 	let _presenter = getName(ROOM.presenter);
 	let _authors = [];
-	ROUND.book.book.forEach((_page) => {
+	ROOM.book.book.forEach((_page) => {
 		let _author = getName(_page.author);
 		if (_authors.indexOf(_author) === -1) {
 			_authors.push(_author);
@@ -323,10 +329,10 @@ SOCKET.on("presentForward", () => {
 	// Go to next page
 	byId("inputPresentBack").disabled = false;
 	byId("presentBlurb").style.height = "";
-	ROUND.page += 1;
+	ROOM.page += 1;
 
 	// Add page to window
-	let _page = ROUND.book.book[ROUND.page];
+	let _page = ROOM.book.book[ROOM.page];
 	let _div = document.createElement("div");
 	_div.classList.add("page");
 
@@ -336,7 +342,7 @@ SOCKET.on("presentForward", () => {
 	let _num = document.createElement("span");
 	_attr.classList.add("attribution");
 	_author.textContent = getName(_page.author) + ":";
-	_num.textContent = (ROUND.page + 1).toString() + "/" + ROOM.settings.pageCount.toString();
+	_num.textContent = (ROOM.page + 1).toString() + "/" + ROOM.settings.pageCount.toString();
 	_attr.appendChild(_author);
 	_attr.appendChild(_num);
 	_div.appendChild(_attr);
@@ -367,7 +373,7 @@ SOCKET.on("presentForward", () => {
 	_window.scrollTop = _window.scrollHeight;
 
 	// Last page
-	if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
+	if (ROOM.page === parseInt(ROOM.settings.pageCount) - 1) {
 		byId("inputPresentForward").disabled = true;
 
 		if (ID === ROOM.presenter) {
@@ -379,14 +385,14 @@ SOCKET.on("presentForward", () => {
 SOCKET.on("presentBack", () => {
 	// Go to previous page
 	byId("inputPresentForward").disabled = false;
-	ROUND.page -= 1;
+	ROOM.page -= 1;
 
 	// Remove last added page
 	let _pages = document.querySelectorAll(".page");
 	_pages[_pages.length - 1].remove();
 
 	// First page
-	if (ROUND.page === -1) {
+	if (ROOM.page === -1) {
 		byId("inputPresentBack").disabled = true;
 		byId("presentBlurb").style.height = "100%";
 	}
@@ -399,7 +405,7 @@ SOCKET.on("presentOverride", () => {
 	// Update UI buttons
 	if (ID === ROOM.host) {
 		show("presentControls");
-		if (ROUND.page === parseInt(ROOM.settings.pageCount) - 1) {
+		if (ROOM.page === parseInt(ROOM.settings.pageCount) - 1) {
 			byId("inputPresentFinish").disabled = false;
 		}
 		hide("presentOverride");
@@ -422,7 +428,7 @@ SOCKET.on("presentFinish", () => {
 	});
 
 	// Keep track of book being presented
-	ROUND.book.presented = true;
+	ROOM.book.presented = true;
 
 	// If all books have been presented, allow host to return to lobby
 	let _done = true;
@@ -643,13 +649,13 @@ function updateBooks() {
 		_bookAuthor.id = "b" + _id;
 
 		// Display who's working on the current page of the book
-		if (ROUND.mode === "Presenting") {
+		if (ROOM.pageMode === "Presenting") {
 			_bookTitle.textContent = BOOKS[_id].title;
 			_bookAuthor.textContent = "by\u00a0" + BOOKS[_id].author;
 		} else {
 			let _num, _page, _author;
-			_num = (ROUND.page + 1).toString();
-			_page = BOOKS[_id].book[ROUND.page];
+			_num = (ROOM.page + 1).toString();
+			_page = BOOKS[_id].book[ROOM.page];
 			_author = getName(_page.author ?? _page);
 			_bookTitle.textContent = BOOKS[_id].title;
 			_bookAuthor.textContent = "Pg\u00a0" + _num + "\u00a0-\u00a0" + _author;
@@ -660,7 +666,7 @@ function updateBooks() {
 			}
 		}
 
-		if (ROUND.mode === "Presenting") {
+		if (ROOM.pageMode === "Presenting") {
 			// Add download buttons
 			_bookDL.type = "button";
 			_bookDL.value = "Download";
@@ -692,9 +698,9 @@ function updatePrevious() {
 
 	let _previousDraw = byId("previousDraw");
 	let _previousWrite = byId("previousWrite");
-	let _previousPage = ROUND.book.book[ROUND.page - 1].value;
+	let _previousPage = ROOM.book.book[ROOM.page - 1].value;
 
-	switch (ROUND.mode) {
+	switch (ROOM.pageMode) {
 		case "Write":
 			// Current mode is write, so the previous page is draw
 			_previousDraw.src = _previousPage ? _previousPage : "img/placeholder.png";
@@ -714,7 +720,7 @@ function updatePrevious() {
 // Game: Update input mode
 function updateInput() {
 	// Change input mode
-	switch (ROUND.mode) {
+	switch (ROOM.pageMode) {
 		case "Write":
 			// Change to writing mode
 			hide("draw");
@@ -743,21 +749,21 @@ function updateInput() {
 
 	// Round timer
 	if (
-		(ROUND.mode === "Write" && +ROOM.settings.timeWrite) ||
-		(ROUND.mode === "Draw" && +ROOM.settings.timeDraw)
+		(ROOM.pageMode === "Write" && +ROOM.settings.timeWrite) ||
+		(ROOM.pageMode === "Draw" && +ROOM.settings.timeDraw)
 	) {
 		// If timer is already enabled, reset it
-		if (ROUND.timer) {
-			clearInterval(ROUND.timer);
-			ROUND.timer = undefined;
+		if (ROOM.timer) {
+			clearInterval(ROOM.timer);
+			ROOM.timer = undefined;
 		}
 
 		// Enable the timer
 		show("statusTimer");
-		let time = ROUND.mode === "Write" ? +ROOM.settings.timeWrite : +ROOM.settings.timeDraw;
-		ROUND.timeLeft = parseInt(time * 60);
-		ROUND.timer = setInterval(() => {
-			if (--ROUND.timeLeft >= 0) {
+		let time = ROOM.pageMode === "Write" ? +ROOM.settings.timeWrite : +ROOM.settings.timeDraw;
+		ROOM.timeLeft = parseInt(time * 60);
+		ROOM.timer = setInterval(() => {
+			if (--ROOM.timeLeft >= 0) {
 				updateTimer();
 			} else {
 				endTimer();
@@ -776,8 +782,8 @@ function updateInput() {
 function updateTimer() {
 	// Update timer text
 	let min, sec;
-	min = Math.floor(ROUND.timeLeft / 60).toString();
-	sec = Math.floor(ROUND.timeLeft - min * 60).toString();
+	min = Math.floor(ROOM.timeLeft / 60).toString();
+	sec = Math.floor(ROOM.timeLeft - min * 60).toString();
 	byId("timer").textContent = min + ":" + sec.padStart(2, "0");
 
 	// Need to alternate between two identical animations,
@@ -786,16 +792,16 @@ function updateTimer() {
 		byId("timer").style.animationName === "tick-1" ? "tick-2" : "tick-1";
 
 	// Upon timer finishing, alert user and submit page automatically
-	if (ROUND.timeLeft === 0) {
+	if (ROOM.timeLeft === 0) {
 		byId("timer").textContent = "Time's up!";
 	}
 }
 
 function endTimer() {
-	if (ROUND.timer) {
+	if (ROOM.timer) {
 		// Reset timer
-		clearInterval(ROUND.timer);
-		ROUND.timer = undefined;
+		clearInterval(ROOM.timer);
+		ROOM.timer = undefined;
 
 		// Submit page
 		byId("inputSubmit").click();
@@ -1286,7 +1292,7 @@ function download(bookIDs) {
 	byId("inputSubmit").addEventListener("click", (e) => {
 		// Get round data
 		let _value = undefined;
-		switch (ROUND.mode) {
+		switch (ROOM.pageMode) {
 			case "Write":
 				// Writing round
 				_value = byId("inputWrite").value.substr(0, 140);
@@ -1302,7 +1308,7 @@ function download(bookIDs) {
 
 		// Send data to server
 		SOCKET.emit("submitPage", {
-			mode: ROUND.mode,
+			mode: ROOM.pageMode,
 			value: _value,
 			key: SESSION_KEY,
 		});
@@ -1414,7 +1420,7 @@ function download(bookIDs) {
 
 	// Draw: Use tools with keyboard
 	document.addEventListener("keydown", (e) => {
-		if (ROUND.mode === "Draw" && document.activeElement !== byId("inputTitle")) {
+		if (ROOM.pageMode === "Draw" && document.activeElement !== byId("inputTitle")) {
 			switch (e.code) {
 				case "KeyD":
 					byId("toolPaint").click();
@@ -1460,7 +1466,7 @@ function download(bookIDs) {
 	// Present: Next page
 	byId("inputPresentForward").addEventListener("click", () => {
 		if (ID === ROOM.presenter) {
-			if (ROUND.page < parseInt(ROOM.settings.pageCount) - 1) {
+			if (ROOM.page < parseInt(ROOM.settings.pageCount) - 1) {
 				SOCKET.emit("presentForward", { key: SESSION_KEY });
 			}
 		}
@@ -1469,7 +1475,7 @@ function download(bookIDs) {
 	// Present: Previous page
 	byId("inputPresentBack").addEventListener("click", () => {
 		if (ID === ROOM.presenter) {
-			if (ROUND.page > -1) {
+			if (ROOM.page > -1) {
 				SOCKET.emit("presentBack", { key: SESSION_KEY });
 			}
 		}
