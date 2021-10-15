@@ -447,8 +447,8 @@ SOCKET.on("finish", () => {
 	for (let _ in BOOKS) {
 		delete BOOKS[_];
 	}
-	for (let _ in ROUND) {
-		delete ROUND[_];
+	for (let _ in ["book", "page", "pageMode", "presenter", "timer", "timeLeft"]) {
+		delete ROOM[_];
 	}
 
 	// Reset layout
