@@ -293,7 +293,7 @@ io.on("connection", (socket) => {
 			} else {
 				// Go to next page
 				io.to(_roomCode).emit("pageForward");
-				startTimer(_roomCode, _expected);
+				startTimer(_roomCode, _expected === "Draw" ? "Write" : "Draw");
 			}
 		}
 	});
