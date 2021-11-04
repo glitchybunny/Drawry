@@ -59,87 +59,103 @@ io.on("connection", (socket) => {
 		}
 
 		// first of all, make sure no two clients connect with the same ID
+		let auth = true;
 		for (let _socketID in CLIENTS) {
 			if (data.id === CLIENTS[_socketID].id) {
-				// disconnect client with matching ID
-				SOCKETS[_socketID].disconnect();
+				// ensure the key matches
+				if (data.key === CLIENTS[_socketID].key) {
+					// same user, disconnect old client with matching ID
+					SOCKETS[_socketID].disconnect();
+				} else {
+					// different user, disconnect since ID is already taken
+					socket.disconnect();
+					auth = false;
+				}
+				break;
 			}
 		}
 
-		// fetch client values
-		let _client = CLIENTS[socket.id];
-		_client.id = xss(data.id.substr(0, 10)).replace(/[^0-9]/g, "") || 0;
-		_client.name = xss(data.name.substr(0, 32));
-		_client.roomCode = xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, "") || 0;
+		if (auth) {
+			// fetch client values
+			let _client = CLIENTS[socket.id];
+			_client.id = xss(data.id.substr(0, 10)).replace(/[^a-fA-F0-9]]/g, "") || 0;
+			_client.key = xss(data.key.substr(0, 20)).replace(/[^a-fA-F0-9]]/g, "") || 0;
+			_client.name = xss(data.name.substr(0, 32));
+			_client.roomCode = xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, "") || 0;
 
-		if (_client.id && _client.roomCode) {
-			// add client to the room
-			socket.join(_client.roomCode);
+			if (_client.id && _client.roomCode) {
+				// add client to the room
+				socket.join(_client.roomCode);
 
-			// if room doesn't exist, create it and make client the host
-			if (!ROOMS.hasOwnProperty(_client.roomCode)) {
-				// create room
-				ROOMS[_client.roomCode] = {
-					clients: [],
-					host: socket.id,
-					settings: SETTINGS_DEFAULT,
-					state: STATE.LOBBY,
-					page: 0,
-					submitted: 0,
-					books: undefined,
-					timer: undefined,
-				};
-			}
+				// if room doesn't exist, create it and make client the host
+				if (!ROOMS.hasOwnProperty(_client.roomCode)) {
+					// create room
+					ROOMS[_client.roomCode] = {
+						clients: [],
+						host: socket.id,
+						settings: SETTINGS_DEFAULT,
+						state: STATE.LOBBY,
+						page: 0,
+						submitted: 0,
+						books: undefined,
+						timer: undefined,
+					};
+				}
 
-			// check if room can be joined
-			let _room = ROOMS[_client.roomCode];
-			if (_room.clients.length < MAX_ROOM_SIZE && _room.state === STATE.LOBBY) {
-				// if room isn't full and is in lobby, add client to the room
-				_room.clients.push(socket.id);
+				// check if room can be joined
+				let _room = ROOMS[_client.roomCode];
+				if (_room.clients.length < MAX_ROOM_SIZE && _room.state === STATE.LOBBY) {
+					// if room isn't full and is in lobby, add client to the room
+					_room.clients.push(socket.id);
 
-				// inform the client they've joined the room
-				io.to(socket.id).emit("joined", {
-					roomCode: _client.roomCode,
-					users: Object.values(CLIENTS).filter((c) => {
-						return c.roomCode === _client.roomCode && c.id !== _client.id;
-					}),
-					host: CLIENTS[_room.host].id,
-					settings: _room.settings,
-				});
+					// inform the client they've joined the room
+					io.to(socket.id).emit("joined", {
+						roomCode: _client.roomCode,
+						users: Object.values(CLIENTS).filter((c) => {
+							return c.roomCode === _client.roomCode && c.id !== _client.id;
+						}),
+						host: CLIENTS[_room.host].id,
+						settings: _room.settings,
+					});
 
-				// inform users in the room about the new client
-				socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
+					// inform users in the room about the new client
+					socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
+				} else {
+					// room is full, boot client
+					io.to(socket.id).emit("kick", "server full");
+					socket.disconnect();
+				}
 			} else {
-				// room is full, boot client
-				io.to(socket.id).emit("kick", "server full");
+				// ID or roomCode is invalid, boot client
+				io.to(socket.id).emit("kick", "invalid room code");
 				socket.disconnect();
 			}
-		} else {
-			// ID or roomCode is invalid, boot client
-			io.to(socket.id).emit("kick", "invalid room code");
-			socket.disconnect();
 		}
 	});
 
 	// Listen for room settings changes
 	socket.on("settings", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("settings", CLIENTS[socket.id].id, data.settings);
-		}
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("settings", CLIENTS[socket.id].id, data.settings);
+			}
 
-		let _roomCode = CLIENTS[socket.id].roomCode;
-		let _room = ROOMS[_roomCode];
+			let _roomCode = CLIENTS[socket.id].roomCode;
+			let _room = ROOMS[_roomCode];
 
-		// Make sure user is the host and settings are within constraints
-		if (socket.id === _room.host && verifySettings(data.settings)) {
-			// Host updating settings
-			_room.settings = data.settings;
+			// Make sure user is the host and settings are within constraints
+			if (socket.id === _room.host && verifySettings(data.settings)) {
+				// Host updating settings
+				_room.settings = data.settings;
 
-			// Propagate settings to other clients
-			socket.to(_roomCode).emit("settings", _room.settings);
+				// Propagate settings to other clients
+				socket.to(_roomCode).emit("settings", _room.settings);
+			} else {
+				// Invalid request, kick from game
+				io.to(socket.id).emit("kick", "invalid settings");
+				socket.disconnect();
+			}
 		} else {
-			// Invalid request, kick from game
-			io.to(socket.id).emit("kick", "invalid settings");
 			socket.disconnect();
 		}
 	});
@@ -147,153 +163,159 @@ io.on("connection", (socket) => {
 	/// --- GAME --- ///
 	// Start the game for the room
 	socket.on("startGame", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("startGame", CLIENTS[socket.id].id, data.settings);
-		}
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("startGame", CLIENTS[socket.id].id, data.settings);
+			}
 
-		let _roomCode = CLIENTS[socket.id].roomCode;
-		let _room = ROOMS[_roomCode];
+			let _roomCode = CLIENTS[socket.id].roomCode;
+			let _room = ROOMS[_roomCode];
 
-		// Make sure user is the host, player count is reached, and settings are valid
-		if (
-			(socket.id === _room.host &&
-				_room.clients.length >= 2 &&
-				verifySettings(data.settings) &&
-				_room.state === STATE.LOBBY) ||
-			DEBUG
-		) {
-			// Update settings, change room state
-			_room.settings = data.settings;
-			_room.state = STATE.PLAYING;
-			_room.page = 0;
+			// Make sure user is the host, player count is reached, and settings are valid
+			if (
+				(socket.id === _room.host &&
+					_room.clients.length >= 2 &&
+					verifySettings(data.settings) &&
+					_room.state === STATE.LOBBY) ||
+				DEBUG
+			) {
+				// Update settings, change room state
+				_room.settings = data.settings;
+				_room.state = STATE.PLAYING;
+				_room.page = 0;
 
-			// Generate page assignment order for books
-			generateBooks(_room);
+				// Generate page assignment order for books
+				generateBooks(_room);
 
-			// Start game
-			io.to(_roomCode).emit("startGame", {
-				books: _room.books,
-				start: _room.settings.firstPage,
-			});
-			startTimer(_roomCode, _room.settings.firstPage);
-		} else {
-			// Invalid request, kick from game
-			socket.disconnect();
+				// Start game
+				io.to(_roomCode).emit("startGame", {
+					books: _room.books,
+					start: _room.settings.firstPage,
+				});
+				startTimer(_roomCode, _room.settings.firstPage);
+			} else {
+				// Invalid request, kick from game
+				socket.disconnect();
+			}
 		}
 	});
 
 	// Update a player's book title
 	socket.on("updateTitle", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("updateTitle", CLIENTS[socket.id].id, { title: data.title });
-		}
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("updateTitle", CLIENTS[socket.id].id, { title: data.title });
+			}
 
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
-		let _room = ROOMS[_roomCode];
+			let _id = CLIENTS[socket.id].id;
+			let _roomCode = CLIENTS[socket.id].roomCode;
+			let _room = ROOMS[_roomCode];
 
-		// make sure to sanitise title string
-		let _title = xss(data.title.substr(0, 40));
+			// make sure to sanitise title string
+			let _title = xss(data.title.substr(0, 40));
 
-		// ensure title is of adequate length, otherwise make it the player name + "'s book"
-		if (_title.length === 0) {
-			_title = CLIENTS[socket.id].name + "'s book";
-		}
+			// ensure title is of adequate length, otherwise make it the player name + "'s book"
+			if (_title.length === 0) {
+				_title = CLIENTS[socket.id].name + "'s book";
+			}
 
-		// send title to other players
-		if (_room.page === 0) {
-			io.to(_roomCode).emit("title", { id: _id, title: _title });
+			// send title to other players
+			if (_room.page === 0) {
+				io.to(_roomCode).emit("title", { id: _id, title: _title });
+			}
 		}
 	});
 
 	// Get page from player
 	socket.on("submitPage", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("submitPage", CLIENTS[socket.id].id, {
-				mode: data.mode,
-				value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : ""),
-			});
-		}
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
-		let _room = ROOMS[_roomCode];
-		let _value = undefined;
-
-		// Fetch page data
-		if (data.mode === "Write") {
-			// Data is text
-			_value = xss(data.value.substr(0, 140));
-		} else if (data.mode === "Draw") {
-			// Data is encoded image
-			// make sure the image is expected format
-			if (data.value.indexOf("data:image/png;base64,") === 0) {
-				let img = Buffer.from(data.value.split(";base64,").pop(), "base64");
-				let dimensions = sizeOf(img);
-
-				// make sure image is correct size
-				if (dimensions.width === 800 && dimensions.height === 600) {
-					_value = data.value;
-				} else {
-					// if it's not the correct size, check if it's within a reasonable tolerance range (1%)
-					let _diffWidth = Math.abs(dimensions.width - 800);
-					let _diffHeight = Math.abs(dimensions.height - 600);
-					if (_diffWidth < 8 && _diffHeight < 6) {
-						// Send image data anyway, it's close enough
-						_value = data.value;
-					} else {
-						console.log("ERROR unexpected image size", [dimensions.width, dimensions.height]);
-					}
-				}
-			} else {
-				console.log("ERROR unexpected image format", {
-					format: data.value.substr(0, 22),
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("submitPage", CLIENTS[socket.id].id, {
+					mode: data.mode,
+					value: data.value.substr(0, 63) + (data.value.length > 63 ? "…" : ""),
 				});
 			}
-		}
+			let _id = CLIENTS[socket.id].id;
+			let _roomCode = CLIENTS[socket.id].roomCode;
+			let _room = ROOMS[_roomCode];
+			let _value = undefined;
 
-		// Identify book ID to update
-		let _bookID;
-		for (let i of Object.keys(_room.books)) {
-			if (_room.books[i][_room.page] === _id) {
-				_bookID = i;
-				break;
+			// Fetch page data
+			if (data.mode === "Write") {
+				// Data is text
+				_value = xss(data.value.substr(0, 140));
+			} else if (data.mode === "Draw") {
+				// Data is encoded image
+				// make sure the image is expected format
+				if (data.value.indexOf("data:image/png;base64,") === 0) {
+					let img = Buffer.from(data.value.split(";base64,").pop(), "base64");
+					let dimensions = sizeOf(img);
+
+					// make sure image is correct size
+					if (dimensions.width === 800 && dimensions.height === 600) {
+						_value = data.value;
+					} else {
+						// if it's not the correct size, check if it's within a reasonable tolerance range (1%)
+						let _diffWidth = Math.abs(dimensions.width - 800);
+						let _diffHeight = Math.abs(dimensions.height - 600);
+						if (_diffWidth < 8 && _diffHeight < 6) {
+							// Send image data anyway, it's close enough
+							_value = data.value;
+						} else {
+							console.log("ERROR unexpected image size", [dimensions.width, dimensions.height]);
+						}
+					}
+				} else {
+					console.log("ERROR unexpected image format", {
+						format: data.value.substr(0, 22),
+					});
+				}
 			}
-		}
 
-		// Verify data.mode is valid
-		let _expected = (_room.settings.firstPage === "Write") ^ _room.page % 2 ? "Write" : "Draw";
-		if (_expected !== data.mode) {
-			// Client trying to send tampered data, overwrite
-			_value = undefined;
-			console.log("ERROR unexpected data.mode", {
-				received: data.mode,
-				expected: _expected,
+			// Identify book ID to update
+			let _bookID;
+			for (let i of Object.keys(_room.books)) {
+				if (_room.books[i][_room.page] === _id) {
+					_bookID = i;
+					break;
+				}
+			}
+
+			// Verify data.mode is valid
+			let _expected = (_room.settings.firstPage === "Write") ^ _room.page % 2 ? "Write" : "Draw";
+			if (_expected !== data.mode) {
+				// Client trying to send tampered data, overwrite
+				_value = undefined;
+				console.log("ERROR unexpected data.mode", {
+					received: data.mode,
+					expected: _expected,
+				});
+			}
+
+			// Send page data to all players
+			io.to(_roomCode).emit("page", {
+				id: _bookID,
+				page: _room.page,
+				value: _value,
+				author: _id,
+				mode: _expected,
 			});
-		}
 
-		// Send page data to all players
-		io.to(_roomCode).emit("page", {
-			id: _bookID,
-			page: _room.page,
-			value: _value,
-			author: _id,
-			mode: _expected,
-		});
+			// Check if all players have submitted
+			_room.submitted += 1;
+			if (_room.submitted === _room.clients.length) {
+				_room.submitted = 0;
+				_room.page += 1;
 
-		// Check if all players have submitted
-		_room.submitted += 1;
-		if (_room.submitted === _room.clients.length) {
-			_room.submitted = 0;
-			_room.page += 1;
-
-			if (_room.page === parseInt(_room.settings.pageCount)) {
-				// Finished creation part of game, move to presenting
-				_room.state = STATE.PRESENTING;
-				io.to(_roomCode).emit("startPresenting");
-			} else {
-				// Go to next page
-				io.to(_roomCode).emit("pageForward");
-				startTimer(_roomCode, _expected === "Draw" ? "Write" : "Draw");
+				if (_room.page === parseInt(_room.settings.pageCount)) {
+					// Finished creation part of game, move to presenting
+					_room.state = STATE.PRESENTING;
+					io.to(_roomCode).emit("startPresenting");
+				} else {
+					// Go to next page
+					io.to(_roomCode).emit("pageForward");
+					startTimer(_roomCode, _expected === "Draw" ? "Write" : "Draw");
+				}
 			}
 		}
 	});
@@ -301,151 +323,165 @@ io.on("connection", (socket) => {
 	/// --- PRESENTING --- ///
 	// Begin presenting a book
 	socket.on("presentBook", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("presentBook", CLIENTS[socket.id].id, { book: data.book });
-		}
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("presentBook", CLIENTS[socket.id].id, { book: data.book });
+			}
+			// let _id = CLIENTS[socket.id].id; // unused
+			let _roomCode = CLIENTS[socket.id].roomCode;
 
-		// Make sure request is from the host
-		if (socket.id === ROOMS[_roomCode].host) {
-			// Ensure book ID is valid
-			let _book = xss(data.book.toString());
-			if (_book in ROOMS[_roomCode].books) {
-				// Begin presenting book
-				ROOMS[_roomCode].page = -1;
-				ROOMS[_roomCode].presenter = _book;
+			// Make sure request is from the host
+			if (socket.id === ROOMS[_roomCode].host) {
+				// Ensure book ID is valid
+				let _book = xss(data.book.toString());
+				if (_book in ROOMS[_roomCode].books) {
+					// Begin presenting book
+					ROOMS[_roomCode].page = -1;
+					ROOMS[_roomCode].presenter = _book;
 
-				// Tell all clients that a book is being presented
-				io.to(_roomCode).emit("presentBook", {
-					book: _book,
-					presenter: ROOMS[_roomCode].presenter,
-				});
+					// Tell all clients that a book is being presented
+					io.to(_roomCode).emit("presentBook", {
+						book: _book,
+						presenter: ROOMS[_roomCode].presenter,
+					});
+				}
 			}
 		}
 	});
 
 	// Go to next page of presentation
 	socket.on("presentForward", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("presentForward", CLIENTS[socket.id].id);
-		}
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("presentForward", CLIENTS[socket.id].id);
+			}
+			let _id = CLIENTS[socket.id].id;
+			let _roomCode = CLIENTS[socket.id].roomCode;
 
-		// Make sure request is from the presenter
-		if (_id === ROOMS[_roomCode].presenter) {
-			if (ROOMS[_roomCode].page < parseInt(ROOMS[_roomCode].settings.pageCount) - 1) {
-				ROOMS[_roomCode].page += 1;
-				io.to(_roomCode).emit("presentForward");
+			// Make sure request is from the presenter
+			if (_id === ROOMS[_roomCode].presenter) {
+				if (ROOMS[_roomCode].page < parseInt(ROOMS[_roomCode].settings.pageCount) - 1) {
+					ROOMS[_roomCode].page += 1;
+					io.to(_roomCode).emit("presentForward");
+				}
 			}
 		}
 	});
 
 	// Go to previous page of presentation (hide most recently shown page)
 	socket.on("presentBack", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("presentBack", CLIENTS[socket.id].id);
-		}
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("presentBack", CLIENTS[socket.id].id);
+			}
+			let _id = CLIENTS[socket.id].id;
+			let _roomCode = CLIENTS[socket.id].roomCode;
 
-		// Make sure request is from the presenter
-		if (_id === ROOMS[_roomCode].presenter) {
-			if (ROOMS[_roomCode].page > -1) {
-				ROOMS[_roomCode].page -= 1;
-				io.to(_roomCode).emit("presentBack");
+			// Make sure request is from the presenter
+			if (_id === ROOMS[_roomCode].presenter) {
+				if (ROOMS[_roomCode].page > -1) {
+					ROOMS[_roomCode].page -= 1;
+					io.to(_roomCode).emit("presentBack");
+				}
 			}
 		}
 	});
 
 	// Take over presentation as host
 	socket.on("presentOverride", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("presentOverride", CLIENTS[socket.id].id);
-		}
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("presentOverride", CLIENTS[socket.id].id);
+			}
+			let _id = CLIENTS[socket.id].id;
+			let _roomCode = CLIENTS[socket.id].roomCode;
 
-		// Make sure request is from the host
-		if (socket.id === ROOMS[_roomCode].host) {
-			ROOMS[_roomCode].presenter = _id;
-			io.to(_roomCode).emit("presentOverride");
+			// Make sure request is from the host
+			if (socket.id === ROOMS[_roomCode].host) {
+				ROOMS[_roomCode].presenter = _id;
+				io.to(_roomCode).emit("presentOverride");
+			}
 		}
 	});
 
 	// Return to lobby for next book
 	socket.on("presentFinish", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("presentFinish", CLIENTS[socket.id].id);
-		}
-		let _id = CLIENTS[socket.id].id;
-		let _roomCode = CLIENTS[socket.id].roomCode;
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("presentFinish", CLIENTS[socket.id].id);
+			}
+			let _id = CLIENTS[socket.id].id;
+			let _roomCode = CLIENTS[socket.id].roomCode;
 
-		// Make sure request is from the presenter
-		if (_id === ROOMS[_roomCode].presenter) {
-			ROOMS[_roomCode].page = undefined;
-			ROOMS[_roomCode].presenter = undefined;
-			io.to(_roomCode).emit("presentFinish");
+			// Make sure request is from the presenter
+			if (_id === ROOMS[_roomCode].presenter) {
+				ROOMS[_roomCode].page = undefined;
+				ROOMS[_roomCode].presenter = undefined;
+				io.to(_roomCode).emit("presentFinish");
+			}
 		}
 	});
 
 	/// --- END --- ///
 	// Listen for game finish events
 	socket.on("finish", (data) => {
-		if (process.env.VERBOSE) {
-			console.log("finish", CLIENTS[socket.id].id);
-		}
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				console.log("finish", CLIENTS[socket.id].id);
+			}
 
-		// Make sure request is from the host
-		let _roomCode = CLIENTS[socket.id].roomCode;
-		if (socket.id === ROOMS[_roomCode].host) {
-			ROOMS[_roomCode].state = STATE.LOBBY;
-			ROOMS[_roomCode].page = 0;
-			ROOMS[_roomCode].submitted = 0;
-			ROOMS[_roomCode].books = undefined;
-			io.to(_roomCode).emit("finish");
+			// Make sure request is from the host
+			let _roomCode = CLIENTS[socket.id].roomCode;
+			if (socket.id === ROOMS[_roomCode].host) {
+				ROOMS[_roomCode].state = STATE.LOBBY;
+				ROOMS[_roomCode].page = 0;
+				ROOMS[_roomCode].submitted = 0;
+				ROOMS[_roomCode].books = undefined;
+				io.to(_roomCode).emit("finish");
+			}
 		}
 	});
 
 	// Listen for disconnect events
 	socket.on("disconnect", (data) => {
-		if (process.env.VERBOSE) {
-			if (CLIENTS[socket.id].id !== undefined) {
-				console.log("disconnect", CLIENTS[socket.id].id, { type: data });
-			}
-		}
-
-		if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
-			// remove client from the room if they've joined one
-			let _id = CLIENTS[socket.id].id;
-			let _roomCode = CLIENTS[socket.id].roomCode;
-
-			// alert others that client has left the room
-			socket.to(_roomCode).emit("userLeave", _id);
-
-			if (ROOMS[_roomCode]) {
-				// remove client from the room
-				let _clients = ROOMS[_roomCode].clients;
-				let _index = _clients.indexOf(socket.id);
-				if (_index !== -1) {
-					_clients.splice(_index, 1);
+		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+			if (process.env.VERBOSE) {
+				if (CLIENTS[socket.id].id !== undefined) {
+					console.log("disconnect", CLIENTS[socket.id].id, { type: data });
 				}
+			}
 
-				// delete the room if everyone has left
-				if (_clients.length === 0) {
-					delete ROOMS[_roomCode];
-				} else {
-					// if the host disconnected, assign a new host
-					if (socket.id === ROOMS[_roomCode].host) {
-						ROOMS[_roomCode].host = _clients[0];
-						socket.to(_roomCode).emit("userHost", CLIENTS[_clients[0]].id);
+			if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
+				// remove client from the room if they've joined one
+				let _id = CLIENTS[socket.id].id;
+				let _roomCode = CLIENTS[socket.id].roomCode;
+
+				// alert others that client has left the room
+				socket.to(_roomCode).emit("userLeave", _id);
+
+				if (ROOMS[_roomCode]) {
+					// remove client from the room
+					let _clients = ROOMS[_roomCode].clients;
+					let _index = _clients.indexOf(socket.id);
+					if (_index !== -1) {
+						_clients.splice(_index, 1);
+					}
+
+					// delete the room if everyone has left
+					if (_clients.length === 0) {
+						delete ROOMS[_roomCode];
+					} else {
+						// if the host disconnected, assign a new host
+						if (socket.id === ROOMS[_roomCode].host) {
+							ROOMS[_roomCode].host = _clients[0];
+							socket.to(_roomCode).emit("userHost", CLIENTS[_clients[0]].id);
+						}
 					}
 				}
 			}
-		}
 
-		delete CLIENTS[socket.id];
+			delete CLIENTS[socket.id]; // todo: instead of deleting, mark as deleted so users can rejoin
+		}
 	});
 });
 
