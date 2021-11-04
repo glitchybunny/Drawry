@@ -8,8 +8,9 @@
 /// --- SOCKET CONSTANTS --- ///
 let array = new Uint32Array(3);
 window.crypto.getRandomValues(array);
-const ID = Cookies.get("id") ? Cookies.get("id") : (array[0].valueOf() + 1).toString();
-const SESSION_KEY = array[1].valueOf().toString(16) + array[2].valueOf().toString(16); // currently unused
+const ID = Cookies.get("id") ?? (array[0].valueOf() + 1).toString(16);
+const SESSION_KEY =
+	Cookies.get("key") ?? array[1].valueOf().toString(16) + array[2].valueOf().toString(16);
 const SOCKET = io.connect(document.documentURI);
 
 /// --- CONSTANTS/ENUMS --- ///
@@ -53,7 +54,6 @@ const PALETTES = {
 };
 
 /// --- GAME CONSTANTS --- ///
-const DEBUG = true;
 const VIEWPORT = {
 	x: 0,
 	y: 0,
@@ -142,6 +142,7 @@ SOCKET.on("joined", (data) => {
 	Cookies.set("name", getName(ID));
 	Cookies.set("room", ROOM.code);
 	Cookies.set("id", ID);
+	Cookies.set("key", SESSION_KEY);
 });
 
 // Add another user to the room
@@ -619,7 +620,7 @@ function updatePlayers() {
 	byId("playersCount").textContent = "(" + Object.keys(USERS).length.toString() + "/10)";
 
 	// Show/hide start button/minimum player warning depending on player count
-	if (Object.keys(USERS).length > 1 || DEBUG) {
+	if (Object.keys(USERS).length > 1) {
 		show("inputStart");
 		hide("inputStartWarning");
 	} else {
