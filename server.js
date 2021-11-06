@@ -9,7 +9,8 @@
 const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
-const io = require("socket.io")(server);
+const io = require("socket.io")({ serveClient: false });
+io.attach(server, { pingInterval: 10000, pingTimeout: 5000, cookie: true });
 const xss = require("xss");
 const path = require("path");
 const sizeOf = require("image-size");
@@ -83,7 +84,11 @@ io.on("connection", (socket) => {
 			_client.name = xss(data.name.substr(0, 32));
 			_client.roomCode = xss(data.roomCode.substr(0, 12)).replace(/[^a-zA-Z0-9-_]/g, "") || 0;
 
-			if (_client.id && _client.roomCode) {
+			if (_client.id === 0 || _client.roomCode === 0) {
+				// ID or roomCode is invalid, boot client
+				io.to(socket.id).emit("kick", "invalid room code");
+				socket.disconnect();
+			} else {
 				// add client to the room
 				socket.join(_client.roomCode);
 
@@ -104,7 +109,15 @@ io.on("connection", (socket) => {
 
 				// check if room can be joined
 				let _room = ROOMS[_client.roomCode];
-				if (_room.clients.length < MAX_ROOM_SIZE && _room.state === STATE.LOBBY) {
+				if (_room.state !== STATE.LOBBY) {
+					// game in progress, can't connect
+					io.to(socket.id).emit("kick", "game in progress");
+					socket.disconnect();
+				} else if (_room.clients.length >= MAX_ROOM_SIZE) {
+					// room is full, boot client
+					io.to(socket.id).emit("kick", "server full");
+					socket.disconnect();
+				} else {
 					// if room isn't full and is in lobby, add client to the room
 					_room.clients.push(socket.id);
 
@@ -120,15 +133,7 @@ io.on("connection", (socket) => {
 
 					// inform users in the room about the new client
 					socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
-				} else {
-					// room is full, boot client
-					io.to(socket.id).emit("kick", "server full");
-					socket.disconnect();
 				}
-			} else {
-				// ID or roomCode is invalid, boot client
-				io.to(socket.id).emit("kick", "invalid room code");
-				socket.disconnect();
 			}
 		}
 	});
@@ -444,7 +449,7 @@ io.on("connection", (socket) => {
 
 	// Listen for disconnect events
 	socket.on("disconnect", (data) => {
-		if (CLIENTS[socket.id] !== undefined && data.key === CLIENTS[socket.id].key) {
+		if (CLIENTS[socket.id] !== undefined) {
 			if (process.env.VERBOSE) {
 				if (CLIENTS[socket.id].id !== undefined) {
 					console.log("disconnect", CLIENTS[socket.id].id, { type: data });
