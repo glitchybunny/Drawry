@@ -469,6 +469,9 @@ SOCKET.on("finish", () => {
 // Disconnect from the server
 SOCKET.on("kick", (data) => {
 	switch (data) {
+		case "game in progress":
+			alert("Game in progress! Can't connect.");
+			break;
 		case "server full":
 			alert("Server full! Can't connect.");
 			break;
