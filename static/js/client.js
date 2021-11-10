@@ -506,6 +506,12 @@ SOCKET.on("disconnect", (data) => {
 	}
 });
 
+// Reconnect to the server
+// todo: reconnect function? to parse room data and server settings and stuff
+
+// todo: request function? server asks this client (host or otherwise) to upload all book data to server
+// 	so it can be shared with the reconnecting client
+
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
 // Restrict inputs with a filter function
 // Get name from ID

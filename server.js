@@ -456,8 +456,8 @@ io.on("connection", (socket) => {
 				}
 			}
 
+			// remove client from the room if they've joined one
 			if (CLIENTS[socket.id].id && CLIENTS[socket.id].roomCode) {
-				// remove client from the room if they've joined one
 				let _id = CLIENTS[socket.id].id;
 				let _roomCode = CLIENTS[socket.id].roomCode;
 
@@ -466,6 +466,7 @@ io.on("connection", (socket) => {
 
 				if (ROOMS[_roomCode]) {
 					// remove client from the room
+					// todo: don't unlink them from room, they're marked as disconnected
 					let _clients = ROOMS[_roomCode].clients;
 					let _index = _clients.indexOf(socket.id);
 					if (_index !== -1) {
@@ -474,9 +475,11 @@ io.on("connection", (socket) => {
 
 					// delete the room if everyone has left
 					if (_clients.length === 0) {
+						// todo: also check if all clients marked disconnected
 						delete ROOMS[_roomCode];
 					} else {
 						// if the host disconnected, assign a new host
+						// todo: assign host to first non-disconnected client
 						if (socket.id === ROOMS[_roomCode].host) {
 							ROOMS[_roomCode].host = _clients[0];
 							socket.to(_roomCode).emit("userHost", CLIENTS[_clients[0]].id);
@@ -521,6 +524,24 @@ function verifySettings(settings) {
 	}
 
 	return _valid;
+}
+
+// Get current game state
+function getGameState(room) {
+	// todo: write function that fetches the following information about the game state
+	//  - whether the game is lobby/playing/presenting
+	//  - page number
+	// 	- mode (write/draw)
+}
+
+// Reconnect client to game
+function reconnect(room, client) {
+	// todo:
+	//  - send client game state, settings, etc
+	//  - ask client which data they're missing in terms of pages
+	//  - if necessary, get data from host and transfer it to the client (create a transfer key for the host to use)
+	// not sure if it's better to send the missing data as soon as the client connects,
+	// or to only send immediately necessary data and wait until presenting to send everything else?????
 }
 
 // Generate books for a room
