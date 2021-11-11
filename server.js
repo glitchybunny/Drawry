@@ -60,23 +60,31 @@ io.on("connection", (socket) => {
 		}
 
 		// first of all, make sure no two clients connect with the same ID
-		let auth = true;
+		let _oldID,
+			auth = 1;
 		for (let _socketID in CLIENTS) {
 			if (data.id === CLIENTS[_socketID].id) {
 				// ensure the key matches
 				if (data.key === CLIENTS[_socketID].key) {
-					// same user, disconnect old client with matching ID
+					// same user, disconnect old and delete old client with matching ID
 					SOCKETS[_socketID].disconnect();
+					delete CLIENTS[_socketID];
+
+					// client is reconnecting, keep track of old ID and set auth to 2
+					_oldID = _socketID;
+					auth = 2;
 				} else {
 					// different user, disconnect since ID is already taken
 					socket.disconnect();
-					auth = false;
+					auth = 0;
 				}
 				break;
 			}
 		}
 
-		if (auth) {
+		console.log(auth);
+
+		if (auth > 0) {
 			// fetch client values
 			let _client = CLIENTS[socket.id];
 			_client.id = xss(data.id.substr(0, 10)).replace(/[^a-fA-F0-9]]/g, "") || 0;
@@ -107,21 +115,38 @@ io.on("connection", (socket) => {
 					};
 				}
 
-				// check if room can be joined
 				let _room = ROOMS[_client.roomCode];
-				if (_room.state !== STATE.LOBBY) {
-					// game in progress, can't connect
-					io.to(socket.id).emit("kick", "game in progress");
-					socket.disconnect();
-				} else if (_room.clients.length >= MAX_ROOM_SIZE) {
-					// room is full, boot client
-					io.to(socket.id).emit("kick", "server full");
-					socket.disconnect();
-				} else {
-					// if room isn't full and is in lobby, add client to the room
-					_room.clients.push(socket.id);
 
-					// inform the client they've joined the room
+				if (auth !== 2) {
+					if (_room.state !== STATE.LOBBY) {
+						// game in progress, can't connect
+						io.to(socket.id).emit("kick", "game in progress");
+						socket.disconnect();
+					} else if (_room.clients.length >= MAX_ROOM_SIZE) {
+						// room is full, can't connect
+						io.to(socket.id).emit("kick", "server full");
+						socket.disconnect();
+					} else {
+						// add client to the room
+						_room.clients[socket.id] = 1;
+						io.to(socket.id).emit("joined", {
+							roomCode: _client.roomCode,
+							users: Object.values(CLIENTS).filter((c) => {
+								return c.roomCode === _client.roomCode && c.id !== _client.id;
+							}),
+							host: CLIENTS[_room.host].id,
+							settings: _room.settings,
+						});
+
+						// broadcast join to other clients
+						socket.to(_client.roomCode).emit("userJoin", { id: _client.id, name: _client.name });
+					}
+				} else {
+					// reconnect user and remove old ID
+					delete _room.clients[_oldID];
+					_room.clients[socket.id] = 1;
+
+					// inform client they've joined
 					io.to(socket.id).emit("joined", {
 						roomCode: _client.roomCode,
 						users: Object.values(CLIENTS).filter((c) => {
@@ -131,8 +156,8 @@ io.on("connection", (socket) => {
 						settings: _room.settings,
 					});
 
-					// inform users in the room about the new client
-					socket.to(_client.roomCode).emit("userJoin", CLIENTS[socket.id]);
+					// tell other users about client reconnecting
+					socket.to(_client.roomCode).emit("userReconnect", { id: _client.id, name: _client.name });
 				}
 			}
 		}
@@ -465,30 +490,37 @@ io.on("connection", (socket) => {
 				socket.to(_roomCode).emit("userLeave", _id);
 
 				if (ROOMS[_roomCode]) {
-					// remove client from the room
-					// todo: don't unlink them from room, they're marked as disconnected
+					// mark client as disconnected
 					let _clients = ROOMS[_roomCode].clients;
-					let _index = _clients.indexOf(socket.id);
-					if (_index !== -1) {
-						_clients.splice(_index, 1);
-					}
+					_clients[socket.id] = 0;
 
-					// delete the room if everyone has left
-					if (_clients.length === 0) {
-						// todo: also check if all clients marked disconnected
+					// get number of connected clients
+					let _connected = 0;
+					Object.keys(_clients).forEach((e) => {
+						_connected += _clients[e];
+					});
+
+					if (_connected === 0) {
+						// All users disconnected, delete room
 						delete ROOMS[_roomCode];
 					} else {
-						// if the host disconnected, assign a new host
-						// todo: assign host to first non-disconnected client
+						// Still users connected
 						if (socket.id === ROOMS[_roomCode].host) {
-							ROOMS[_roomCode].host = _clients[0];
-							socket.to(_roomCode).emit("userHost", CLIENTS[_clients[0]].id);
+							// Host disconnected, so reassign host to first active client
+							Object.keys(_clients).forEach((_s) => {
+								if (_clients[_s] === 1) {
+									// Assign host
+									ROOMS[_roomCode].host = _s;
+									socket.to(_roomCode).emit("userHost", CLIENTS[_s].id);
+								}
+							});
 						}
 					}
 				}
 			}
 
-			delete CLIENTS[socket.id]; // todo: instead of deleting, mark as deleted so users can rejoin
+			// mark as disconnected so user can rejoin
+			//CLIENTS[socket.id].disconnected = true;
 		}
 	});
 });
