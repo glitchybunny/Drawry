@@ -209,13 +209,11 @@ io.on("connection", (socket) => {
 					_room.state === STATE.LOBBY) ||
 				DEBUG
 			) {
-				// Update settings, change room state
+				// Initialise room values, generate books
 				_room.settings = data.settings;
 				_room.state = STATE.PLAYING;
 				_room.page = 0;
-
-				// Generate page assignment order for books
-				generateBooks(_room);
+				_room.books = generateBooks(_room.clients, _room.settings);
 
 				// Start game
 				io.to(_roomCode).emit("startGame", {
@@ -577,27 +575,29 @@ function reconnect(room, client) {
 }
 
 // Generate books for a room
-function generateBooks(room) {
+function generateBooks(clients, settings) {
 	// create books
-	room.books = {};
-	room.clients.forEach((id) => {
-		room.books[CLIENTS[id].id] = [CLIENTS[id].id.toString()];
+	let books = {};
+	let players = [];
+	Object.keys(clients).forEach((id) => {
+		let clientID = CLIENTS[id].id.toString();
+		players.push(clientID);
+		books[clientID] = [clientID];
 	});
-	let _players = Object.keys(room.books);
 
 	// assign pages
-	if (room.settings.pageOrder === "Normal" || _players.length <= 3) {
+	if (settings.pageOrder === "Normal" || players.length <= 3) {
 		// normal order (cyclical)
-		for (let i = 1; i < room.settings.pageCount; i++) {
-			for (let j = 0; j < _players.length; j++) {
-				room.books[_players[(j + i) % _players.length]].push(_players[j]);
+		for (let i = 1; i < settings.pageCount; i++) {
+			for (let j = 0; j < players.length; j++) {
+				books[players[(j + i) % players.length]].push(players[j]);
 			}
 		}
-	} else if (room.settings.pageOrder === "Random") {
+	} else if (settings.pageOrder === "Random") {
 		// random order
-		let _assigned = [_players]; // variable to keep track of previous rounds
+		let _assigned = [players]; // variable to keep track of previous rounds
 
-		for (let i = 1; i < room.settings.pageCount; i++) {
+		for (let i = 1; i < settings.pageCount; i++) {
 			let _prev = _assigned[i - 1];
 			let _next = _prev.slice(); // copy previous array
 
@@ -605,10 +605,10 @@ function generateBooks(room) {
 			shuffle(_next);
 
 			// ensure no pages match the previous round
-			for (let j = 0; j < _players.length; j++) {
+			for (let j = 0; j < players.length; j++) {
 				if (_prev[j] === _next[j]) {
 					// pages match, generate random index to swap with
-					let _swap = Math.floor(Math.random() * (_players.length - 1));
+					let _swap = Math.floor(Math.random() * (players.length - 1));
 					if (_swap >= j) {
 						_swap += 1;
 					}
@@ -620,11 +620,13 @@ function generateBooks(room) {
 
 			// add round to books
 			_assigned.push(_next);
-			for (let j = 0; j < _players.length; j++) {
-				room.books[_players[j]].push(_next[j]);
+			for (let j = 0; j < players.length; j++) {
+				books[players[j]].push(_next[j]);
 			}
 		}
 	}
+
+	return books;
 }
 
 // Shuffle array (fisher yates)

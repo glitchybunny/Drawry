@@ -187,6 +187,9 @@ SOCKET.on("startGame", (data) => {
 		};
 	}
 
+	console.log(data.books);
+	console.log(BOOKS, ID, BOOKS[ID]);
+
 	// Set round info
 	ROOM.book = BOOKS[ID];
 	ROOM.pageMode = data.start;
