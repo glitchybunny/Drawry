@@ -516,7 +516,6 @@ SOCKET.on("disconnect", (data) => {
 // 	so it can be shared with the reconnecting client
 
 ///// ----- SYNCHRONOUS FUNCTIONS ----- /////
-// Restrict inputs with a filter function
 // Get name from ID
 function getName(id) {
 	if (id) {

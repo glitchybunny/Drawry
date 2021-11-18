@@ -122,7 +122,7 @@ io.on("connection", (socket) => {
 						// game in progress, can't connect
 						io.to(socket.id).emit("kick", "game in progress");
 						socket.disconnect();
-					} else if (_room.clients.length >= MAX_ROOM_SIZE) {
+					} else if (Object.keys(_room.clients).length >= MAX_ROOM_SIZE) {
 						// room is full, can't connect
 						io.to(socket.id).emit("kick", "server full");
 						socket.disconnect();
@@ -204,7 +204,7 @@ io.on("connection", (socket) => {
 			// Make sure user is the host, player count is reached, and settings are valid
 			if (
 				(socket.id === _room.host &&
-					_room.clients.length >= 2 &&
+					Object.keys(_room.clients).length >= 2 &&
 					verifySettings(data.settings) &&
 					_room.state === STATE.LOBBY) ||
 				DEBUG
@@ -272,6 +272,9 @@ io.on("connection", (socket) => {
 			if (data.mode === "Write") {
 				// Data is text
 				_value = xss(data.value.substr(0, 140));
+				if (_value.length === 0) {
+					_value = "...";
+				}
 			} else if (data.mode === "Draw") {
 				// Data is encoded image
 				// make sure the image is expected format
@@ -331,7 +334,7 @@ io.on("connection", (socket) => {
 
 			// Check if all players have submitted
 			_room.submitted += 1;
-			if (_room.submitted === _room.clients.length) {
+			if (_room.submitted === Object.keys(_room.clients).length) {
 				_room.submitted = 0;
 				_room.page += 1;
 
