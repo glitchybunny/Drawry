@@ -1,7 +1,7 @@
 /*
 	picturephone
 	canvas_test.js
-	a multiplayer art experiment by Glitch Taylor (rtay.io)
+	a multiplayer art experiment by Glitch Taylor
 	this file is for testing custom drawing/canvas logic
 */
 "use strict";

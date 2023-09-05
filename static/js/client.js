@@ -1,7 +1,7 @@
 /*
 	drawry
 	client.js
-	a multiplayer drawing game by Glitch Taylor (rtay.io)
+	a multiplayer drawing game by Glitch Taylor
 */
 "use strict";
 

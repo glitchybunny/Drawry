@@ -1,7 +1,7 @@
 /*
 	picturephone
 	fabric-regl.js
-	a multiplayer art experiment by Glitch Taylor (rtay.io)
+	a multiplayer art experiment by Glitch Taylor
 	this file extends upon fabric.js, providing an abstract webgl rendering layer using regl
 */
 "use strict";
