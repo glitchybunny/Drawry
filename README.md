@@ -9,9 +9,11 @@ Inspired by drawception, brokenpicturephone, and a plethora of other games in th
 ---
 
 ### Running your own server
+
 For reference, server.js is the node server, and /static/js/client.js is the main javascript module for the client.
 
 **How to run locally:**
+
 1. Make sure you have npm and nodejs installed - they're required for this.
 2. Clone the repo and navigate to the cloned directory.
 3. Run `npm install` to download all the dependencies.
@@ -23,13 +25,16 @@ For reference, server.js is the node server, and /static/js/client.js is the mai
 ### Environment Variables
 
 **PORT**
+
 - Changes which port the server runs on
 - Default: 80
 
 **RATE_LIMIT**
+
 - Defines the max amount of resource requests from an IP address per minute.
 - Default: 50
 
 **VERBOSE**
+
 - Enables verbose logging in the server console
 - Default: false

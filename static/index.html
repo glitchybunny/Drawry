@@ -1,345 +1,576 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <html lang="en">
-<head>
-	<meta charset="utf-8">
-	<meta content="width=device-width, user-scalable=1" name="viewport" />
-	<title>Drawry</title>
-	<link href="css/normalize.min.css" media="screen" rel="stylesheet" type="text/css" />
-	<link href="css/index.css" media="screen" rel="stylesheet" type="text/css" />
-</head>
-<body>
-	<div class="flex center" id="join" style="max-width:20em; margin:auto;">
-		<h1>Drawry</h1>
-		<section class="flex box" style="margin:1em;">
-			<label for="inputName">Nickname:</label>
-			<input aria-required="true" autocomplete="on" id="inputName" maxlength="32" minlength="1"
-						 onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
-			<label for="inputRoom">Room:</label>
-			<input aria-required="true" autocomplete="on" id="inputRoom" maxlength="12" minlength="4"
-						 onkeydown="return enterSubmit(event, 'inputJoin')" required="required" type="text">
-			<input id="inputJoin" type="button" value="Join">
-		</section>
-		<a href="/help.html" style="font-size:1.2em;">How to play</a>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, user-scalable=1" name="viewport" />
+    <title>Drawry</title>
+    <link
+      href="css/normalize.min.css"
+      media="screen"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="css/index.css"
+      media="screen"
+      rel="stylesheet"
+      type="text/css"
+    />
+  </head>
+  <body>
+    <div class="flex center" id="join" style="max-width: 20em; margin: auto">
+      <h1>Drawry</h1>
+      <section class="flex box" style="margin: 1em">
+        <label for="inputName">Nickname:</label>
+        <input
+          aria-required="true"
+          autocomplete="on"
+          id="inputName"
+          maxlength="32"
+          minlength="1"
+          onkeydown="return enterSubmit(event, 'inputJoin')"
+          required="required"
+          type="text"
+        />
+        <label for="inputRoom">Room:</label>
+        <input
+          aria-required="true"
+          autocomplete="on"
+          id="inputRoom"
+          maxlength="12"
+          minlength="4"
+          onkeydown="return enterSubmit(event, 'inputJoin')"
+          required="required"
+          type="text"
+        />
+        <input id="inputJoin" type="button" value="Join" />
+      </section>
+      <a href="/help.html" style="font-size: 1.2em">How to play</a>
 
-		<footer class="copyright">
-			<a href="https://github.com/darkrilin/drawry">&copy; Glitch 2021</a>
-		</footer>
-	</div>
+      <footer class="copyright">
+        <a href="https://github.com/GlitchTaylor/Drawry">&copy; Glitch 2023</a>
+      </footer>
+    </div>
 
-	<div class="flex hidden" hidden id="game" style="flex-wrap:wrap;">
-		<!-- SIDEBAR -->
-		<aside class="flex">
-			<header style="padding:.5em 0">
-				<h1 class="center">Drawry</h1>
-			</header>
-			<section class="boxlet" id="players">
-				<header>
-					<h2>Players</h2>
-					<h2 id="playersCount" style="text-align:right;">1</h2>
-				</header>
-				<ul id="playersList"></ul>
-			</section>
-			<section class="boxlet" id="invite">
-				<h2>Invite Others!</h2>
-				<p>Room code:<span class="blurred right" id="roomCode" style="cursor:pointer;"></span></p>
-				<div>
-					<input id="inviteButton" type="button" value="Copy invite link">
-					<output class="hidden fade-out" hidden id="inviteButtonStatus" style="float:right">Link copied!
-					</output>
-				</div>
-			</section>
-			<section class="boxlet hidden" hidden id="books">
-				<h2>Books</h2>
-				<ul id="booksList"></ul>
-				<input class="hidden" hidden id="download" style="font-size:1em; display:block;"
-							 type="button" value="Download all">
-			</section>
-			<footer style="text-align:center; padding:.5em;">
-				<a href="https://github.com/darkrilin/drawry">&copy; Glitch 2021</a>
-			</footer>
-		</aside>
-		<!-- GAME AREA -->
-		<main>
-			<!-- LOBBY/SETUP -->
-			<section class="flex box" id="setup" style="width:23em; margin:auto;">
-				<header>
-					<h2>Game Setup</h2>
-					<p class="right hostName"></p>
-				</header>
-				<hr>
-				<div id="settings">
-					<div class="flex row">
-						<dfn aria-label="Whether the first page is written or drawn"
-								 title="Whether the first page is written or drawn">
-							First page
-						</dfn>
-						<div class="host hidden">
-							<label>
-								<input aria-label="The first page is a text input" name="firstPage" type="radio"
-											 value="Write">
-								Write
-							</label>
-							<label>
-								<input aria-label="The first page is a drawable canvas input" name="firstPage"
-											 type="radio"
-											 value="Draw">
-								Draw
-							</label>
-						</div>
-						<div class="notHost">
-							<output for="firstPage" id="firstPageDisplay"></output>
-						</div>
-					</div>
-					<div class="flex row">
-						<dfn aria-label="Number of pages in each book" id="isHostLabel"
-								 title="Number of pages in each book">
-							Pages per book
-						</dfn>
-						<div class="flex row">
-							<div class="host hidden">
-								<input aria-labelledby="isHostLabel" id="pageCount" max="20" min="2" name="pageCount"
-											 type="range">
-							</div>
-							<output for="pageCount" id="pageCountDisplay"></output>
-						</div>
-					</div>
-					<div class="flex row">
-						<dfn aria-label="How pages are assigned to players" title="How pages are assigned to players">
-							Page assignment
-						</dfn>
-						<div class="host hidden">
-							<label>
-								<input aria-label="Pages are assigned in a cyclic order" name="pageOrder" type="radio"
-											 value="Normal">
-								Normal
-							</label>
-							<label>
-								<input aria-label="Pages are assigned in a semi-random order" name="pageOrder"
-											 type="radio"
-											 value="Random">
-								Random
-							</label>
-						</div>
-						<div class="notHost">
-							<output for="pageOrder" id="pageOrderDisplay"></output>
-						</div>
-					</div>
-					<div class="flex row">
-						<dfn aria-label="Whether there are color palette restrictions on the drawings"
-								 title="Whether there are color palette restrictions on the drawings">
-							Color palette
-						</dfn>
-						<div class="host hidden">
-							<select id="colorPalette">
-								<option value="No palette">No palette</option>
-								<option value="Rainbow">Rainbow</option>
-								<option value="Blues">Blues</option>
-								<option value="PICO-8">PICO-8</option>
-								<!--<option value="Random">Random</option>-->
-							</select>
-						</div>
-						<div class="notHost">
-							<output for="colorPalette" id="colorPaletteDisplay"></output>
-						</div>
-					</div>
-					<hr>
-					<div class="flex row">
-						<dfn aria-label="Time limit per writing page (in minutes)" id="timeWriteLabel"
-								 title="Time limit per writing page (in minutes)">
-							Write time limit
-						</dfn>
-						<div class="flex row">
-							<div class="host hidden">
-								<input aria-labelledby="timeWriteLabel" id="timeWrite" max="15" min="0" name="timeWrite"
-											 type="range">
-							</div>
-							<output for="timeWrite" id="timeWriteDisplay" style="min-width:3.2em;"></output>
-						</div>
-					</div>
-					<div class="flex row">
-						<dfn aria-label="Time limit per drawing page (in minutes)" id="timeDrawLabel"
-								 title="Time limit per drawing page (in minutes)">
-							Draw time limit
-						</dfn>
-						<div class="flex row">
-							<div class="host hidden">
-								<input aria-labelledby="timeDrawLabel" id="timeDraw" max="15" min="0" name="timeDraw"
-											 type="range">
-							</div>
-							<output for="timeDraw" id="timeDrawDisplay" style="min-width:3.2em;"></output>
-						</div>
-					</div>
-				</div>
-				<hr>
-				<div class="center host hidden" hidden>
-					<p id="inputStartWarning" style="font-style:italic;">
-						Two or more players required to start...
-					</p>
-					<input class="hidden" hidden id="inputStart" style="margin-top:.5em" type="button"
-								 value="Start game">
-				</div>
-				<div class="center notHost">
-					<p style="font-style:italic;">
-						Waiting for the host to start the game...
-					</p>
-				</div>
-			</section>
+    <div class="flex hidden" hidden id="game" style="flex-wrap: wrap">
+      <!-- SIDEBAR -->
+      <aside class="flex">
+        <header style="padding: 0.5em 0">
+          <h1 class="center">Drawry</h1>
+        </header>
+        <section class="boxlet" id="players">
+          <header>
+            <h2>Players</h2>
+            <h2 id="playersCount" style="text-align: right">1</h2>
+          </header>
+          <ul id="playersList"></ul>
+        </section>
+        <section class="boxlet" id="invite">
+          <h2>Invite Others!</h2>
+          <p>
+            Room code:<span
+              class="blurred right"
+              id="roomCode"
+              style="cursor: pointer"
+            ></span>
+          </p>
+          <div>
+            <input id="inviteButton" type="button" value="Copy invite link" />
+            <output
+              class="hidden fade-out"
+              hidden
+              id="inviteButtonStatus"
+              style="float: right"
+              >Link copied!
+            </output>
+          </div>
+        </section>
+        <section class="boxlet hidden" hidden id="books">
+          <h2>Books</h2>
+          <ul id="booksList"></ul>
+          <input
+            class="hidden"
+            hidden
+            id="download"
+            style="font-size: 1em; display: block"
+            type="button"
+            value="Download all"
+          />
+        </section>
+        <footer style="text-align: center; padding: 0.5em">
+          <a href="https://github.com/GlitchTaylor/Drawry"
+            >&copy; Glitch 2023</a
+          >
+        </footer>
+      </aside>
+      <!-- GAME AREA -->
+      <main>
+        <!-- LOBBY/SETUP -->
+        <section class="flex box" id="setup" style="width: 23em; margin: auto">
+          <header>
+            <h2>Game Setup</h2>
+            <p class="right hostName"></p>
+          </header>
+          <hr />
+          <div id="settings">
+            <div class="flex row">
+              <dfn
+                aria-label="Whether the first page is written or drawn"
+                title="Whether the first page is written or drawn"
+              >
+                First page
+              </dfn>
+              <div class="host hidden">
+                <label>
+                  <input
+                    aria-label="The first page is a text input"
+                    name="firstPage"
+                    type="radio"
+                    value="Write"
+                  />
+                  Write
+                </label>
+                <label>
+                  <input
+                    aria-label="The first page is a drawable canvas input"
+                    name="firstPage"
+                    type="radio"
+                    value="Draw"
+                  />
+                  Draw
+                </label>
+              </div>
+              <div class="notHost">
+                <output for="firstPage" id="firstPageDisplay"></output>
+              </div>
+            </div>
+            <div class="flex row">
+              <dfn
+                aria-label="Number of pages in each book"
+                id="isHostLabel"
+                title="Number of pages in each book"
+              >
+                Pages per book
+              </dfn>
+              <div class="flex row">
+                <div class="host hidden">
+                  <input
+                    aria-labelledby="isHostLabel"
+                    id="pageCount"
+                    max="20"
+                    min="2"
+                    name="pageCount"
+                    type="range"
+                  />
+                </div>
+                <output for="pageCount" id="pageCountDisplay"></output>
+              </div>
+            </div>
+            <div class="flex row">
+              <dfn
+                aria-label="How pages are assigned to players"
+                title="How pages are assigned to players"
+              >
+                Page assignment
+              </dfn>
+              <div class="host hidden">
+                <label>
+                  <input
+                    aria-label="Pages are assigned in a cyclic order"
+                    name="pageOrder"
+                    type="radio"
+                    value="Normal"
+                  />
+                  Normal
+                </label>
+                <label>
+                  <input
+                    aria-label="Pages are assigned in a semi-random order"
+                    name="pageOrder"
+                    type="radio"
+                    value="Random"
+                  />
+                  Random
+                </label>
+              </div>
+              <div class="notHost">
+                <output for="pageOrder" id="pageOrderDisplay"></output>
+              </div>
+            </div>
+            <div class="flex row">
+              <dfn
+                aria-label="Whether there are color palette restrictions on the drawings"
+                title="Whether there are color palette restrictions on the drawings"
+              >
+                Color palette
+              </dfn>
+              <div class="host hidden">
+                <select id="colorPalette">
+                  <option value="No palette">No palette</option>
+                  <option value="Rainbow">Rainbow</option>
+                  <option value="Blues">Blues</option>
+                  <option value="PICO-8">PICO-8</option>
+                  <!--<option value="Random">Random</option>-->
+                </select>
+              </div>
+              <div class="notHost">
+                <output for="colorPalette" id="colorPaletteDisplay"></output>
+              </div>
+            </div>
+            <hr />
+            <div class="flex row">
+              <dfn
+                aria-label="Time limit per writing page (in minutes)"
+                id="timeWriteLabel"
+                title="Time limit per writing page (in minutes)"
+              >
+                Write time limit
+              </dfn>
+              <div class="flex row">
+                <div class="host hidden">
+                  <input
+                    aria-labelledby="timeWriteLabel"
+                    id="timeWrite"
+                    max="15"
+                    min="0"
+                    name="timeWrite"
+                    type="range"
+                  />
+                </div>
+                <output
+                  for="timeWrite"
+                  id="timeWriteDisplay"
+                  style="min-width: 3.2em"
+                ></output>
+              </div>
+            </div>
+            <div class="flex row">
+              <dfn
+                aria-label="Time limit per drawing page (in minutes)"
+                id="timeDrawLabel"
+                title="Time limit per drawing page (in minutes)"
+              >
+                Draw time limit
+              </dfn>
+              <div class="flex row">
+                <div class="host hidden">
+                  <input
+                    aria-labelledby="timeDrawLabel"
+                    id="timeDraw"
+                    max="15"
+                    min="0"
+                    name="timeDraw"
+                    type="range"
+                  />
+                </div>
+                <output
+                  for="timeDraw"
+                  id="timeDrawDisplay"
+                  style="min-width: 3.2em"
+                ></output>
+              </div>
+            </div>
+          </div>
+          <hr />
+          <div class="center host hidden" hidden>
+            <p id="inputStartWarning" style="font-style: italic">
+              Two or more players required to start...
+            </p>
+            <input
+              class="hidden"
+              hidden
+              id="inputStart"
+              style="margin-top: 0.5em"
+              type="button"
+              value="Start game"
+            />
+          </div>
+          <div class="center notHost">
+            <p style="font-style: italic">
+              Waiting for the host to start the game...
+            </p>
+          </div>
+        </section>
 
-			<!-- GAMEPLAY -->
-			<section class="flex center hidden" hidden id="status">
-				<h2><span id="statusTitle"></span> - Page&nbsp;<span id="statusPage"></span>/<span
-					id="statusPageMax"></span><span class="hidden" hidden id="statusTimer"> -⏳<span id="timer">0:00</span></span>
-				</h2>
-			</section>
-			<div class="flex hidden" hidden id="gameplay">
-				<section class="flex box" id="title">
-					<label for="inputTitle" style="font-weight:bold;">Title</label>
-					<input aria-required="true" autocomplete="off" id="inputTitle" maxlength="40" minlength="1"
-								 placeholder="Enter a title for your book" required="required" size="25" spellcheck="true"
-								 type="text">
-				</section>
-				<section class="flex box hidden" hidden id="previous">
-					<label style="font-weight:bold;">Previous page</label>
-					<p class="hidden" hidden id="previousWrite"></p>
-					<img alt="" class="hidden" hidden id="previousDraw" src="img/base.png" />
-				</section>
-				<section class="flex box hidden" hidden id="write">
-					<label for="inputWrite" style="font-weight:bold;">Story</label>
-					<textarea aria-required="true" autocomplete="off" id="inputWrite" maxlength="140" minlength="1"
-										onkeydown="return enterPrevent(event)" placeholder="What happens next?" required="required"
-										spellcheck="true"></textarea>
-				</section>
-				<section class="flex box hidden" hidden id="draw">
-					<label style="font-weight:bold;">Drawing</label>
-					<div style="display:flex;">
-						<div id="palette">
-							<div id="colorContainer">
-								<input autocomplete="off" id="toolColor" title="Color picker" type="color" value="Pick a color">
-							</div>
-							<div id="colorHistory" class="hidden" hidden></div>
-							<div id="colorRadio" class="hidden" hidden></div>
-						</div>
-						<div id="canvas">
-							<img alt="" id="canvasBase" src="img/base.png">
-							<canvas height="600" id="cBase" width="800"></canvas>
-							<canvas height="600" id="cRegl" width="800"></canvas>
-							<canvas height="600" id="cCursor" width="800"></canvas>
-						</div>
-						<div id="stuff">
-							<!-- Tools -->
-							<div id="undoRedo">
-								<input autocomplete="off" disabled="disabled" id="toolUndo" title="Undo (Z)"
-											 type="button">
-								<input autocomplete="off" disabled="disabled" id="toolRedo" title="Redo (Y)"
-											 type="button">
-							</div>
-							<input autocomplete="off" class="selected" id="toolPaint" title="Draw tool (D)"
-										 type="button">
-							<input autocomplete="off" id="toolErase" title="Erase tool (E)" type="button">
-							<input autocomplete="off" id="toolFill" title="Fill tool (F)" type="button">
+        <!-- GAMEPLAY -->
+        <section class="flex center hidden" hidden id="status">
+          <h2>
+            <span id="statusTitle"></span> - Page&nbsp;<span
+              id="statusPage"
+            ></span
+            >/<span id="statusPageMax"></span
+            ><span class="hidden" hidden id="statusTimer">
+              -⏳<span id="timer">0:00</span></span
+            >
+          </h2>
+        </section>
+        <div class="flex hidden" hidden id="gameplay">
+          <section class="flex box" id="title">
+            <label for="inputTitle" style="font-weight: bold">Title</label>
+            <input
+              aria-required="true"
+              autocomplete="off"
+              id="inputTitle"
+              maxlength="40"
+              minlength="1"
+              placeholder="Enter a title for your book"
+              required="required"
+              size="25"
+              spellcheck="true"
+              type="text"
+            />
+          </section>
+          <section class="flex box hidden" hidden id="previous">
+            <label style="font-weight: bold">Previous page</label>
+            <p class="hidden" hidden id="previousWrite"></p>
+            <img
+              alt=""
+              class="hidden"
+              hidden
+              id="previousDraw"
+              src="img/base.png"
+            />
+          </section>
+          <section class="flex box hidden" hidden id="write">
+            <label for="inputWrite" style="font-weight: bold">Story</label>
+            <textarea
+              aria-required="true"
+              autocomplete="off"
+              id="inputWrite"
+              maxlength="140"
+              minlength="1"
+              onkeydown="return enterPrevent(event)"
+              placeholder="What happens next?"
+              required="required"
+              spellcheck="true"
+            ></textarea>
+          </section>
+          <section class="flex box hidden" hidden id="draw">
+            <label style="font-weight: bold">Drawing</label>
+            <div style="display: flex">
+              <div id="palette">
+                <div id="colorContainer">
+                  <input
+                    autocomplete="off"
+                    id="toolColor"
+                    title="Color picker"
+                    type="color"
+                    value="Pick a color"
+                  />
+                </div>
+                <div id="colorHistory" class="hidden" hidden></div>
+                <div id="colorRadio" class="hidden" hidden></div>
+              </div>
+              <div id="canvas">
+                <img alt="" id="canvasBase" src="img/base.png" />
+                <canvas height="600" id="cBase" width="800"></canvas>
+                <canvas height="600" id="cRegl" width="800"></canvas>
+                <canvas height="600" id="cCursor" width="800"></canvas>
+              </div>
+              <div id="stuff">
+                <!-- Tools -->
+                <div id="undoRedo">
+                  <input
+                    autocomplete="off"
+                    disabled="disabled"
+                    id="toolUndo"
+                    title="Undo (Z)"
+                    type="button"
+                  />
+                  <input
+                    autocomplete="off"
+                    disabled="disabled"
+                    id="toolRedo"
+                    title="Redo (Y)"
+                    type="button"
+                  />
+                </div>
+                <input
+                  autocomplete="off"
+                  class="selected"
+                  id="toolPaint"
+                  title="Draw tool (D)"
+                  type="button"
+                />
+                <input
+                  autocomplete="off"
+                  id="toolErase"
+                  title="Erase tool (E)"
+                  type="button"
+                />
+                <input
+                  autocomplete="off"
+                  id="toolFill"
+                  title="Fill tool (F)"
+                  type="button"
+                />
 
-							<!-- Tool options -->
-							<hr>
-							<div id="optionsBrush">
-								<label for="brushSizeRange">Size:</label>
-								<input class="vertical" type="range" min="1" max="10" value="2" step="0.1" orient="vertical"
-											 autocomplete="off" id="brushSizeRange">
-								<input type="number" min="1" max="99" value="4" autocomplete="off" id="brushSize">
-							</div>
-						</div>
-					</div>
-				</section>
-				<section class="flex box" style="padding: 0 1em .5em;">
-					<input autocomplete="off" id="inputSubmit" type="button" value="Submit">
-				</section>
-			</div>
+                <!-- Tool options -->
+                <hr />
+                <div id="optionsBrush">
+                  <label for="brushSizeRange">Size:</label>
+                  <input
+                    class="vertical"
+                    type="range"
+                    min="1"
+                    max="10"
+                    value="2"
+                    step="0.1"
+                    orient="vertical"
+                    autocomplete="off"
+                    id="brushSizeRange"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    value="4"
+                    autocomplete="off"
+                    id="brushSize"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="flex box" style="padding: 0 1em 0.5em">
+            <input
+              autocomplete="off"
+              id="inputSubmit"
+              type="button"
+              value="Submit"
+            />
+          </section>
+        </div>
 
-			<!-- PRESENTING -->
-			<section class="flex box hidden" hidden id="present" style="margin:auto;">
-				<header>
-					<h2>Presenting</h2>
-					<p class="right hostName"></p>
-				</header>
-				<hr>
-				<div id="presentMenu">
-					<div class="host hidden" hidden style="flex-flow:column nowrap">
-						<table id="presentTable"></table>
-						<div class="center" style="margin:.5em">
-							<input disabled="disabled" id="finish" style="font-size:1.1em"
-										 type="button" value="Play again?" autocomplete="off">
-						</div>
-					</div>
-					<div class="notHost">
-						<p class="center" style="font-style:italic;margin:.5em;font-size:1.1em;">
-							Waiting for a presentation to start...
-						</p>
-					</div>
-				</div>
-				<div class="hidden" hidden id="presentWindow">
-					<div class="flex" style="background-color:#fff; height:100%;" id="presentBlurb">
-						<h1 class="center" id="presentTitle" style="margin-top:1em"></h1>
-						<p class="center" style="margin:.5em 0 2em;">
-							<span id="authors"></span>
-							<br>
-							<span id="presenter"></span>
-						</p>
-					</div>
-				</div>
-				<div class="center hidden flex" hidden id="presentControls">
-					<div class="flex" style="flex-flow:row nowrap">
-						<input autocomplete="off" disabled="disabled" id="inputPresentBack" type="button" value="< Prev">
-						<input autocomplete="off" id="inputPresentForward" type="button" value="Next >">
-					</div>
-					<div class="flex">
-						<input disabled="disabled" autocomplete="off" id="inputPresentFinish" type="button"
-									 value="Finish presenting">
-					</div>
-				</div>
-				<div class="hidden center flex" hidden id="presentOverride">
-					<input id="inputPresentOverride" type="button" value="Hijack presentation">
-				</div>
-			</section>
+        <!-- PRESENTING -->
+        <section
+          class="flex box hidden"
+          hidden
+          id="present"
+          style="margin: auto"
+        >
+          <header>
+            <h2>Presenting</h2>
+            <p class="right hostName"></p>
+          </header>
+          <hr />
+          <div id="presentMenu">
+            <div class="host hidden" hidden style="flex-flow: column nowrap">
+              <table id="presentTable"></table>
+              <div class="center" style="margin: 0.5em">
+                <input
+                  disabled="disabled"
+                  id="finish"
+                  style="font-size: 1.1em"
+                  type="button"
+                  value="Play again?"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+            <div class="notHost">
+              <p
+                class="center"
+                style="font-style: italic; margin: 0.5em; font-size: 1.1em"
+              >
+                Waiting for a presentation to start...
+              </p>
+            </div>
+          </div>
+          <div class="hidden" hidden id="presentWindow">
+            <div
+              class="flex"
+              style="background-color: #fff; height: 100%"
+              id="presentBlurb"
+            >
+              <h1 class="center" id="presentTitle" style="margin-top: 1em"></h1>
+              <p class="center" style="margin: 0.5em 0 2em">
+                <span id="authors"></span>
+                <br />
+                <span id="presenter"></span>
+              </p>
+            </div>
+          </div>
+          <div class="center hidden flex" hidden id="presentControls">
+            <div class="flex" style="flex-flow: row nowrap">
+              <input
+                autocomplete="off"
+                disabled="disabled"
+                id="inputPresentBack"
+                type="button"
+                value="< Prev"
+              />
+              <input
+                autocomplete="off"
+                id="inputPresentForward"
+                type="button"
+                value="Next >"
+              />
+            </div>
+            <div class="flex">
+              <input
+                disabled="disabled"
+                autocomplete="off"
+                id="inputPresentFinish"
+                type="button"
+                value="Finish presenting"
+              />
+            </div>
+          </div>
+          <div class="hidden center flex" hidden id="presentOverride">
+            <input
+              id="inputPresentOverride"
+              type="button"
+              value="Hijack presentation"
+            />
+          </div>
+        </section>
 
-			<!-- DIALOGS -->
-			<dialog id="wait" role="alertdialog">
-				<p class="center" style="display:block">
-					Waiting for others to finish their page...
-				</p>
-				<div style="padding:.5em">
-					<img alt="" class="spin" src="img/loading.png" style="display:block; margin:0 auto;">
-				</div>
-				<p class="center" style="display:block">
-					<span id="waitDisplay">0</span> page(s) remaining
-				</p>
-			</dialog>
-		</main>
-	</div>
+        <!-- DIALOGS -->
+        <dialog id="wait" role="alertdialog">
+          <p class="center" style="display: block">
+            Waiting for others to finish their page...
+          </p>
+          <div style="padding: 0.5em">
+            <img
+              alt=""
+              class="spin"
+              src="img/loading.png"
+              style="display: block; margin: 0 auto"
+            />
+          </div>
+          <p class="center" style="display: block">
+            <span id="waitDisplay">0</span> page(s) remaining
+          </p>
+        </dialog>
+      </main>
+    </div>
 
-	<div class="hidden" hidden id="loading"></div>
+    <div class="hidden" hidden id="loading"></div>
 
-	<script src="/js/socket.io.min.js"></script>
-	<script src="/js/cookies.min.js"></script>
-	<script src="/js/dialog-polyfill.js"></script>
-	<script src="/js/fabric.min.js"></script>
-	<script src="/js/regl.js"></script>
-	<script src="/js/fabric-regl.js"></script>
-	<script src="/js/client.js"></script>
-	<script>
-		function enterSubmit(e, id) {
-			if (e.keyCode === 13) {
-				document.getElementById(id).click();
-				return false;
-			}
-			return true;
-		}
+    <script src="/js/socket.io.min.js"></script>
+    <script src="/js/cookies.min.js"></script>
+    <script src="/js/dialog-polyfill.js"></script>
+    <script src="/js/fabric.min.js"></script>
+    <script src="/js/regl.js"></script>
+    <script src="/js/fabric-regl.js"></script>
+    <script src="/js/client.js"></script>
+    <script>
+      function enterSubmit(e, id) {
+        if (e.keyCode === 13) {
+          document.getElementById(id).click()
+          return false
+        }
+        return true
+      }
 
-		function enterPrevent(e) {
-			if (e.keyCode === 13) {
-				e.preventDefault();
-				return false;
-			}
-		}
-	</script>
-</body>
+      function enterPrevent(e) {
+        if (e.keyCode === 13) {
+          e.preventDefault()
+          return false
+        }
+      }
+    </script>
+  </body>
 </html>
